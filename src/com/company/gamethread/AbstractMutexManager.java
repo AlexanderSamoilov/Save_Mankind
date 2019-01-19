@@ -67,8 +67,10 @@ public abstract class AbstractMutexManager <TypeKey, TypeValue> extends HashMap 
                 // Even more. When thread A asks thread B it uses not the same key when thread B asks thread A.
                 TypeValue val = (TypeValue) super.get(key); // class cast exception?
                 if (val != value) {
-                    Main.printMsg("Error: insert(" + key + "," + value + "): conflict, value already = " + val);
-                    Main.terminateNoGiveUp(1000);
+                    Main.terminateNoGiveUp(
+                            1000,
+                            "Error: insert(" + key + "," + value + "): conflict, value already = " + val
+                    );
                 } else {
                     return val;
                 }
@@ -76,8 +78,10 @@ public abstract class AbstractMutexManager <TypeKey, TypeValue> extends HashMap 
                 try {
                     super.put(key, value);
                 } catch (ConcurrentModificationException e) {
-                    Main.printMsg("Error: ConcurrentModificationException on writing to hash[" + key + "]");
-                    Main.terminateNoGiveUp(1000);
+                    Main.terminateNoGiveUp(
+                            1000,
+                            "Error: ConcurrentModificationException on writing to hash[" + key + "]"
+                    );
                 }
             }
 
@@ -105,8 +109,9 @@ public abstract class AbstractMutexManager <TypeKey, TypeValue> extends HashMap 
                 if (TypeV.isInstance(value)) {
                     return (TypeValue)value;
                 } else {
-                    Main.printMsg("Error: Wrong map element type: expected " + TypeV.getClass().toString() + ", got " + value.getClass() + ".");
-                    Main.terminateNoGiveUp(1000);
+                    Main.terminateNoGiveUp(
+                            1000,
+                            "Error: Wrong map element type: expected " + TypeV.getClass().toString() + ", got " + value.getClass() + ".");
                     return null;
                 }
             } else {

@@ -1,9 +1,6 @@
 package com.gamethread;
 
-import com.gamecontent.Bullet;
-import com.gamecontent.GameMap;
-import com.gamecontent.Player;
-import com.gamecontent.Unit;
+import com.gamecontent.*;
 
 import java.util.HashSet;
 import java.util.concurrent.Semaphore;
@@ -23,15 +20,19 @@ public class C_Thread extends Main.ThreadPattern {
     public void repeat() throws InterruptedException {
 
         Main.ParameterizedMutexManager.getInstance().getMutex("V", "recalc").acquire();
-        Main.printMsg(super.getName() + " is calculating.");
+//        Main.printMsg(super.getName() + " is calculating.");
         // recalculate positions of each game object
         // TODO: do it according to our documentation (swap pointers worldCurr, worldNext)
         if (GameMap.getInstance().getBullets() != null) {
-            HashSet<Bullet> blts = (HashSet<Bullet>)GameMap.getInstance().getBullets().clone();
-            for (Bullet b : blts) {
+            HashSet<Bullet> bullets = (HashSet<Bullet>)GameMap.getInstance().getBullets().clone();
+
+            for (Bullet b : bullets) {
                 b.move();
             }
         }
+
+        // TODO bad realisation. We must use collections to iterate all units
+        // TODO May be != null check move in getPlayers(), getUnits()?
         if (Player.getPlayers() != null) {
             for (Player pl : Player.getPlayers()) {
                 if (pl.getUnits() != null) {
@@ -41,7 +42,9 @@ public class C_Thread extends Main.ThreadPattern {
                 }
             }
         }
-        ((Semaphore) Main.ParameterizedMutexManager.getInstance().getMutex("V", "recalc")).release();
+        ((Semaphore) Main.ParameterizedMutexManager.getInstance().getMutex(
+                "V", "recalc")
+        ).release();
     }
 
 }

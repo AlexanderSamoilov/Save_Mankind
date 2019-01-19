@@ -4,248 +4,372 @@ import com.gamegraphics.Sprite;
 import com.gamethread.Main;
 
 import java.awt.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
+// For details read the DOC "Data Structure"
 public class GameObject implements Moveable {
-    protected Integer[] loc; // current coordinates (z for airplanes) // not required if we implement objects with complex geometry
-    protected Integer[] destPoint; // the map point to move to now, may be NULL
+    // TODO loc_x, loc_y, loc_z
+    protected Integer[] loc;         // Location of object (x, y, and z for airplanes)
+
+    // TODO dest_x, dest_y
+    protected Integer[] destPoint;   // The map point to move to (has x, y)
+
     protected Sprite sprite;
 
     // TODO Check body block usability
-    /* bodyBlocks[][] bodyBlocks;     * We should decide if we implement object of complex form.
-     * That is, the object which contains of several block items
-     * which are not a solid rectangular parallelepiped.
-     * See ticket "Структура Данных" in Trello board for details. */
-    protected int[] size;
+    // We should decide if we implement object of complex form.
+    // That is, the object which contains of several block items
+    // which are not a solid rectangular parallelepiped. */
+//    bodyBlocks[][] bodyBlocks;
+
+    protected int playerId;
+
+    // TODO size_x, size_y, size_z
+    protected int[] size;            // Object dimensions in GameMap cells (sX, sY, sZ)
 
     protected int hitPoints;
     protected int maxHitPoints;
     protected int speed;
-    protected int armor;                 // 0..100% - percentage damage decrement
-    protected int hardness;              /* absolute damage decrement - minimal HP amount that makes some
-     * damage to the object
-     * (lower damages are just congested and make no damage) */
-    protected HashMap<Resource,Integer> res;                 // res[0] is mass, res[1] is energy, res[2} is money etc.
+//    protected int armor;             // 0..100% - percentage damage decrement
 
-    protected int burnChanceOnHit;           // 0..100% - gives the chance of ignition at the bullet hitting.
-    protected int explosionChanceOnHit;      // 0..100% - similar with the previous one
-    protected int explosionChanceOnBurn;     /* 0..100% - this is another one. On each calculation step
-     * the object can explode if it is burning. */
+    // absolute damage decrement - minimal HP amount that makes some
+    // damage to the object
+    // (lower damages are just congested and make no damage) */
+//    protected int hardness;
 
-    protected boolean isBroken;
-    protected boolean isBurning;
-    protected boolean isDying;
-    protected boolean isMoving;
+    protected HashMap<Resource,Integer> res;   // res[0] is mass, res[1] is energy, res[2} is money etc.
+
+//    protected int burnChanceOnHit;           // 0..100% - gives the chance of ignition at the bullet hitting.
+//    protected int explosionChanceOnHit;      // 0..100% - similar with the previous one
+
+    // 0..100% - this is another one. On each calculation step
+    // the object can explode if it is burning.
+//    protected int explosionChanceOnBurn;
+
+//    protected boolean isBroken;
+//    protected boolean isBurning;
+//    protected boolean isDying;
+//    protected boolean isMoving;
+
     protected boolean isSelected;
 
-    protected int playerId;
-
-    public void select() {
-        isSelected = true;
-    }
-
-    public void unselect() {
-        isSelected = false;
-    }
-
-    public int getPlayerId() {
-        return playerId;
-    }
 
     // Here x,y,z - coordinates on grid (not absolute)
-    public GameObject(Sprite spr, int x, int y, int z, int sX, int sY, int sZ, HashMap<Resource,Integer> ress, int hp, int spd, int arm, int hard, int bch, int ech, int eco) {
+    public GameObject(Sprite sprite, int x, int y, int z, int sX, int sY, int sZ, HashMap<Resource,Integer> res, int hp, int speed, int arm, int hard, int bch, int ech, int eco) {
         // 1 - parent class specific parameters
         // 2 - validation
-        if (spr == null) {
+        if (sprite == null) {
             throw new IllegalArgumentException("Failed to initialize GameObject with spr=null.");
         }
 
         // TODO: check if the object borders are within map area!
-        if ((x < 0) || (y < 0) || (z < 0) ||
-            (x > Restrictions.getMaxX()) || (y > Restrictions.getMaxY()) || (z > Restrictions.getMaxZ()) ||
-            (sX <= 0) || (sY <= 0) || (sZ <= 0) ||
-            (sX > Restrictions.getMaxObjectSizeBlocks()) || (sY > Restrictions.getMaxObjectSizeBlocks()) || (sZ > Restrictions.getMaxObjectSizeBlocks()) ||
-            (ress.get(Resource.MASS) <= 0) || (ress.get(Resource.MASS) > Restrictions.getMaxMass()) ||
-            (ress.get(Resource.ENERGY) < 0) || (ress.get(Resource.ENERGY) > Restrictions.getMaxEnergy()) ||
-            (hp < 0) || (hp > Restrictions.getMaxHp()) ||
-            (spd < -Restrictions.getMaxSpeed()) || (spd > Restrictions.getMaxSpeed()) ||
-            (arm < 0) || (arm > Restrictions.getMaxArmor()) ||
-            (hard < 0) || (hard > Restrictions.getMaxHardness()) ||
-            (bch < 0) || (bch > Restrictions.getMaxBCH()) ||
-            (ech < 0) || (ech > Restrictions.getMaxECH()) ||
-            (eco < 0) || (eco > Restrictions.getMaxECO())
-        )
-        {
-            throw new IllegalArgumentException("Failed to initialize " + getClass() + ". Some of parameters are beyond the restricted boundaries.");
+        boolean valid;
+
+        // Check object coordinates
+        valid = Main.in_range(0, x, Restrictions.MAX_X, false);
+        valid = valid && Main.in_range(0, y, Restrictions.MAX_Y, false);
+        valid = valid && Main.in_range(0, z, Restrictions.MAX_Z, false);
+
+        // Check object stats
+        valid = valid && Main.in_range(0, hp, Restrictions.MAX_HP, false);
+        valid = valid && Main.in_range(-Restrictions.MAX_SPEED, speed, Restrictions.MAX_SPEED, false);
+
+        // Check object dimensions
+        valid = valid && Main.in_range(0, sX, Restrictions.getMaxObjectSizeBlocks() + 1, true);
+        valid = valid && Main.in_range(0, sY, Restrictions.getMaxObjectSizeBlocks() + 1, true);
+        valid = valid && Main.in_range(0, sZ, Restrictions.getMaxObjectSizeBlocks() + 1, true);
+
+        // Check object resources limits
+        valid = valid && Main.in_range(
+                0, res.get(Resource.MASS), Restrictions.MAX_MASS + 1, true
+        );
+
+        valid = valid && Main.in_range(
+                0, res.get(Resource.ENERGY), Restrictions.MAX_ENERGY, false
+        );
+
+        if (!valid) {
+            Main.terminateNoGiveUp(
+                    1000,
+                    "Failed to initialize " + getClass() + ". Some of parameters are beyond the restricted boundaries."
+            );
         }
 
-        sprite = spr;
-        loc = new Integer[]{x*Restrictions.getBlockSize(), y*Restrictions.getBlockSize(), z*Restrictions.getBlockSize()};
-        size = new int[]{sX, sY, sZ};
-        res = new HashMap<Resource,Integer>();
-        res.put(Resource.MASS, ress.get(Resource.MASS));
-        res.put(Resource.ENERGY, ress.get(Resource.ENERGY));
-        maxHitPoints = hp;
-        speed = spd;
-        armor = arm;
-        hardness = hard;
-        burnChanceOnHit = bch;
-        explosionChanceOnHit = ech;
-        explosionChanceOnBurn = eco;
+        this.sprite = sprite;
+        this.loc = new Integer[]{
+                x * Restrictions.BLOCK_SIZE, y * Restrictions.BLOCK_SIZE, z * Restrictions.BLOCK_SIZE
+        };
+
+        this.size = new int[]{sX, sY, sZ};
+
+        this.res = new HashMap<Resource,Integer>();
+        this.res.put(Resource.MASS, res.get(Resource.MASS));
+        this.res.put(Resource.ENERGY, res.get(Resource.ENERGY));
+
+        this.maxHitPoints = hp;
+        this.speed = speed;
+//        this.armor = arm;
+//        this.hardness = hard;
+//        this.burnChanceOnHit = bch;
+//        this.explosionChanceOnHit = ech;
+//        this.explosionChanceOnBurn = eco;
 
         // 3 - default values
-        hitPoints = hp;
-        isBroken = false;
-        isBurning = false;
-        isDying = false;
-        isMoving = false;
-        isSelected = false;
+        this.hitPoints = hp;
+//        isBroken = false;
+//        isBurning = false;
+//        isDying = false;
+//        isMoving = false;
+        this.isSelected = false;
         this.destPoint = null;
+
+        // FIXME this.playerId = Faction.NEUTRAL
         this.playerId = -1;
 
-        GameMap.getInstance().registerObject(this); // mark the object on the map
-    }
-
-    public void setOwner(int plId) {
-        this.playerId = plId;
+        // Mark the object on the map
+        GameMap.getInstance().registerObject(this);
     }
 
     public void render(Graphics g) {
-        //Main.printMsg("RENDER OBJECT: x=" + loc[0] + ", y=" + loc[1] + ", obj=" + this);
-        /* -------------------------- Picture drawing ------------------------------------------- */
-        sprite.render(g, loc[0], loc[1], size[0]*Restrictions.getBlockSize(), size[1]*Restrictions.getBlockSize());
-        if (isSelected) g.drawRect(loc[0], loc[1],size[0]*Restrictions.getBlockSize(), size[1]*Restrictions.getBlockSize());
+        int rect_x    = loc[0];
+        int rect_y    = loc[1];
+        int rect_w    = size[0] * Restrictions.BLOCK_SIZE;
+        int rect_h    = size[1] * Restrictions.BLOCK_SIZE;
 
-        int percentageHP = 100 * hitPoints / maxHitPoints;
+        this.sprite.render(g, rect_x, rect_y, rect_w, rect_h);
+
+        if (isSelected) {
+            g.drawRect(rect_x, rect_y, rect_w, rect_h);
+        }
+
+        /* TODO Move it in HUD Class.render() */
         Color hpColor = null;
-        switch ((percentageHP - 1) / 25){
-            case (3):
-                hpColor = Color.GREEN;
-                break;
-            case (0):
-                hpColor = Color.RED;
-                break;
-            default:
-                hpColor = Color.YELLOW;
-                break;
+
+        int percentageHP   = 100 * hitPoints / maxHitPoints;
+        int actualPartOfHP = (100 * hitPoints / maxHitPoints - 1) / 25;
+
+        if (actualPartOfHP == 3){
+            hpColor = Color.GREEN;
+        }
+
+        if (actualPartOfHP == 0){
+            hpColor = Color.RED;
+        }
+
+        if (0 < actualPartOfHP && actualPartOfHP < 3) {
+            hpColor = Color.YELLOW;
         }
 
         // "healthy" HP
         g.setColor(hpColor);
-        g.fillRect(loc[0], loc[1] + size[1]*Restrictions.getBlockSize(), size[0]*Restrictions.getBlockSize()*percentageHP/100, 5);
+        g.fillRect(rect_x, rect_y + rect_h, rect_w * percentageHP / 100, 5);
+
+        // "loosed" HP
         g.setColor(Color.BLACK);
-        g.fillRect(loc[0] + size[0]*Restrictions.getBlockSize()*percentageHP/100, loc[1] + size[1]*Restrictions.getBlockSize(), size[0]*Restrictions.getBlockSize()*(100 - percentageHP)/100, 5);
-        g.drawRect(loc[0], loc[1] + size[1]*Restrictions.getBlockSize(), size[0]*Restrictions.getBlockSize(), 5);
+        g.fillRect(
+                rect_x + rect_w * percentageHP / 100,
+                rect_y + rect_h,
+                rect_w * (100 - percentageHP) / 100,
+                5
+        );
+
+        g.drawRect(rect_x, rect_y + rect_h, rect_w, 5);
     }
 
     public void setDestinationPoint(Integer [] dest) {
         // TODO: check if coordinates are within restrictions
         if (destPoint == null) {
-            destPoint = new Integer[]{dest[0],dest[1]};
-        } else {
-            destPoint[0] = dest[0];
-            destPoint[1] = dest[1];
+            this.destPoint = new Integer[2];
         }
+
+        this.destPoint[0] = dest[0];
+        this.destPoint[1] = dest[1];
+
         if (this instanceof Shootable) {
-            ((Shootable)this).unsetAttackObject();
-            ((Shootable)this).unsetAttackPoint();
+            ((Shootable)this).unsetTargetObject();
+            ((Shootable)this).unsetTargetPoint();
         }
-        Main.printMsg("setDestinationPoint: x=" + dest[0] + ", y=" + dest[1]);
+
+        Main.printMsg("Destination: OBJ: " + this.playerId + " x=" + dest[0] + ", y=" + dest[1]);
     }
 
-    public void unsetDestinationPoint() {
-        destPoint = null;
-    }
-
+    // TODO next_x, next_y
+    // FIXME boolean ?
     public boolean moveTo(Integer [] next) {
-        //Main.printMsg("next?: x=" + next[0] + ", y=" + next[1]);
-        // store current coordinates (we roll back changes if the calculation reveals that we cannot move)
-        int newX = -1;
-        int newY = -1;
+        // FIXME replace later
+        int size_x = size[0];
+        int size_y = size[1];
 
-        double norm = Math.sqrt((next[0] - loc[0])*(next[0] - loc[0]) + (next[1] - loc[1])*(next[1] - loc[1]));
+        // Store current coordinates (we roll back changes if the calculation reveals that we cannot move)
+        int new_x, new_y;
+        int new_z = loc[2];
+
+        double norm = Math.sqrt(sqrVal(next[0] - loc[0]) + sqrVal(next[1] - loc[1]));
         //Main.printMsg("norm=" + norm + ", speed=" + speed);
-        if (norm <= speed) { // avoid division by zero and endless wandering around the destination point
-            newX = next[0];
-            newY = next[1];
-        } else { // next iteration
-            newX = loc[0] + (int)((next[0] - loc[0]) * speed / norm);
-            newY = loc[1] + (int)((next[1] - loc[1]) * speed / norm);
+
+        // TODO Move it to Tools.Class checkNorm()
+        // Avoid division by zero and endless wandering around the destination point
+        if (norm <= speed) {
+            // One step to target
+            new_x = next[0];
+            new_y = next[1];
+
+        } else {
+            // Many steps to target
+            new_x = loc[0] + (int)((next[0] - loc[0]) * speed / norm);
+            new_y = loc[1] + (int)((next[1] - loc[1]) * speed / norm);
         }
+
         //Main.printMsg("move?: x=" + newX + ", y=" + newY + ", norm=" + norm);
 
-        int idxX = newX / Restrictions.getBlockSize();
-        int idxY = newY / Restrictions.getBlockSize();
-        if (Restrictions.getIntersectionStrategySeverity() > 0) {
-            // check if we intersect another object
-            // 1 - obtain the list of the map blocks which are intersected by the line of the object
-            boolean intersects = false;
-            for (int i = idxX; i <= idxX + size[0]; i++) {
-                for (int j = idxY; j <= idxY + size[1]; j++) {
-                    if ((i != idxX) && (i != idxX + size[0]) && (j != idxY) && (j != idxY + size[1])) {
-                        continue; // skip all blocks which are in the middle
-                    }
-                    // TODO: remove these temporary defense after implement safe check of map bounds:
-                    int i_fixed = (i == GameMap.getInstance().getWid()) ? i-1 : i;
-                    int j_fixed = (j == GameMap.getInstance().getWid()) ? j-1 : j;
-                    //
-                    HashSet<GameObject> objectsOnTheBlock = GameMap.getInstance().objects[i_fixed][j_fixed];
-                    if ((objectsOnTheBlock.size() != 0)) {
-                        for (GameObject thatObject : objectsOnTheBlock) {
-                            if (thatObject != this) { // there is somebody there and it is not me!
-                                // multiple objects on the same block are allowed when they don't intersect
-                                if (Restrictions.getIntersectionStrategySeverity() > 1) {
-                                    intersects = true;
-                                    //Main.printMsg("INTERSECTS: i=" + i_fixed + ", j=" + j_fixed + ", thatObject=" + this + ", thisObject=" + thatObject);
-                                    break;
-                                } else { // multiple objects on the same block are forbidden even if they actually don't intersect
-                                    Rectangle thisObjectRect = new Rectangle(newX, newY, size[0] * Restrictions.getBlockSize(), size[1] * Restrictions.getBlockSize());
-                                    Rectangle thatObjectRect = new Rectangle(thatObject.loc[0], thatObject.loc[1], thatObject.size[0] * Restrictions.getBlockSize(), thatObject.size[1] * Restrictions.getBlockSize());
-                                    if (thisObjectRect.intersects(thatObjectRect)) {
-                                        intersects = true;
-                                        break;
-                                    }
-                                }
-                            } else {
-                                //Main.printMsg("JUST ME: i=" + i_fixed + ", j=" + j_fixed);
-                            }
-                            if (intersects) break;
-                        }
-                    } else{
-                        //Main.printMsg("NOTHING: i=" + i_fixed + ", j=" + j_fixed + ", thatObject=" + this + ", thisObject=" + thatObject);
-                    }
-                }
-                if (intersects) {
-                    //Main.printMsg("INTERSECTS 2: thatObject=" + this);
-                    break;
-                }
-            }
-            if (intersects)  {
-                //Main.printMsg("INTERSECTS 3:" + ", thatObject=" + this);
-                return true; // fail
-            }
+        // TODO Rename later!
+        int cube_w = size[0] * Restrictions.BLOCK_SIZE;
+        int cube_h = size[1] * Restrictions.BLOCK_SIZE;
+        int cube_d = size[2] * Restrictions.BLOCK_SIZE;
+
+        // TODO Is this must be here or lower? (about validation data after this)
+        if (isIntersect(new_x, new_y, size_x, size_y)) {
+            return false;
         }
 
         // TODO: check if the object borders are within map area!
-        if ((newX < 0) || (newY < 0) || (loc[2] < 0) ||
-                (newX + size[0] * Restrictions.getBlockSize() >= Restrictions.getMaxXAbs()) ||
-                (newY + size[1] * Restrictions.getBlockSize() >= Restrictions.getMaxYAbs()) ||
-                (loc[2] + size[2] * Restrictions.getBlockSize() >= Restrictions.getMaxZAbs())) {
-            return true; // fail
+        boolean not_valid;
+        not_valid = new_x < 0 || new_y < 0 || new_z < 0;
+
+        not_valid = not_valid || new_x + cube_w >= Restrictions.getMaxXAbs();
+        not_valid = not_valid || new_y + cube_h >= Restrictions.getMaxYAbs();
+        not_valid = not_valid || new_z + cube_d >= Restrictions.getMaxZAbs();
+
+        if (not_valid) {
+            return false;
         }
 
-        // all checks passed - do movement finally:
-        if ((newX == next[0]) && (newY == next[1])) { // destination point reached
+        // All checks passed - do movement finally:
+        if (new_x == next[0] && new_y == next[1]) {
+            // Destination point reached
             unsetDestinationPoint();
         }
 
         GameMap.getInstance().eraseObject(this);
-        loc[0] = newX;
-        loc[1] = newY;
+
+        this.loc[0] = new_x;
+        this.loc[1] = new_y;
         GameMap.getInstance().registerObject(this);
+
         //Main.printMsg("move: x=" + loc[0] + ", y=" + loc[1] + ", obj=" + this);
+
+        return true;
+    }
+
+    public boolean isIntersect(int new_x, int new_y, int sX, int sY) {
+        if (Restrictions.INTERSECTION_STRATEGY_SEVERITY == 0) {
+            return false;
+        }
+
+        int rect_w = size[0] * Restrictions.BLOCK_SIZE;
+        int rect_h = size[1] * Restrictions.BLOCK_SIZE;
+
+        // FIXME What is it?
+        int left_block_x = new_x / Restrictions.BLOCK_SIZE;
+        int right_block_x = left_block_x + sX;
+        int top_block_y = new_y / Restrictions.BLOCK_SIZE;
+        int bottom_block_y = top_block_y + sY;
+
+        // Check if we intersect another object
+        // 1 - obtain the list of the map blocks which are intersected by the line of the object
+        // FIXME What is i or j?
+        for (int i = left_block_x; i <= right_block_x; i++) {
+            for (int j = top_block_y; j <= bottom_block_y; j++) {
+                // FIXME What is this?
+                if (
+                    (i != left_block_x) && (i != right_block_x) && 
+                    (j != top_block_y) && (j != bottom_block_y)
+                ) {
+                    // Skip all blocks which are in the middle
+                    continue;
+                }
+
+                // TODO: remove these temporary defense after implement safe check of map bounds:
+                int i_fixed = (i == GameMap.getInstance().getWidth()) ? i-1 : i;
+                int j_fixed = (j == GameMap.getInstance().getWidth()) ? j-1 : j;
+
+                HashSet<GameObject> objectsOnBlock = GameMap.getInstance().objectsOnMap[i_fixed][j_fixed];
+                if (objectsOnBlock.size() == 0) {
+                    continue;
+                }
+
+                for (GameObject objOnBlock : objectsOnBlock) {
+                    // Is me?
+                    if (objOnBlock == this) {
+                        continue;
+                    }
+
+                    // Multiple objects on the same block are allowed when they don't intersect
+                    if (Restrictions.INTERSECTION_STRATEGY_SEVERITY > 1) {
+                        //Main.printMsg("INTERSECTS: i=" + i_fixed + ", j=" + j_fixed + ", thisObject=" + this + ", objOnBlock=" + objOnBlock);
+                        return true;
+                    }
+
+                    // Multiple objects on the same block are forbidden even
+                    // if they actually don't intersect
+                    Rectangle thisObjRect = new Rectangle(new_x, new_y, rect_w, rect_h);
+                    Rectangle objOnBlockRect = new Rectangle(
+                            objOnBlock.loc[0],
+                            objOnBlock.loc[1],
+                            objOnBlock.size[0] * Restrictions.BLOCK_SIZE,
+                            objOnBlock.size[1] * Restrictions.BLOCK_SIZE
+                    );
+
+                    if (thisObjRect.intersects(objOnBlockRect)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
         return false;
+    }
+
+    // TODO Move it in gametools Class
+    public int sqrVal(int value) {
+        return value * value;
+    }
+
+    public void deselect() {
+        this.isSelected = false;
+    }
+
+    // TODO How about delete objects?
+    public Rectangle getRect () {
+        return new Rectangle(
+                this.loc[0],
+                this.loc[1],
+                this.size[0] * Restrictions.BLOCK_SIZE,
+                this.size[1] * Restrictions.BLOCK_SIZE
+        );
+    }
+
+    // TODO Use Patterns here for: Point, point_x, point_y, GameObject, Building
+    public boolean contains (Integer[] point) {
+        return this.getRect().contains(point[0], point[1]);
+    }
+
+    // TODO Remove setters. Use Class.attr = newVal
+    public void setOwner(int plId) {
+        this.playerId = plId;
+    }
+
+    public void unsetDestinationPoint() {
+        this.destPoint = null;
+    }
+
+    public void select() {
+        this.isSelected = true;
+    }
+
+    // TODO Remove getters. Use Class.attr
+    public int getPlayerId() {
+        return playerId;
     }
 }

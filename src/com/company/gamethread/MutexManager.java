@@ -26,8 +26,10 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
                 threadIdB = C_Thread.getInstance().getId();
                 break;
             default:
-                Main.printMsg("Error: threads of type " + threadType + " are not supported.");
-                Main.terminateNoGiveUp(1000);
+                Main.terminateNoGiveUp(
+                        1000,
+                        "Error: threads of type " + threadType + " are not supported."
+                );
         }
 
         TypeValue value12 = null;
@@ -41,8 +43,10 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
         if ((value12 != null) && (value21 != null) && (value12 != value21)) {
             Main.printMsg("hash[" + key12 + "]=" + value12);
             Main.printMsg("hash[" + key21 + "]=" + value21);
-            Main.printMsg("Error: the hash is not symmetric.");
-            Main.terminateNoGiveUp(1000);
+            Main.terminateNoGiveUp(
+                    1000,
+                    "Error: the hash is not symmetric."
+            );
         }
         if (value12 != null) { return value12; }
         else if (value21 != null) { return value21; }

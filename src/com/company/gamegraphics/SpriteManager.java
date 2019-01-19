@@ -4,6 +4,7 @@ import com.gametools.ResourceManager;
 
 import java.awt.image.BufferedImage;
 
+// TODO Delete Dis
 public class SpriteManager extends ResourceManager {
     private BufferedImage image;
 

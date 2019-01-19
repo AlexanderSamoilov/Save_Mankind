@@ -4,9 +4,11 @@ package com.gamethread;
 public class D_Thread extends Main.ThreadPattern {
 
     private static final D_Thread instance = new D_Thread("D-Thread");
+
     public static D_Thread getInstance() {
         return instance;
     }
+
     private D_Thread(String threadName) {
         super(threadName);
     }
@@ -14,7 +16,7 @@ public class D_Thread extends Main.ThreadPattern {
     @Override
     public void repeat() throws InterruptedException {
 
-        Main.printMsg(super.getName() + " is managing the dashboard.");
+//        Main.printMsg(super.getName() + " is managing the dashboard.");
         //Main.printMsg("x=" + Main.getMouseController().getX());
         //Main.printMsg("Main thread id for me: " + Main.getThreadId());
     }
