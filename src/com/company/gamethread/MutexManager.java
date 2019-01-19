@@ -1,4 +1,4 @@
-package com.gamethread;
+package com.company.gamethread;
 
 import java.util.ConcurrentModificationException;
 import java.util.concurrent.Semaphore;

@@ -1,8 +1,8 @@
-package com.gamethread;
+package com.company.gamethread;
 
-import com.gamecontent.*;
-import com.gamecontrollers.MouseController;
-import com.gamegraphics.Sprite;
+import com.company.gamecontent.*;
+import com.company.gamecontrollers.MouseController;
+import com.company.gamegraphics.Sprite;
 
 import javax.swing.*;
 import java.awt.*;
@@ -40,7 +40,7 @@ public class Main {
 
     /* DEBUG */
     private static boolean TRACE_ON = false;
-    private static boolean OUT_LOG = true;
+    private static boolean OUT_LOG = false;
 
     private static MouseRect mouseRectangle = new MouseRect();
     private static MouseController mouseController = new MouseController();
@@ -94,22 +94,22 @@ public class Main {
         testPlayerTankResources.put(Resource.ENERGY, 1000);
 
         // Initialising Player test tank Sprite
-        Sprite testPlayerTankSprite = new Sprite("tank_composed.png");
+        Sprite testPlayerTankSprite = new Sprite("light_tank_1.png");
 
         // This is a test. Initialising tanks for Player.
         // We try calculate how much tanks we can place on map by width
-        int testNumTanks = GameMap.getInstance().getWidth() / 2 - 1;
-//        int testNumTanks = 1;
+//        int testNumTanks = GameMap.getInstance().getWidth() / 2 - 1;
+        int testNumTanks = 2;
 
         ArrayList<Unit> testPlayerUnits = new ArrayList<Unit>();
         for (int i=0; i <= testNumTanks - 1; i++) {
             testPlayerUnits.add(
                     new Unit(
                             new Weapon(
-                                    100, 200, 15, 6, 7
+                                    100, 100, 15, 6, 7
                             ),
-                            5, testPlayerTankSprite, 2*i + 1, 1, 0, 1, 2, 1,
-                            testPlayerTankResources, 500, 6, 25, 15, 5, 5, 5
+                            2, testPlayerTankSprite, 2*i + 1, 1, 0, 1, 1, 1,
+                            testPlayerTankResources, 500, 6, 15,25, 15, 5, 5, 5
                     )
             );
         }
@@ -120,24 +120,24 @@ public class Main {
         testEnemyTankResources.put(Resource.ENERGY, 1000);
 
         // Initialising Enemy test tank Sprite
-        Sprite testEnemyTankSprite = new Sprite("e_tank_composed.png");
+        Sprite testEnemyTankSprite = new Sprite("light_tank_2.png");
 
 
 
         // This is a test. Initialising tanks for Player.
         // We try calculate how much tanks we can place on map by width
-        int testEnemyTanks = GameMap.getInstance().getWidth() / 2 - 1;
-//        int testEnemyTanks = 1;
+//        int testEnemyTanks = GameMap.getInstance().getWidth() / 2 - 1;
+        int testEnemyTanks = 2;
         ArrayList<Unit> testEnemyUnits = new ArrayList<Unit>();
         for (int i=0; i <= testEnemyTanks - 1; i++) {
             testEnemyUnits.add(
                     new Unit(
                             new Weapon(
-                                    300, 150, 10, 8, 5
+                                    300, 100, 10, 8, 5
                             ),
-                            7, testEnemyTankSprite, Restrictions.getMaxX() - 2 - 2*i,
+                            3, testEnemyTankSprite, Restrictions.MAX_X - 2 - 2*i,
                             Restrictions.getMaxY() - 2, 0, 1, 1, 1,
-                            testEnemyTankResources, 500, 7, 25, 15, 5, 5, 5
+                            testEnemyTankResources, 500, 7, 15, 25, 15, 5, 5, 5
                     )
             );
         }
@@ -640,7 +640,7 @@ public class Main {
         // Fill map with random numbers of textures (initing in future)
         for(int i=0; i<width; i++) {
             for (int j = 0; j < height; j++) {
-                map[i][j] = ((i * i + j * j) / 5) % 6;
+                map[i][j] = ((i * i + j * j) / 7) % 8;
             }
         }
 

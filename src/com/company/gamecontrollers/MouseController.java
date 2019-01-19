@@ -1,8 +1,8 @@
-package com.gamecontrollers;
+package com.company.gamecontrollers;
 
-import com.gamecontent.GameMap;
-import com.gamethread.Main;
-import com.gamethread.MutexManager;
+import com.company.gamecontent.GameMap;
+import com.company.gamethread.Main;
+import com.company.gamethread.MutexManager;
 
 import java.awt.*;
 import java.awt.event.MouseAdapter;

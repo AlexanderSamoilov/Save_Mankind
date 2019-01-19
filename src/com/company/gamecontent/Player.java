@@ -1,6 +1,6 @@
-package com.gamecontent;
+package com.company.gamecontent;
 
-import com.gamethread.Main;
+import com.company.gamethread.Main;
 
 import java.util.HashMap;
 import java.util.ArrayList;

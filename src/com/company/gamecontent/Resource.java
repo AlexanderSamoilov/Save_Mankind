@@ -1,4 +1,4 @@
-package com.gamecontent;
+package com.company.gamecontent;
 
 public enum Resource {
     MASS,

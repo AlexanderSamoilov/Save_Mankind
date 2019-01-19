@@ -1,7 +1,7 @@
-package com.gamecontent;
+package com.company.gamecontent;
 
-import com.gamegraphics.Sprite;
-import com.gamethread.Main;
+import com.company.gamegraphics.Sprite;
+import com.company.gamethread.Main;
 
 import java.util.HashMap;
 
@@ -14,7 +14,7 @@ public class Building extends GameObject {
 
     public Building(int energyConsumption, int upgradeTime, Sprite sprite, int x, int y, int z, int sX, int sY, int sZ, HashMap<Resource, Integer> res, int hp, int arm, int hard, int bch, int ech, int eco) {
         // 1 - parent class specific parameters
-        super(sprite, x, y, z, sX, sY, sZ, res, hp, 0, arm, hard, bch, ech, eco);
+        super(sprite, x, y, z, sX, sY, sZ, res, hp, 0, 0, arm, hard, bch, ech, eco);
 
         // 2 - child class specific parameters validation
         boolean valid = true;

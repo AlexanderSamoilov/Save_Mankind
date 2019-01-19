@@ -1,6 +1,6 @@
-package com.gamecontent;
+package com.company.gamecontent;
 
-import com.gamegraphics.Sprite;
+import com.company.gamegraphics.Sprite;
 
 
 

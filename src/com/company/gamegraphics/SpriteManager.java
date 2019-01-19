@@ -1,6 +1,6 @@
-package com.gamegraphics;
+package com.company.gamegraphics;
 
-import com.gametools.ResourceManager;
+import com.company.gametools.ResourceManager;
 
 import java.awt.image.BufferedImage;
 

@@ -1,6 +1,6 @@
-package com.gamethread;
+package com.company.gamethread;
 
-import com.gamecontent.*;
+import com.company.gamecontent.*;
 
 import java.util.HashSet;
 import java.util.concurrent.Semaphore;
