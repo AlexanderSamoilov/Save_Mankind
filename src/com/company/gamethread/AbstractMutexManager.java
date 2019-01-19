@@ -1,4 +1,4 @@
-package com.company;
+package com.gamethread;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.ConcurrentModificationException;
@@ -67,7 +67,8 @@ public abstract class AbstractMutexManager <TypeKey, TypeValue> extends HashMap 
                 // Even more. When thread A asks thread B it uses not the same key when thread B asks thread A.
                 TypeValue val = (TypeValue) super.get(key); // class cast exception?
                 if (val != value) {
-                    throw new ConcurrentModificationException("insert(" + key + "," + value + "): conflict, value already = " + val);
+                    Main.printMsg("Error: insert(" + key + "," + value + "): conflict, value already = " + val);
+                    Main.terminateNoGiveUp(1000);
                 } else {
                     return val;
                 }
@@ -75,8 +76,8 @@ public abstract class AbstractMutexManager <TypeKey, TypeValue> extends HashMap 
                 try {
                     super.put(key, value);
                 } catch (ConcurrentModificationException e) {
-                    Main.printMsg("ConcurrentModificationException on writing to hash[" + key + "]");
-                    throw e;
+                    Main.printMsg("Error: ConcurrentModificationException on writing to hash[" + key + "]");
+                    Main.terminateNoGiveUp(1000);
                 }
             }
 
@@ -96,7 +97,7 @@ public abstract class AbstractMutexManager <TypeKey, TypeValue> extends HashMap 
         }*/
 
         // Careful about types: https://stackoverflow.com/questions/33765010/put-an-object-of-the-wrong-type-in-a-map.
-        protected TypeValue obtain(TypeKey key) throws NullPointerException, NoSuchElementException, TypeNotPresentException, ClassCastException {
+        protected TypeValue obtain(TypeKey key) throws NullPointerException, NoSuchElementException, ClassCastException {
             // TODO: check what happens if it contains, but another type (String "123" instead of integer 123).
             // Will in this case (or even in case we just call containsKey() with another type and variables are not equal literally as int and String) some exception be thrown?
             if (super.containsKey(key)) {
@@ -104,7 +105,9 @@ public abstract class AbstractMutexManager <TypeKey, TypeValue> extends HashMap 
                 if (TypeV.isInstance(value)) {
                     return (TypeValue)value;
                 } else {
-                    throw new TypeNotPresentException("Wrong map element type: expected " + TypeV.getClass().toString() + ", got " + value.getClass() + ".", null);
+                    Main.printMsg("Error: Wrong map element type: expected " + TypeV.getClass().toString() + ", got " + value.getClass() + ".");
+                    Main.terminateNoGiveUp(1000);
+                    return null;
                 }
             } else {
                 //throw new NoSuchElementException("No such key: Hash[" + key1 + "].");
