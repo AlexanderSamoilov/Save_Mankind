@@ -1,17 +1,20 @@
-package com.gamecontent;
+package com.company.gamecontent;
 
 import java.lang.Math;
 
 public abstract class Restrictions {
 
-    static final int BLOCK_SIZE = 40;
+    static final int BLOCK_SIZE = 64;
 
     // 0 - multiple objects on the same block are allowed (even if they overlap)
     // 1 - multiple objects on the same block are allowed when they don't overlap
     // 2 - multiple objects on the same block are not allowed (even if they actually don't overlap)
     static final int INTERSECTION_STRATEGY_SEVERITY = 1;
-    private static final int MONITOR_MAX_X = 1200; // TODO: calculate it!
-    private static final int MONITOR_MAX_Y = 720;  // TODO: calculate it!
+//    private static final int MONITOR_MAX_X = 1200; // TODO: calculate it!
+//    private static final int MONITOR_MAX_Y = 720;  // TODO: calculate it!
+
+    private static final int MONITOR_MAX_X = 768; // TODO: calculate it!
+    private static final int MONITOR_MAX_Y = 768; // TODO: calculate it!
 
     public static final int MAX_X = Math.min(MONITOR_MAX_X, MONITOR_MAX_Y) / BLOCK_SIZE;
     public static final int MAX_Y = Math.min(MONITOR_MAX_X, MONITOR_MAX_Y) / BLOCK_SIZE;

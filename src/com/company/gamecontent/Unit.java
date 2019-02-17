@@ -1,7 +1,7 @@
-package com.gamecontent;
+package com.company.gamecontent;
 
-import com.gamegraphics.Sprite;
-import com.gamethread.Main;
+import com.company.gamegraphics.Sprite;
+import com.company.gamethread.Main;
 
 import java.awt.*;
 import java.util.HashMap;
@@ -11,10 +11,6 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 public class Unit extends GameObject implements Shootable {
-
-    // Where the "face"/gun is looking to (left-top, left-bottom, right-top, right-bottom etc.),
-    // here sprites will be used. May be NULL for the objects which don't shoot, like a wall.
-    private boolean[] direction;
 
     // May be NULL (for the wall), but we suppose each unit can use only one type of weapon.
     // it is also supposed that it is not possible to redevelop existing units to use another weapon
@@ -36,9 +32,9 @@ public class Unit extends GameObject implements Shootable {
     private Integer[] targetPoint;
 
     // TODO Initialization of vars to init(), constructor must be empty
-    public Unit(Weapon weapon, int r, Sprite sprite, int x, int y, int z, int sX, int sY, int sZ, HashMap<Resource, Integer> res, int hp, int speed, int arm, int hard, int bch, int ech, int eco) {
+    public Unit(Weapon weapon, int r, Sprite sprite, int x, int y, int z, int sX, int sY, int sZ, HashMap<Resource, Integer> res, int hp, int speed, int rot_speed, int arm, int hard, int bch, int ech, int eco) {
         // 1 - parent class specific parameters
-        super(sprite, x, y, z, sX, sY, sZ, res, hp, speed, arm, hard, bch, ech, eco);
+        super(sprite, x, y, z, sX, sY, sZ, res, hp, speed, rot_speed, arm, hard, bch, ech, eco);
 
         // 2 - child class specific parameters validation
         boolean valid = true;
@@ -61,7 +57,6 @@ public class Unit extends GameObject implements Shootable {
         this.weapon = weapon;
 
         // 3 - default values
-        this.direction = new boolean[]{false, false};
         this.targetPoint = null;
         this.isCorrupted = false;
         this.weapon.setOwner(this);
@@ -160,7 +155,7 @@ public class Unit extends GameObject implements Shootable {
 
         if (destPoint != null) {
 //            Main.printMsg("Player " + this.getPlayerId() + " move to destPoint");
-            moveTo(destPoint);
+            this.moveTo(destPoint);
             return;
         }
 
@@ -198,15 +193,16 @@ public class Unit extends GameObject implements Shootable {
         // or: something hinders (impediment on the line of fire) - need to relocate
         // TODO Here may be a Def target where unit can't pursuing
         // TODO Move it in AI_Tools_Class
-        moveTo(getNextPointOnOptimalShootingPath(target));
+        Main.printMsg("Some unit of Player " + this.getPlayerId() + " move To!");
+        this.moveTo(getNextPointOnOptimalShootingPath(target));
     }
 
-    // TODO Move it in gametools Class
+    // TODO Move it in Math.Class
     public int sqrVal(int value) {
         return value * value;
     }
 
-    // TODO Move it in gametools Class
+    // TODO Move it in Math.Class
     public boolean withinRadius(Integer [] A, Integer [] B, int radius) {
         return sqrVal(radius) >= sqrVal(A[0] - B[0]) + sqrVal(A[1] - B[1]);
     }
@@ -255,6 +251,7 @@ public class Unit extends GameObject implements Shootable {
     }
 
     public void render(Graphics g) {
+//        Main.printMsg("Rendering UNIT: " + this.getPlayerId());
         super.render(g);
 
         if (!hasWeapon()) {

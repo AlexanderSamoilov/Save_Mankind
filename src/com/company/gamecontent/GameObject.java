@@ -1,19 +1,23 @@
-package com.gamecontent;
+package com.company.gamecontent;
 
-import com.gamegraphics.Sprite;
-import com.gamethread.Main;
+import com.company.gamegraphics.Sprite;
+import com.company.gamethread.Main;
 
 import java.awt.*;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Random;
 
 // For details read the DOC "Data Structure"
 public class GameObject implements Moveable {
-    // TODO loc_x, loc_y, loc_z
-    protected Integer[] loc;         // Location of object (x, y, and z for airplanes)
+    // TODO Use Point3D class loc_x, loc_y, loc_z
+    public Integer[] loc;         // Location of object (x, y, and z for airplanes)
 
-    // TODO dest_x, dest_y
+    // TODO Use Point2D class
     protected Integer[] destPoint;   // The map point to move to (has x, y)
+
+    private int destAngle;           // Destination angle for sprite rotation
+    private int currAngle;           // Current angle of sprite rotation
 
     protected Sprite sprite;
 
@@ -31,6 +35,7 @@ public class GameObject implements Moveable {
     protected int hitPoints;
     protected int maxHitPoints;
     protected int speed;
+    protected int rotation_speed;
 //    protected int armor;             // 0..100% - percentage damage decrement
 
     // absolute damage decrement - minimal HP amount that makes some
@@ -56,7 +61,7 @@ public class GameObject implements Moveable {
 
 
     // Here x,y,z - coordinates on grid (not absolute)
-    public GameObject(Sprite sprite, int x, int y, int z, int sX, int sY, int sZ, HashMap<Resource,Integer> res, int hp, int speed, int arm, int hard, int bch, int ech, int eco) {
+    public GameObject(Sprite sprite, int x, int y, int z, int sX, int sY, int sZ, HashMap<Resource,Integer> res, int hp, int speed, int rot_speed, int arm, int hard, int bch, int ech, int eco) {
         // 1 - parent class specific parameters
         // 2 - validation
         if (sprite == null) {
@@ -109,6 +114,7 @@ public class GameObject implements Moveable {
 
         this.maxHitPoints = hp;
         this.speed = speed;
+        this.rotation_speed = rot_speed;
 //        this.armor = arm;
 //        this.hardness = hard;
 //        this.burnChanceOnHit = bch;
@@ -123,6 +129,10 @@ public class GameObject implements Moveable {
 //        isMoving = false;
         this.isSelected = false;
         this.destPoint = null;
+        this.destAngle = 0;
+
+        // Default - object look up
+        this.currAngle = 0;
 
         // FIXME this.playerId = Faction.NEUTRAL
         this.playerId = -1;
@@ -137,8 +147,10 @@ public class GameObject implements Moveable {
         int rect_w    = size[0] * Restrictions.BLOCK_SIZE;
         int rect_h    = size[1] * Restrictions.BLOCK_SIZE;
 
-        this.sprite.render(g, rect_x, rect_y, rect_w, rect_h);
+        // ----> Drawing sprite with actual orientation
+        this.sprite.render(g, currAngle, rect_x, rect_y, rect_w, rect_h);
 
+        // ----> Drawing HP rectangle
         if (isSelected) {
             g.drawRect(rect_x, rect_y, rect_w, rect_h);
         }
@@ -191,12 +203,76 @@ public class GameObject implements Moveable {
             ((Shootable)this).unsetTargetPoint();
         }
 
-        Main.printMsg("Destination: OBJ: " + this.playerId + " x=" + dest[0] + ", y=" + dest[1]);
+        Main.printMsg("Destination OBJ_" + this.playerId + ": x=" + dest[0] + ", y=" + dest[1]);
+    }
+
+    public boolean rotateTo() {
+        if (currAngle == destAngle) {
+            return false;
+        }
+
+        int rotation_direction = getRotationDirectionPolar();
+
+        // Correcting angle for rotation
+        if (rotation_direction > 0 && currAngle == 360) {
+            this.currAngle = 0;
+        }
+
+        if (rotation_direction < 0 && currAngle == 0) {
+            this.currAngle = 360;
+        }
+
+        // Rotate
+        this.currAngle += rotation_speed * rotation_direction;
+//        Main.printMsg("New Sprite Ang: " + currAngle);
+
+        return true;
+    }
+
+    public boolean rotateToPointOnRay() {
+        if (destPoint == null || rayIntersectsDestPoint()) {
+//            Main.printMsg("Destination reached, rotation aborted");
+            return false;
+        }
+
+        Main.printMsg("-----------");
+
+        // TODO Think about optimizing with rayIntersectsDestPoint
+        int rotation = getRotationDirectionRay();
+        Main.printMsg("New rota: " + rotation);
+
+        // We automatically learned that the point lies behind the ray.
+        if (rotation == 0) {
+            rotation = randomSign();
+        }
+
+        this.currAngle += rotation_speed * rotation;
+
+        Main.printMsg("New Sprite Ang: " + currAngle);
+
+        if (Math.abs(currAngle) == 360) {
+            this.currAngle = 0;
+        }
+
+        return true;
     }
 
     // TODO next_x, next_y
     // FIXME boolean ?
     public boolean moveTo(Integer [] next) {
+        // FIXME Not good calculate angle every time. Need optimize in future
+        this.destAngle = calculateRotationPolar(next);
+        this.rotateTo();
+
+        // This is only "Tank" object logic
+        //  We not moving while angle to target will not be small enough
+        // TODO 1) If Tank start moving we need move to "looking forward" direction
+        //  and turn Tank in the direction of rotation
+        // TODO 2) If Tank not moving but target moving, Tank must rotate to target
+        if (Math.abs(destAngle - currAngle) > 45) {
+            return true;
+        }
+
         // FIXME replace later
         int size_x = size[0];
         int size_y = size[1];
@@ -208,7 +284,7 @@ public class GameObject implements Moveable {
         double norm = Math.sqrt(sqrVal(next[0] - loc[0]) + sqrVal(next[1] - loc[1]));
         //Main.printMsg("norm=" + norm + ", speed=" + speed);
 
-        // TODO Move it to Tools.Class checkNorm()
+        // TODO Move it to Math.Class checkNorm()
         // Avoid division by zero and endless wandering around the destination point
         if (norm <= speed) {
             // One step to target
@@ -257,7 +333,7 @@ public class GameObject implements Moveable {
         this.loc[1] = new_y;
         GameMap.getInstance().registerObject(this);
 
-        //Main.printMsg("move: x=" + loc[0] + ", y=" + loc[1] + ", obj=" + this);
+//        Main.printMsg("move: x=" + loc[0] + ", y=" + loc[1] + ", obj=" + this);
 
         return true;
     }
@@ -331,11 +407,6 @@ public class GameObject implements Moveable {
         return false;
     }
 
-    // TODO Move it in gametools Class
-    public int sqrVal(int value) {
-        return value * value;
-    }
-
     public void deselect() {
         this.isSelected = false;
     }
@@ -372,4 +443,197 @@ public class GameObject implements Moveable {
     public int getPlayerId() {
         return playerId;
     }
+
+    // TODO Move it to Math.Class
+    public int calculateRotationPolar (Integer [] point) {
+        // https://vk-book.ru/povorot-teni-elementa-v-storonu-kursora-na-javascript/
+        // We use "up->down" vision in our Game.
+        // It means we not need sheets of sprites to animate rotation effect in several directions
+        // Instead of this we calculate angle "Theta" to rotate our sprite by Rectangular Triangle
+        // If we abandon this implementation of sprites, we will need to use the "Orientation" class
+        // to memorize each direction separately.
+        // And the algorithm for calculating the angle may also need to be modified.
+
+        int x0 = loc[0] + size[0] * Restrictions.BLOCK_SIZE / 2;
+	    int y0 = loc[1] + size[1] * Restrictions.BLOCK_SIZE / 2;
+	    int x  = point[0];
+	    int y  = point[1];
+//	    int any_x = x;
+//	    int any_y = y0;
+
+	    // Origin formula
+//        double cos_theta = (
+//                (
+//                        sqrVal(x0-x) + sqrVal(y0-y)
+//                        + sqrVal(x0-any_x) + sqrVal(y0-any_y)
+//                        - sqrVal(x-any_x) - sqrVal(y-any_y)
+//                )
+//                / (
+//                        2
+//                        * Math.sqrt( sqrVal(x0-x) + sqrVal(y0-y) )
+//                        * Math.sqrt( sqrVal(x0-any_x) + sqrVal(y0-any_y) )
+//                )
+//        );
+
+        // Simplify formula
+        double cos_theta = (
+                Math.abs(x0-x) /
+                Math.sqrt( sqrVal(x0-x) + sqrVal(y0-y) )
+        );
+
+	    int theta = (int) Math.toDegrees(Math.acos(cos_theta));
+
+	    // "Round" alpha angle of rotation to step speed of rotation
+        // So that we can know exactly how far we turned
+        theta = rotation_speed * Math.round((float) theta / rotation_speed);
+
+        // Here is researching were is dest_point located, and counting angle at 0 to 360 deg
+        // This formulas edited to right oriented origin axis and 0-angle
+        // as sprite 0-angle (Looking up on the map)
+        int circle_angle = 0;
+
+        // FIXME To many "if" statements. theta = [0, 90]. Is this right?
+        // Right-Up
+        // angle (0, 90)
+        if(x > x0 && y < y0) {
+            circle_angle = 90 - theta;
+        }
+
+        // Right-Down
+        // angle (90, 180)
+        if(x > x0 && y > y0) {
+            circle_angle = 90 + theta;
+        }
+
+        // Left-Down
+        // angle (180, 270)
+        if(x < x0 && y > y0) {
+            circle_angle = 180 + (90 - theta);
+        }
+
+        // Left-Up
+        // angle (270, 360)
+        if(x < x0 && y < y0) {
+            circle_angle = 180 + (90 + theta);
+        }
+
+        // Left
+        if(x < x0 && y == y0) {
+            circle_angle = 270;
+        }
+
+        // Up
+        if(x == x0 && y < y0) {
+            circle_angle = 360;
+        }
+
+        // Right
+        if(x > x0 && y == y0) {
+            circle_angle = 90;
+        }
+
+        // Down
+        if(x == x0 && y > y0) {
+            circle_angle = 180;
+        }
+
+        return circle_angle;
+    }
+
+    // TODO Move it to Math.Class
+    public int getRotationDirectionPolar () {
+        int diffAngles = destAngle - currAngle;
+
+        if (diffAngles > 0 && diffAngles < 180) {
+            return 1;
+        }
+
+        if (diffAngles > 180) {
+            return -1;
+        }
+
+        if (diffAngles < 0 && diffAngles > -180) {
+            return -1;
+        }
+
+        if (diffAngles < -180) {
+            return 1;
+        }
+
+        // If we rotate to the opposite direction, we not care how it happens
+        //  But the cool solution is to randomly choose the direction of rotation.
+        //  I get the maximum value of angle which is considered to be the opposite direction of rotation.
+        //  Value must be 180.
+        //  Since we rounded the angle by rotation_speed, we can reduce the condition.
+        //  Alternative: If unit can move backward we must return 0 in this condition
+        if (Math.abs(diffAngles) == 180) {
+            return randomSign();
+        }
+
+        return 0;
+    }
+
+    // TODO Move it to Math.Class
+    public int getRotationDirectionRay () {
+        // Here use the straight line equation algorithm to find where is destination Point
+        // and how we start rotation
+        double tang = Math.tan(Math.toRadians(currAngle));
+
+        int x0 = loc[0] + size[0] * Restrictions.BLOCK_SIZE / 2;
+	    int y0 = loc[1] + size[1] * Restrictions.BLOCK_SIZE / 2;
+	    int x = destPoint[0];
+	    int y = destPoint[1];
+	    int ax = x0 + 1;
+	    int ay = (int) tang * (ax - x0) + y0;
+
+	    // To the right (1), To the left (-1) of the line or on the line(0)
+        if ((int) tang * (x - x0) + y0 > y0) {
+            return 1;
+        }
+
+        if ((int) tang * (x - x0) + y0 < y0) {
+            return -1;
+        }
+
+        return 0;
+    }
+
+    // TODO Move it to Math.Class
+    // FIXME Rewrite
+    public boolean rayIntersectsDestPoint() {
+        double tang = Math.tan(Math.toRadians(currAngle));
+
+        int x0 = loc[0] + size[0] * Restrictions.BLOCK_SIZE / 2;
+	    int y0 = loc[1] + size[1] * Restrictions.BLOCK_SIZE / 2;
+	    int x = destPoint[0];
+	    int y = destPoint[1];
+	    int ax = x0 + 1;    // FIXME Take a 1 pixel point can make bad calculations.
+	    int ay = (int) tang * (ax - x0) + y0;
+
+	    boolean pseudoscalar = (x - x0) * (ay - y0) == (ax - x0) * (y - y0);
+	    boolean x_on_ray     = (x - x0) * (ax - x0) >= 0;
+	    boolean y_on_ray     = (y - y0) * (ay - y0) >= 0;
+
+        return pseudoscalar && x_on_ray && y_on_ray;
+    }
+
+    // TODO Move it to Math.Class
+    public int randomSign() {
+        Random random = new Random();
+
+        int result = random.nextInt(2) - 1;
+
+        return (result == 0) ? 1 : result;
+    }
+
+    // TODO Move it to Math.Class
+    public int getSign(int val) {
+        return (val >= 0) ? 1 : -1;
+    }
+
+    // TODO Move it to Math.Class
+    public int sqrVal(int value) {
+        return value * value;
+    }
+
 }

@@ -1,7 +1,7 @@
-package com.gamecontent;
+package com.company.gamecontent;
 
-import com.gamegraphics.Sprite;
-import com.gamethread.Main;
+import com.company.gamegraphics.Sprite;
+import com.company.gamethread.Main;
 
 import javax.imageio.IIOException;
 import java.awt.*;
@@ -11,11 +11,14 @@ import java.util.HashMap;
 
 enum Nature {
     SAND,
-    FOREST,
+    DIRT,
+//    FOREST,
+    BUSH,
     WATER,
     HILL,
     MARSH,
-    HOLE
+    HOLE,
+    PLATE,
 }
 
 public class GameMapBlock {
@@ -34,12 +37,15 @@ public class GameMapBlock {
 
     // Block Static natSprite initing with static content
     static {
-        natSprite.put(Nature.SAND, "sand.png");
-        natSprite.put(Nature.FOREST, "forest.png");
-        natSprite.put(Nature.WATER, "water.png");
-        natSprite.put(Nature.HILL, "hill.png");
-        natSprite.put(Nature.MARSH, "marsh.png");
-        natSprite.put(Nature.HOLE, "hole.png");
+        natSprite.put(Nature.SAND,   "sand_dark_stackable.png");
+        natSprite.put(Nature.DIRT,   "dirt.png");
+//        natSprite.put(Nature.FOREST, "forest.png");
+        natSprite.put(Nature.BUSH,   "bush.png");
+        natSprite.put(Nature.WATER,  "water_dirt.png");
+        natSprite.put(Nature.HILL,   "hill_dirt.png");
+        natSprite.put(Nature.MARSH,  "marsh_dirt_stackable.png");
+        natSprite.put(Nature.HOLE,   "hole_dirt.png");
+        natSprite.put(Nature.PLATE,  "plate.png");
     }
 
     public GameMapBlock(int x, int y, int natType) {
@@ -59,26 +65,40 @@ public class GameMapBlock {
             case SAND:
                 throughWalkable = true;
                 throughShootable = true;
-                onBuildable = true;
+                onBuildable = false;
                 nature = Nature.SAND;
                 break;
-            case FOREST:
+            case DIRT:
                 throughWalkable = true;
                 throughShootable = true;
                 onBuildable = false;
-                nature = Nature.FOREST;
+                nature = Nature.DIRT;
                 break;
+            case PLATE:
+                throughWalkable = true;
+                throughShootable = true;
+                onBuildable = true;
+                nature = Nature.PLATE;
+                break;
+
+//            case FOREST:
+//                throughWalkable = true;
+//                throughShootable = true;
+//                onBuildable = false;
+//                nature = Nature.FOREST;
+//                break;
+            case BUSH:
+                throughWalkable = true;
+                throughShootable = true;
+                onBuildable = false;
+                nature = Nature.BUSH;
+                break;
+
             case WATER:
                 throughWalkable = false;
                 throughShootable = true;
                 onBuildable = false;
                 nature = Nature.WATER;
-                break;
-            case HILL:
-                throughWalkable = false;
-                throughShootable = false;
-                onBuildable = false;
-                nature = Nature.HILL;
                 break;
             case HOLE:
                 throughWalkable = false;
@@ -86,11 +106,19 @@ public class GameMapBlock {
                 onBuildable = false;
                 nature = Nature.HOLE;
                 break;
+
             case MARSH:
                 throughWalkable = true;
                 throughShootable = true;
                 onBuildable = false;
                 nature = Nature.MARSH;
+                break;
+
+            case HILL:
+                throughWalkable = false;
+                throughShootable = false;
+                onBuildable = false;
+                nature = Nature.HILL;
                 break;
             default:
                 throw new EnumConstantNotPresentException(
@@ -109,6 +137,7 @@ public class GameMapBlock {
 
         this.sprite.render(
                 g,
+                0,
                 loc_x * Restrictions.BLOCK_SIZE,
                 loc_y * Restrictions.BLOCK_SIZE,
                 Restrictions.BLOCK_SIZE,

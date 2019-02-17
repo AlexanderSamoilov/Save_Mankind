@@ -1,4 +1,4 @@
-package com.gamethread;
+package com.company.gamethread;
 
 // Singleton
 public class D_Thread extends Main.ThreadPattern {

@@ -1,4 +1,4 @@
-package com.gametools;
+package com.company.gametools;
 
 /**
  * Resource Manager will rule of resources in the game

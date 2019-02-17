@@ -1,4 +1,4 @@
-package com.gamethread;
+package com.company.gamethread;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.ConcurrentModificationException;
