@@ -504,19 +504,27 @@ public class GameObject implements Moveable {
 
     public boolean angleBetweenRayAndPointLessThan(double dAngle) {
 
-        if (destPoint == null) throw new NullPointerException("angleBetweenRayAndPointLessThan: destPoint is NULL!");
+        // Point "B" - destination or target point
+        Integer v[] = null;
+
+        if (destPoint != null) {
+            v = new Integer[] {destPoint[0], -destPoint[1]};
+        } else if (this instanceof Shootable) {
+            GameObject target = ((Shootable)this).getTargetObject();
+            if (target != null) {
+                v = new Integer[] {target.loc[0], -target.loc[1]};
+            }
+        }
+
+        if (v == null) throw new NullPointerException("angleBetweenRayAndPointLessThan: destination and target points are both NULL!");
 
         // Point "O" - center of the objct
         int x0 = loc[0] + size[0] * Restrictions.BLOCK_SIZE / 2;
         int y0 = -(loc[1] + size[1] * Restrictions.BLOCK_SIZE / 2);
 
-        // Point "B" - destination point
-        int xb = destPoint[0];
-        int yb = -destPoint[1];
+        double len = Math.sqrt(sqrVal(v[0] - x0) + sqrVal(v[1] - y0));
 
-        double len = Math.sqrt(sqrVal(xb - x0) + sqrVal(yb - y0));
-
-        return (xb - x0) * Math.cos(this.currAngle) + (yb - y0) * Math.sin(this.currAngle) > len * Math.cos(dAngle);
+        return (v[0] - x0) * Math.cos(this.currAngle) + (v[1] - y0) * Math.sin(this.currAngle) > len * Math.cos(dAngle);
     }
 
     public boolean angleBetweenRayAndPointLessThanDefaultValue() {

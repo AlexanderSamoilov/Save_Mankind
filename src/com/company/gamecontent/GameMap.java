@@ -198,6 +198,7 @@ public class GameMap {
 
     // TODO May be move it to Unit?
     private void assignUnit(GameObject selectedObj, Integer[] point){
+        Main.printMsg("assignUnit!");
         // FIXME: We must take floor(), not just divide!
         int block_x = point[0] / Restrictions.BLOCK_SIZE;
         int block_y = point[1] / Restrictions.BLOCK_SIZE;
