@@ -4,6 +4,8 @@ import java.lang.Math;
 
 public abstract class Restrictions {
 
+    static final int rotateMode = 1; // 0 - angle mode, not 0 - ray mode
+
     static final int BLOCK_SIZE = 64;
 
     // 0 - multiple objects on the same block are allowed (even if they overlap)

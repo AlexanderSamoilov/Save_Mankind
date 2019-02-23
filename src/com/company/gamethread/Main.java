@@ -109,7 +109,7 @@ public class Main {
                                     100, 100, 15, 6, 7
                             ),
                             2, testPlayerTankSprite, 2*i + 1, 1, 0, 1, 1, 1,
-                            testPlayerTankResources, 500, 6, 15,25, 15, 5, 5, 5
+                            testPlayerTankResources, 500, 6, 10,25, 15, 5, 5, 5
                     )
             );
         }

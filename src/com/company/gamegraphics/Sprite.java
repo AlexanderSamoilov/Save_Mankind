@@ -47,12 +47,12 @@ public class Sprite {
         this.fileName = filename;
     }
 
-    public void render(Graphics g, int rotation_angle, int x, int y, int w, int h) {
+    public void render(Graphics g, double rotation_angle, int x, int y, int w, int h) {
         AffineTransform saveAT = ((Graphics2D) g).getTransform();
 
         if (rotation_angle != 0) {
             this.rotation.setToIdentity();
-            this.rotation.rotate(Math.toRadians(rotation_angle), (double) (x + w / 2), (double) (y + h / 2));
+            this.rotation.rotate(rotation_angle, (double) (x + w / 2), (double) (y + h / 2));
             ((Graphics2D) g).transform(rotation);
         }
 
