@@ -210,20 +210,20 @@ public class GameObject implements Moveable {
         Main.printMsg("Destination OBJ_" + this.playerId + ": x=" + dest[0] + ", y=" + dest[1]);
     }
 
-    public void rotateTo() {
-        if (Restrictions.rotateMode > 0) rotateToPointOnRay();
-        //else rotateToAngle();
+    public void rotateTo(Integer [] point) {
+        if (Restrictions.rotateMode > 0) rotateToPointOnRay(point);
+        //else rotateToAngle(point);
     }
 
     /*
-    public void rotateToAngle() {
+    public void rotateToAngle(Integer [] point) {
         double destAngle =...;
         if (Math.abs(currAngle - destAngle) < rotation_speed) {
             return;
         }
 
         int rotation_direction;
-        if (Restrictions.rotateMode > 0) rotation_direction = getRotationDirectionRay();
+        if (Restrictions.rotateMode > 0) rotation_direction = getRotationDirectionRay(point);
         else rotation_direction = getRotationDirectionPolar();
 
         // It's clear that the point lies behind the ray that is 180°
@@ -239,6 +239,7 @@ public class GameObject implements Moveable {
     }
 */
 
+    /*
     public Integer[] getTargetOrDestinationPoint() {
         Integer v[] = null;
         if (destPoint != null) {
@@ -252,13 +253,11 @@ public class GameObject implements Moveable {
 
         return v;
     }
+*/
 
-    public void rotateToPointOnRay() {
+    public void rotateToPointOnRay(Integer[] point) {
 
-        // Point "B" - destination or target point
-        Integer v[] = getTargetOrDestinationPoint();
-
-        if (v == null || angleBetweenRayAndPointLessThanDefaultValue()) {
+        if (point == null || angleBetweenRayAndPointLessThanDefaultValue(point)) {
             Main.printMsg("Destination reached, rotation aborted");
             return;
         }
@@ -266,7 +265,7 @@ public class GameObject implements Moveable {
         Main.printMsg("-----------");
 
         // TODO Think about optimizing with angleBetweenRayAndPointLessThan
-        int rotation_direction = getRotationDirectionRay();
+        int rotation_direction = getRotationDirectionRay(point);
         Main.printMsg("New rota: " + rotation_direction);
 
         // It's clear that the point lies behind the ray that is 180°
@@ -285,15 +284,15 @@ public class GameObject implements Moveable {
     // FIXME boolean ?
     public boolean moveTo(Integer [] next) {
         // FIXME Not good calculate angle every time. Need optimize in future
-        this.rotateTo();
+        this.rotateTo(next);
 
         // This is only "Tank" object logic
         //  We not moving while angle to target will not be small enough
         // TODO 1) If Tank start moving we need move to "looking forward" direction
         //  and turn Tank in the direction of rotation
         // TODO 2) If Tank not moving but target moving, Tank must rotate to target
-        if (! angleBetweenRayAndPointLessThan(Math.toRadians(45))) {
-            Main.printMsg("< 45");
+        if (! angleBetweenRayAndPointLessThan(next, Math.toRadians(45))) {
+            //Main.printMsg("< 45");
             return false;
         }
 
@@ -494,19 +493,16 @@ public class GameObject implements Moveable {
     }
 */
     // TODO Move it to Math.Class
-    public int getRotationDirectionRay () {
+    public int getRotationDirectionRay (Integer [] point) {
 
-        // Point "B" - destination or target point
-        Integer v[] = getTargetOrDestinationPoint();
-
-        if (v == null) throw new NullPointerException("getRotationDirectionRay: destPoint is NULL!");
+        if (point == null) throw new NullPointerException("getRotationDirectionRay: destPoint is NULL!");
 
         // Point "O" - center of the objct
         int x0 = loc[0] + size[0] * Restrictions.BLOCK_SIZE / 2;
         int y0 = -(loc[1] + size[1] * Restrictions.BLOCK_SIZE / 2);
 
-        int xb = v[0];
-        int yb = -v[1];
+        int xb = point[0];
+        int yb = -point[1];
 
         double invariant = (xb - x0) * Math.sin(this.currAngle) - (yb - y0) * Math.cos(this.currAngle);
         double angleLeft = Math.acos(((xb - x0) * Math.cos(this.currAngle) + (yb - y0) * Math.sin(this.currAngle)) / Math.sqrt(sqrVal(xb - x0) + sqrVal(yb - y0)));
@@ -523,26 +519,23 @@ public class GameObject implements Moveable {
 
     }
 
-    public boolean angleBetweenRayAndPointLessThan(double dAngle) {
+    public boolean angleBetweenRayAndPointLessThan(Integer [] point, double dAngle) {
 
-        // Point "B" - destination or target point
-        Integer v[] = getTargetOrDestinationPoint();
+        if (point == null) throw new NullPointerException("angleBetweenRayAndPointLessThan: destination and target points are both NULL!");
 
-        if (v == null) throw new NullPointerException("angleBetweenRayAndPointLessThan: destination and target points are both NULL!");
-
-        // Point "O" - center of the objct
+        // Point "O" - center of the object
         int x0 = loc[0] + size[0] * Restrictions.BLOCK_SIZE / 2;
         int y0 = -(loc[1] + size[1] * Restrictions.BLOCK_SIZE / 2);
-        int xb = v[0];
-        int yb = -v[1];
+        int xb = point[0];
+        int yb = -point[1];
 
         double len = Math.sqrt(sqrVal(xb - x0) + sqrVal(yb - y0));
 
         return (xb - x0) * Math.cos(this.currAngle) + (yb - y0) * Math.sin(this.currAngle) > len * Math.cos(dAngle);
     }
 
-    public boolean angleBetweenRayAndPointLessThanDefaultValue() {
-        return angleBetweenRayAndPointLessThan(rotation_speed);
+    public boolean angleBetweenRayAndPointLessThanDefaultValue(Integer [] point) {
+        return angleBetweenRayAndPointLessThan(point, rotation_speed);
     }
 
     // TODO Move it to Math.Class
