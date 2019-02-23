@@ -239,8 +239,26 @@ public class GameObject implements Moveable {
     }
 */
 
+    public Integer[] getTargetOrDestinationPoint() {
+        Integer v[] = null;
+        if (destPoint != null) {
+            v = new Integer[] {destPoint[0], destPoint[1]};
+        } else if (this instanceof Shootable) {
+            GameObject target = ((Shootable)this).getTargetObject();
+            if (target != null) {
+                v = new Integer[] {target.loc[0], target.loc[1]};
+            }
+        }
+
+        return v;
+    }
+
     public void rotateToPointOnRay() {
-        if (destPoint == null || angleBetweenRayAndPointLessThanDefaultValue()) {
+
+        // Point "B" - destination or target point
+        Integer v[] = getTargetOrDestinationPoint();
+
+        if (v == null || angleBetweenRayAndPointLessThanDefaultValue()) {
             Main.printMsg("Destination reached, rotation aborted");
             return;
         }
@@ -275,7 +293,8 @@ public class GameObject implements Moveable {
         //  and turn Tank in the direction of rotation
         // TODO 2) If Tank not moving but target moving, Tank must rotate to target
         if (! angleBetweenRayAndPointLessThan(Math.toRadians(45))) {
-            return true;
+            Main.printMsg("< 45");
+            return false;
         }
 
         // FIXME replace later
@@ -477,15 +496,17 @@ public class GameObject implements Moveable {
     // TODO Move it to Math.Class
     public int getRotationDirectionRay () {
 
-        if (destPoint == null) throw new NullPointerException("getRotationDirectionRay: destPoint is NULL!");
+        // Point "B" - destination or target point
+        Integer v[] = getTargetOrDestinationPoint();
+
+        if (v == null) throw new NullPointerException("getRotationDirectionRay: destPoint is NULL!");
 
         // Point "O" - center of the objct
         int x0 = loc[0] + size[0] * Restrictions.BLOCK_SIZE / 2;
         int y0 = -(loc[1] + size[1] * Restrictions.BLOCK_SIZE / 2);
 
-        // Point "B" - destination point
-        int xb = destPoint[0];
-        int yb = -destPoint[1];
+        int xb = v[0];
+        int yb = -v[1];
 
         double invariant = (xb - x0) * Math.sin(this.currAngle) - (yb - y0) * Math.cos(this.currAngle);
         double angleLeft = Math.acos(((xb - x0) * Math.cos(this.currAngle) + (yb - y0) * Math.sin(this.currAngle)) / Math.sqrt(sqrVal(xb - x0) + sqrVal(yb - y0)));
@@ -505,26 +526,19 @@ public class GameObject implements Moveable {
     public boolean angleBetweenRayAndPointLessThan(double dAngle) {
 
         // Point "B" - destination or target point
-        Integer v[] = null;
-
-        if (destPoint != null) {
-            v = new Integer[] {destPoint[0], -destPoint[1]};
-        } else if (this instanceof Shootable) {
-            GameObject target = ((Shootable)this).getTargetObject();
-            if (target != null) {
-                v = new Integer[] {target.loc[0], -target.loc[1]};
-            }
-        }
+        Integer v[] = getTargetOrDestinationPoint();
 
         if (v == null) throw new NullPointerException("angleBetweenRayAndPointLessThan: destination and target points are both NULL!");
 
         // Point "O" - center of the objct
         int x0 = loc[0] + size[0] * Restrictions.BLOCK_SIZE / 2;
         int y0 = -(loc[1] + size[1] * Restrictions.BLOCK_SIZE / 2);
+        int xb = v[0];
+        int yb = -v[1];
 
-        double len = Math.sqrt(sqrVal(v[0] - x0) + sqrVal(v[1] - y0));
+        double len = Math.sqrt(sqrVal(xb - x0) + sqrVal(yb - y0));
 
-        return (v[0] - x0) * Math.cos(this.currAngle) + (v[1] - y0) * Math.sin(this.currAngle) > len * Math.cos(dAngle);
+        return (xb - x0) * Math.cos(this.currAngle) + (yb - y0) * Math.sin(this.currAngle) > len * Math.cos(dAngle);
     }
 
     public boolean angleBetweenRayAndPointLessThanDefaultValue() {
