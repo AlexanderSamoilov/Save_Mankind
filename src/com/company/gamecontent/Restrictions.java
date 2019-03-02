@@ -6,6 +6,20 @@ public abstract class Restrictions {
 
     static final int rotateMode = 1; // 0 - angle mode, not 0 - ray mode
 
+    // Sprites of all object are oriented to north by default at the beginning of the game.
+    // But since we perform all calculations in Cartesian coordinate system
+    // we have to take into account that north is 90° (PI / 2) in Cartesian coordinates
+    // and use this angle in the sprite rotation formulae.
+    static final double INIT_ANGLE = Math.toRadians(90);
+
+    // The coordinate system in computer is not always Cartesian (because of different graphics libraries)
+    // But we use all formulae for Cartesian coordinate system. In order to make these "classic" math formulae
+    // working for non-Cartesian coordinate systems we introduce extra multiplier which transform classic formulae.
+    // At the moment we use only one such multiplier (for Y axe orientation)
+    // +1 for Cartesian coordinate system (orthonormal basis) - default case
+    // -1 for typical game map (Y axe direction to south)
+    static final int Y_ORIENT = -1; // Y axe is oriented to south
+
     static final int BLOCK_SIZE = 64;
 
     // 0 - multiple objects on the same block are allowed (even if they overlap)

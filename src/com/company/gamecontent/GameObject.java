@@ -8,6 +8,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Random;
 
+import static com.company.gamecontent.Restrictions.INIT_ANGLE;
+import static com.company.gamecontent.Restrictions.Y_ORIENT;
+
 // For details read the DOC "Data Structure"
 public class GameObject implements Moveable {
     // TODO Use Point3D class loc_x, loc_y, loc_z
@@ -16,11 +19,10 @@ public class GameObject implements Moveable {
     // TODO Use Point2D class
     protected Integer[] destPoint;   // The map point to move to (has x, y)
 
-    //private double destAngle;           // Destination angle for sprite rotation
-    private double initAngle; // we need it because the fi_1="angle where the face/gun of the object points to" IS NOT
-    // fi_2="the angle" to which we rotate the object sprite (when the object is created its fi_1=90 and fi_2=0)
-    // This is because in Dekart coordinates "North" means 90° and not 0°.
-    private double currAngle;           // Current angle of sprite rotation
+    // Current orientation angle of the objects' sprite, measured in radians.
+    // Since we do all calculation in the Cartesian coordinate system
+    // the value 0 (that is 0°) means "to east".
+    private double currAngle;
 
     protected Sprite sprite;
 
@@ -117,7 +119,7 @@ public class GameObject implements Moveable {
 
         this.maxHitPoints = hp;
         this.speed = speed;
-        this.rotation_speed = rot_speed * Math.PI / 180.0;
+        this.rotation_speed = Math.toRadians(rot_speed);
 //        this.armor = arm;
 //        this.hardness = hard;
 //        this.burnChanceOnHit = bch;
@@ -134,9 +136,8 @@ public class GameObject implements Moveable {
         this.destPoint = null;
         //this.destAngle = 0;
 
-        // Default - object look up
-        this.initAngle = Math.toRadians(90);
-        this.currAngle = this.initAngle;
+        // Default - at the beginning of the game all objects are oriented to north
+        this.currAngle = INIT_ANGLE;
 
         // FIXME this.playerId = Faction.NEUTRAL
         this.playerId = -1;
@@ -152,7 +153,7 @@ public class GameObject implements Moveable {
         int rect_h    = size[1] * Restrictions.BLOCK_SIZE;
 
         // ----> Drawing sprite with actual orientation
-        this.sprite.render(g, initAngle - currAngle, rect_x, rect_y, rect_w, rect_h);
+        this.sprite.render(g, INIT_ANGLE - currAngle, rect_x, rect_y, rect_w, rect_h);
 
         // ----> Drawing HP rectangle
         if (isSelected) {
@@ -222,18 +223,18 @@ public class GameObject implements Moveable {
             return;
         }
 
-        int rotation_direction;
-        if (Restrictions.rotateMode > 0) rotation_direction = getRotationDirectionRay(point);
-        else rotation_direction = getRotationDirectionPolar();
+        int direction;
+        if (Restrictions.rotateMode > 0) direction = getRotationDirectionRay(point);
+        else direction = getRotationDirectionPolar();
 
         // It's clear that the point lies behind the ray that is 180°
         // Otherwise (in case 0°) Math.abs(currAngle - destAngle) < rotation_speed must return true
-        if (rotation_direction == 0) {
-            rotation_direction = randomSign();
+        if (direction == 0) {
+            direction = randomSign();
         }
 
         // Rotate
-        this.currAngle -= rotation_speed * rotation_direction;
+        this.currAngle += rotation_speed * direction;
         this.currAngle %= Math.toRadians(360); // TODO: maybe it is possible to optimize division (for example write own func which subtract 360 until it gets less than 360)
         Main.printMsg("New Sprite Ang: " + currAngle);
     }
@@ -257,24 +258,21 @@ public class GameObject implements Moveable {
 
     public void rotateToPointOnRay(Integer[] point) {
 
-        if (point == null || angleBetweenRayAndPointLessThanDefaultValue(point)) {
-            Main.printMsg("Destination reached, rotation aborted");
+        if (point == null || angleBetweenRayAndPointSmallEnough(point)) {
+            Main.printMsg("Destination reached or undefined, rotation aborted");
             return;
         }
 
-        Main.printMsg("-----------");
-
-        // TODO Think about optimizing with angleBetweenRayAndPointLessThan
-        int rotation_direction = getRotationDirectionRay(point);
-        Main.printMsg("New rota: " + rotation_direction);
+        int direction = getRotationDirectionRay(point);
+        Main.printMsg("New rota: " + direction);
 
         // It's clear that the point lies behind the ray that is 180°
-        // Otherwise (in case 0°) angleBetweenRayAndPointLessThan must return true
-        if (rotation_direction == 0) {
-            rotation_direction = randomSign();
+        // Otherwise (in case 0°) angleBetweenRayAndPoint*** must return true
+        if (direction == 0) {
+            direction = randomSign();
         }
 
-        this.currAngle -= rotation_speed * rotation_direction;
+        this.currAngle += rotation_speed * direction;
         this.currAngle %= Math.toRadians(360); // TODO: maybe it is possible to optimize division (for example write own func which subtract 360 until it gets less than 360)
         Main.printMsg("New Sprite Ang: " + currAngle);
 
@@ -291,10 +289,13 @@ public class GameObject implements Moveable {
         // TODO 1) If Tank start moving we need move to "looking forward" direction
         //  and turn Tank in the direction of rotation
         // TODO 2) If Tank not moving but target moving, Tank must rotate to target
-        if (! angleBetweenRayAndPointLessThan(next, Math.toRadians(45))) {
-            //Main.printMsg("< 45");
-            return false;
+        // if (this instanceof Tank) {
+        if (!angleBetweenRayAndPointLessThan(next, Math.toRadians(45))) {
+            Main.printMsg(">= 45");
+            return true;
         }
+        Main.printMsg("< 45");
+        //}
 
         // FIXME replace later
         int size_x = size[0];
@@ -497,24 +498,43 @@ public class GameObject implements Moveable {
 
         if (point == null) throw new NullPointerException("getRotationDirectionRay: destPoint is NULL!");
 
-        // Point "O" - center of the objct
-        int x0 = loc[0] + size[0] * Restrictions.BLOCK_SIZE / 2;
-        int y0 = -(loc[1] + size[1] * Restrictions.BLOCK_SIZE / 2);
+        /*
+        Hayami uses the following formula to determine on which of two semi-planes (left or right)
+        obtained by the division of the 2D-space by the given ray with center in O(x0, y0) and direction-vector (xv,yv)
+        lays the given point P(xp, yp):
 
-        int xb = point[0];
-        int yb = -point[1];
+                                           invariant = xv * (yp - y0) - (xp - x0) * yv
 
-        double invariant = (xb - x0) * Math.sin(this.currAngle) - (yb - y0) * Math.cos(this.currAngle);
-        double angleLeft = Math.acos(((xb - x0) * Math.cos(this.currAngle) + (yb - y0) * Math.sin(this.currAngle)) / Math.sqrt(sqrVal(xb - x0) + sqrVal(yb - y0)));
-        double dx = xb -x0;
-        double dy = yb - y0;
-        Main.printMsg("x0=" + x0 + " y0=" + y0 + " xb=" + xb + " yb=" + yb +
-                "xb - x0= " + dx
-                + "yb - y0= " + dy
-                + "Math.cos(this.currAngle)= \n" + Math.cos(this.currAngle)
-                + "Math.sin(this.currAngle)= \n" + Math.sin(this.currAngle)
-                + "currAngle=" + this.currAngle + " invariant=" + invariant + " left=" + angleLeft);
-	    // To the right (1), To the left (-1) of the line or on the line(0)
+        If invariant > 0 then the point (xp, yp) lays on the left semi-plane from the vector (xv,yv)
+        If invariant < 0 then the point (xp, yp) lays on the right semi-plane from the vector (xv,yv)
+        If invariant == 0 then the point (xp, yp) lays on the line given by the vector (xv,yv)
+
+        The goal is to rotate the ray given by the vector (xv, yv) until it intersects the point (xp, yp),
+        but in the direction of minimal angle (shorter angle). It is obvious that it is shorter to turn to
+        that semi-plane where the point is located.
+
+        Thus,
+        if invatiant > 0 we should turn left (counter clockwise)
+        if invariant < 0 we should turn right (clockwise)
+        if invariant == 0 we should turn backwards (180°)
+
+        */
+
+        // Point "O" - center of the object
+        int x0 =              loc[0] + size[0] * Restrictions.BLOCK_SIZE / 2;
+        int y0 = Y_ORIENT  * (loc[1] + size[1] * Restrictions.BLOCK_SIZE / 2);
+
+        // Point "P"
+        int xp = point[0];
+        int yp = Y_ORIENT  * point[1];
+
+        // The direction-vector of the ray has coordinates (cos fi, sin fi) where fi = this.currAngle, so ...
+        double invariant = (yp - y0) * Math.cos(this.currAngle) - (xp - x0) * Math.sin(this.currAngle);
+        //double angleLeft = Math.acos(((xp - x0) * Math.cos(this.currAngle) + (yp - y0) * Math.sin(this.currAngle))
+        //        / Math.sqrt(sqrVal(xp - x0) + sqrVal(yp - y0)));
+
+	    // counter clockwise (1), clockwise (-1) or just backwards (0)
+        // NOTE: In the Cartesian coordinate system the angle is growing counter clockwise!
         return (int)Math.signum(invariant);
 
     }
@@ -525,23 +545,76 @@ public class GameObject implements Moveable {
 
         // Point "O" - center of the object
         int x0 = loc[0] + size[0] * Restrictions.BLOCK_SIZE / 2;
-        int y0 = -(loc[1] + size[1] * Restrictions.BLOCK_SIZE / 2);
-        int xb = point[0];
-        int yb = -point[1];
+        int y0 = Y_ORIENT  * (loc[1] + size[1] * Restrictions.BLOCK_SIZE / 2);
+        // Point "P" - destination point of rotation
+        int xp = point[0];
+        int yp = Y_ORIENT  * point[1];
 
-        double len = Math.sqrt(sqrVal(xb - x0) + sqrVal(yb - y0));
+        /* Here we use the formulae of the angle between two vectors:
+                       cos (a1,b1) ^ (a2,b2) = (a1*a2 + b1*b2) / (|(a1,b1)| * |(a2,b2)|)
+                       where |(ai,bi)| is then length of the i-vector, that is sqrt(ai*ai + bi*bi)
 
-        return (xb - x0) * Math.cos(this.currAngle) + (yb - y0) * Math.sin(this.currAngle) > len * Math.cos(dAngle);
+        We want to know when the angle between two vectors is less then the given value dAngle. Calculations:
+                       (a1,b1) ^ (a2,b2) < dAngle
+
+        f(x) = cos(x) is monotonically decreasing within [0; PI] and we consider only angles within [0; PI],
+        because we don't care about orientation (we just need to get the angle between two rays given by two vectors).
+        Taking into account the monotonic behaviour of f(x) = cos(x) in the interval [0; PI] we have this:
+                       cos (a1,b1) ^ (a2,b2) > cos(dAngle)
+                       (a1*a2 + b1*b2) / (|(a1,b1)| * |(a2,b2)|) > cos(dAngle)
+                       a1*a2 + b1*b2 > |(a1,b1)| * |(a2,b2)| * cos(dAngle)
+                       a1*a2 + b1*b2 > len(a1,b1) * len(a2,b2) * cos(dAngle)
+
+        We are free to choose arbitrary the length of the vector which represents the ray of the objects' orientation,
+        thus let us suppose that len(a1,b1) = 1, because a1 = cos(fi), b1 = sin(fi), therefore:
+                       a2 * cos(fi) + b2 * sin(fi) > len(a2,b2) * cos(dAngle)
+
+        Vector (a1,b1) represents the ray of the current objects' orientation (its length is 1)
+        a1 = cos(this.currAngle), b1 = sin(this.currAngle)
+        Vector (a2,b2) represents the ray from the center of the object towards destination rotation point "P"
+        a2 = xp - x0, b2 = yp - y0
+
+         */
+
+        // len(a2,b2)
+        double len = Math.sqrt(sqrVal(xp - x0) + sqrVal(yp - y0));
+        /*Main.printMsg("Current angle between vectors: " +
+                Math.acos(((xp - x0) * Math.cos(this.currAngle) + (yp - y0) * Math.sin(this.currAngle)) / len));
+        Main.printMsg("a1=" + 100*Math.cos(this.currAngle) + ", b1 = " + Math.sin(this.currAngle));
+        Main.printMsg("a2=" + (xp - x0) + ", b2=" + (yp - y0));
+        Main.printMsg("currAngle=" + Math.toDegrees(this.currAngle));*/
+        return (xp - x0) * Math.cos(this.currAngle) + (yp - y0) * Math.sin(this.currAngle) > len * Math.cos(dAngle);
     }
 
-    public boolean angleBetweenRayAndPointLessThanDefaultValue(Integer [] point) {
-        return angleBetweenRayAndPointLessThan(point, rotation_speed);
+    public boolean angleBetweenRayAndPointSmallEnough(Integer [] point) {
+        // Sometimes it is better to turn one more time (even if the angle different is already less than given delta)
+        // For example if delta is 45°, we turned and now the angle between the target and our object is 40°.
+        // In such case it is better to do one more turn step and the angle will 40° - 45° = -5° which is more precise.
+
+        // Let imagine we are on the position where delta less then dFi (that is we are closer to the desired destAngle
+        // less than the rotation step). Then we can turn once again and we cross the destination ray.
+        // So, before we cross the destination ray the delta is fi1=abs(destAngle - currAngle)
+        // After we cross the delta will be fi2=abs(destAngle - currAngle - step)
+        // Both of them less than step, but we want to choose the one which absolute value is less.
+
+        // It is obvious that: fi1 + fi2 = step
+        // It means that fi1 <= step /2 or fi2 <= step /2
+        // So we COULD set the stopping critetion: angleBetweenRayAndPointLessThan(point, rotation_speed * 0.5)
+        // However it is very risky since we are not in the perfect math world, but in computer
+        // Thus we must take some value which is "a little more than" 0.5, but enough more to cover calc errors.
+
+        // What is "close to, but not really more than" 0.5?
+        // 2/3, 3/5, 4/7, 5/9, 6/10, ... - this sequence approximates to 0.5
+        // the sequence formula: (n + 1) / 2n
+        // let's take for example n = 5, then K = 0.6 which is a little more than 0.5, but safe.
+        int N = 5;
+        double K = (N + 1) / (2.0 * N);
+        return angleBetweenRayAndPointLessThan(point, K * rotation_speed);
     }
 
     // TODO Move it to Math.Class
     public int randomSign() {
         Random random = new Random();
-
         int result = random.nextInt(2) - 1;
 
         return (result == 0) ? 1 : result;
