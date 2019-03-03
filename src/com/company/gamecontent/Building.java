@@ -1,9 +1,11 @@
 package com.company.gamecontent;
 
 import com.company.gamegraphics.Sprite;
-import com.company.gamethread.Main;
 
 import java.util.HashMap;
+
+import static com.company.gametools.MathTools.in_range;
+import static com.company.gamethread.Main.terminateNoGiveUp;
 
 public class Building extends GameObject {
     private int energyConsumption;
@@ -18,16 +20,16 @@ public class Building extends GameObject {
 
         // 2 - child class specific parameters validation
         boolean valid = true;
-        valid = valid && Main.in_range(
+        valid = valid && in_range(
                 0, energyConsumption, Restrictions.getMaxEnergyConsumption(), false
         );
 
-        valid = valid && Main.in_range(
+        valid = valid && in_range(
                 0, upgradeTime, Restrictions.getMaxInitialUpgradeTime(), false
         );
 
         if (!valid) {
-            Main.terminateNoGiveUp(
+            terminateNoGiveUp(
                     1000,
                     "Failed to initialize " + getClass() +
                                ". Some of parameters are beyond the restricted boundaries."

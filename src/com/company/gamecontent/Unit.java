@@ -10,6 +10,9 @@ import java.util.HashSet;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
+import static com.company.gametools.MathTools.in_range;
+import static com.company.gametools.MathTools.withinRadius;
+
 public class Unit extends GameObject implements Shootable {
 
     // May be NULL (for the wall), but we suppose each unit can use only one type of weapon.
@@ -38,7 +41,7 @@ public class Unit extends GameObject implements Shootable {
 
         // 2 - child class specific parameters validation
         boolean valid = true;
-        valid = valid && Main.in_range(
+        valid = valid && in_range(
                 0,
                 r * Restrictions.BLOCK_SIZE,
                 Restrictions.getMaxDetectRadiusAbs(),
@@ -195,16 +198,6 @@ public class Unit extends GameObject implements Shootable {
         // TODO Move it in AI_Tools_Class
         Main.printMsg("Some unit of Player " + this.getPlayerId() + " move To!");
         this.moveTo(getNextPointOnOptimalShootingPath(target));
-    }
-
-    // TODO Move it in Math.Class
-    public int sqrVal(int value) {
-        return value * value;
-    }
-
-    // TODO Move it in Math.Class
-    public boolean withinRadius(Integer [] A, Integer [] B, int radius) {
-        return sqrVal(radius) >= sqrVal(A[0] - B[0]) + sqrVal(A[1] - B[1]);
     }
 
     // TODO Move it in AI_Tools_Class

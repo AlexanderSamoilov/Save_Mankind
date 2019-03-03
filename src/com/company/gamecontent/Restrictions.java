@@ -4,7 +4,7 @@ import java.lang.Math;
 
 public abstract class Restrictions {
 
-    static final int rotateMode = 1; // 0 - angle mode, not 0 - ray mode
+    static final int ROTATE_MOD = 1; // 0 - angle mode, not 0 - ray mode
 
     // Sprites of all object are oriented to north by default at the beginning of the game.
     // But since we perform all calculations in Cartesian coordinate system

@@ -5,6 +5,8 @@ import com.company.gamethread.Main;
 import java.awt.*;
 import java.util.HashSet;
 
+import static com.company.gametools.MathTools.sqrVal;
+
 public class Bullet implements Moveable {
     // NOTE: now this field is used to detect which Unit made a shoot in order to set its "targetObject" to null when the target dies
     // Yes, it is possible to do the same even without this extra field if we just check the "units" list of Player class
@@ -75,12 +77,12 @@ public class Bullet implements Moveable {
         int curr_y = loc[1];
 
         // Count the distance between current point and next point
-        double norm = Math.sqrt(sqrVal(next[0] - curr_x) + sqrVal(next[1] - curr_y));
+        double norm = Math.sqrt(
+                sqrVal(next[0] - curr_x) + sqrVal(next[1] - curr_y)
+        );
 
-        //Main.printMsg("norm=" + norm + ", speed=" + speed);
-
-        // TODO Move it to Tools.Class checkNorm()
         // Avoid division by zero and endless wandering around the destination point
+        //Main.printMsg("norm=" + norm + ", speed=" + speed);
         if (norm <= speed) {
             // One step to target
             this.loc[0] = next[0];
@@ -163,11 +165,6 @@ public class Bullet implements Moveable {
 
         // TODO: check it it is safe to make null the object which method is being called at the moment
         GameMap.getInstance().destroyBullet(this);
-    }
-
-    // TODO Move it in Tools.Class
-    public int sqrVal(int value) {
-        return value * value;
     }
 
     // TODO Use Sprite rendering

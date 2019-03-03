@@ -359,15 +359,6 @@ public class Main {
     }
 
     // FIXME Move to Tools.Class
-    public static boolean in_range(int left, int val, int right, boolean strict) {
-        if (strict) {
-            return (left < val && val < right);
-        }
-
-        return (left <= val && val <= right);
-    }
-
-    // FIXME Move to Tools.Class
     public static void timeout(long timeoutMSec) {
         /* TODO: what happens if we pass negative timeout into sleep()? */
         try {

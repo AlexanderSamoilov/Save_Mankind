@@ -1,15 +1,34 @@
 package com.company.gamecontent;
 
 import com.company.gamegraphics.Sprite;
-import com.company.gamethread.Main;
 
 import java.awt.*;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Random;
 
 import static com.company.gamecontent.Restrictions.INIT_ANGLE;
 import static com.company.gamecontent.Restrictions.Y_ORIENT;
+import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
+import static com.company.gamecontent.Restrictions.MAX_X;
+import static com.company.gamecontent.Restrictions.MAX_Y;
+import static com.company.gamecontent.Restrictions.MAX_Z;
+import static com.company.gamecontent.Restrictions.MAX_HP;
+import static com.company.gamecontent.Restrictions.MAX_SPEED;
+import static com.company.gamecontent.Restrictions.MAX_MASS;
+import static com.company.gamecontent.Restrictions.MAX_ENERGY;
+import static com.company.gamecontent.Restrictions.INTERSECTION_STRATEGY_SEVERITY;
+import static com.company.gamecontent.Restrictions.ROTATE_MOD;
+import static com.company.gamecontent.Restrictions.getMaxObjectSizeBlocks;
+import static com.company.gamecontent.Restrictions.getMaxXAbs;
+import static com.company.gamecontent.Restrictions.getMaxYAbs;
+import static com.company.gamecontent.Restrictions.getMaxZAbs;
+
+import static com.company.gametools.MathTools.in_range;
+import static com.company.gametools.MathTools.randomSign;
+import static com.company.gametools.MathTools.sqrVal;
+
+import static com.company.gamethread.Main.printMsg;
+import static com.company.gamethread.Main.terminateNoGiveUp;
 
 // For details read the DOC "Data Structure"
 public class GameObject implements Moveable {
@@ -77,30 +96,30 @@ public class GameObject implements Moveable {
         boolean valid;
 
         // Check object coordinates
-        valid = Main.in_range(0, x, Restrictions.MAX_X, false);
-        valid = valid && Main.in_range(0, y, Restrictions.MAX_Y, false);
-        valid = valid && Main.in_range(0, z, Restrictions.MAX_Z, false);
+        valid = in_range(0, x, MAX_X, false);
+        valid = valid && in_range(0, y, MAX_Y, false);
+        valid = valid && in_range(0, z, MAX_Z, false);
 
         // Check object stats
-        valid = valid && Main.in_range(0, hp, Restrictions.MAX_HP, false);
-        valid = valid && Main.in_range(-Restrictions.MAX_SPEED, speed, Restrictions.MAX_SPEED, false);
+        valid = valid && in_range(0, hp, MAX_HP, false);
+        valid = valid && in_range(-MAX_SPEED, speed, MAX_SPEED, false);
 
         // Check object dimensions
-        valid = valid && Main.in_range(0, sX, Restrictions.getMaxObjectSizeBlocks() + 1, true);
-        valid = valid && Main.in_range(0, sY, Restrictions.getMaxObjectSizeBlocks() + 1, true);
-        valid = valid && Main.in_range(0, sZ, Restrictions.getMaxObjectSizeBlocks() + 1, true);
+        valid = valid && in_range(0, sX, getMaxObjectSizeBlocks() + 1, true);
+        valid = valid && in_range(0, sY, getMaxObjectSizeBlocks() + 1, true);
+        valid = valid && in_range(0, sZ, getMaxObjectSizeBlocks() + 1, true);
 
         // Check object resources limits
-        valid = valid && Main.in_range(
-                0, res.get(Resource.MASS), Restrictions.MAX_MASS + 1, true
+        valid = valid && in_range(
+                0, res.get(Resource.MASS), MAX_MASS + 1, true
         );
 
-        valid = valid && Main.in_range(
-                0, res.get(Resource.ENERGY), Restrictions.MAX_ENERGY, false
+        valid = valid && in_range(
+                0, res.get(Resource.ENERGY), MAX_ENERGY, false
         );
 
         if (!valid) {
-            Main.terminateNoGiveUp(
+            terminateNoGiveUp(
                     1000,
                     "Failed to initialize " + getClass() + ". Some of parameters are beyond the restricted boundaries."
             );
@@ -108,7 +127,7 @@ public class GameObject implements Moveable {
 
         this.sprite = sprite;
         this.loc = new Integer[]{
-                x * Restrictions.BLOCK_SIZE, y * Restrictions.BLOCK_SIZE, z * Restrictions.BLOCK_SIZE
+                x * BLOCK_SIZE, y * BLOCK_SIZE, z * BLOCK_SIZE
         };
 
         this.size = new int[]{sX, sY, sZ};
@@ -149,8 +168,8 @@ public class GameObject implements Moveable {
     public void render(Graphics g) {
         int rect_x    = loc[0];
         int rect_y    = loc[1];
-        int rect_w    = size[0] * Restrictions.BLOCK_SIZE;
-        int rect_h    = size[1] * Restrictions.BLOCK_SIZE;
+        int rect_w    = size[0] * BLOCK_SIZE;
+        int rect_h    = size[1] * BLOCK_SIZE;
 
         // ----> Drawing sprite with actual orientation
         this.sprite.render(g, INIT_ANGLE - currAngle, rect_x, rect_y, rect_w, rect_h);
@@ -208,15 +227,15 @@ public class GameObject implements Moveable {
             ((Shootable)this).unsetTargetPoint();
         }
 
-        Main.printMsg("Destination OBJ_" + this.playerId + ": x=" + dest[0] + ", y=" + dest[1]);
+        printMsg("Destination OBJ_" + this.playerId + ": x=" + dest[0] + ", y=" + dest[1]);
     }
 
     public void rotateTo(Integer [] point) {
-        if (Restrictions.rotateMode > 0) rotateToPointOnRay(point);
+        if (ROTATE_MOD > 0) rotateToPointOnRay(point);
         //else rotateToAngle(point);
     }
 
-    /*
+/*
     public void rotateToAngle(Integer [] point) {
         double destAngle =...;
         if (Math.abs(currAngle - destAngle) < rotation_speed) {
@@ -224,7 +243,7 @@ public class GameObject implements Moveable {
         }
 
         int direction;
-        if (Restrictions.rotateMode > 0) direction = getRotationDirectionRay(point);
+        if (rotateMode > 0) direction = getRotationDirectionRay(point);
         else direction = getRotationDirectionPolar();
 
         // It's clear that the point lies behind the ray that is 180°
@@ -236,11 +255,11 @@ public class GameObject implements Moveable {
         // Rotate
         this.currAngle += rotation_speed * direction;
         this.currAngle %= Math.toRadians(360); // TODO: maybe it is possible to optimize division (for example write own func which subtract 360 until it gets less than 360)
-        Main.printMsg("New Sprite Ang: " + currAngle);
+        printMsg("New Sprite Ang: " + currAngle);
     }
 */
 
-    /*
+/*
     public Integer[] getTargetOrDestinationPoint() {
         Integer v[] = null;
         if (destPoint != null) {
@@ -259,12 +278,12 @@ public class GameObject implements Moveable {
     public void rotateToPointOnRay(Integer[] point) {
 
         if (point == null || angleBetweenRayAndPointSmallEnough(point)) {
-            Main.printMsg("Destination reached or undefined, rotation aborted");
+            printMsg("Destination reached or undefined, rotation aborted");
             return;
         }
 
         int direction = getRotationDirectionRay(point);
-        Main.printMsg("New rota: " + direction);
+        printMsg("New rota: " + direction);
 
         // It's clear that the point lies behind the ray that is 180°
         // Otherwise (in case 0°) angleBetweenRayAndPoint*** must return true
@@ -274,7 +293,7 @@ public class GameObject implements Moveable {
 
         this.currAngle += rotation_speed * direction;
         this.currAngle %= Math.toRadians(360); // TODO: maybe it is possible to optimize division (for example write own func which subtract 360 until it gets less than 360)
-        Main.printMsg("New Sprite Ang: " + currAngle);
+        printMsg("New Sprite Ang: " + currAngle);
 
      }
 
@@ -291,10 +310,10 @@ public class GameObject implements Moveable {
         // TODO 2) If Tank not moving but target moving, Tank must rotate to target
         // if (this instanceof Tank) {
         if (!angleBetweenRayAndPointLessThan(next, Math.toRadians(45))) {
-            Main.printMsg(">= 45");
+            printMsg(">= 45");
             return true;
         }
-        Main.printMsg("< 45");
+        printMsg("< 45");
         //}
 
         // FIXME replace later
@@ -305,11 +324,12 @@ public class GameObject implements Moveable {
         int new_x, new_y;
         int new_z = loc[2];
 
-        double norm = Math.sqrt(sqrVal(next[0] - loc[0]) + sqrVal(next[1] - loc[1]));
-        //Main.printMsg("norm=" + norm + ", speed=" + speed);
+        double norm = Math.sqrt(
+                sqrVal(next[0] - loc[0]) + sqrVal(next[1] - loc[1])
+        );
 
-        // TODO Move it to Math.Class checkNorm()
         // Avoid division by zero and endless wandering around the destination point
+        //printMsg("norm=" + norm + ", speed=" + speed);
         if (norm <= speed) {
             // One step to target
             new_x = next[0];
@@ -320,13 +340,12 @@ public class GameObject implements Moveable {
             new_x = loc[0] + (int)((next[0] - loc[0]) * speed / norm);
             new_y = loc[1] + (int)((next[1] - loc[1]) * speed / norm);
         }
-
-        //Main.printMsg("move?: x=" + newX + ", y=" + newY + ", norm=" + norm);
+        //printMsg("move?: x=" + newX + ", y=" + newY + ", norm=" + norm);
 
         // TODO Rename later!
-        int cube_w = size[0] * Restrictions.BLOCK_SIZE;
-        int cube_h = size[1] * Restrictions.BLOCK_SIZE;
-        int cube_d = size[2] * Restrictions.BLOCK_SIZE;
+        int cube_w = size[0] * BLOCK_SIZE;
+        int cube_h = size[1] * BLOCK_SIZE;
+        int cube_d = size[2] * BLOCK_SIZE;
 
         // TODO Is this must be here or lower? (about validation data after this)
         if (isIntersect(new_x, new_y, size_x, size_y)) {
@@ -337,9 +356,9 @@ public class GameObject implements Moveable {
         boolean not_valid;
         not_valid = new_x < 0 || new_y < 0 || new_z < 0;
 
-        not_valid = not_valid || new_x + cube_w >= Restrictions.getMaxXAbs();
-        not_valid = not_valid || new_y + cube_h >= Restrictions.getMaxYAbs();
-        not_valid = not_valid || new_z + cube_d >= Restrictions.getMaxZAbs();
+        not_valid = not_valid || new_x + cube_w >= getMaxXAbs();
+        not_valid = not_valid || new_y + cube_h >= getMaxYAbs();
+        not_valid = not_valid || new_z + cube_d >= getMaxZAbs();
 
         if (not_valid) {
             return false;
@@ -357,23 +376,23 @@ public class GameObject implements Moveable {
         this.loc[1] = new_y;
         GameMap.getInstance().registerObject(this);
 
-//        Main.printMsg("move: x=" + loc[0] + ", y=" + loc[1] + ", obj=" + this);
+//        printMsg("move: x=" + loc[0] + ", y=" + loc[1] + ", obj=" + this);
 
         return true;
     }
 
     public boolean isIntersect(int new_x, int new_y, int sX, int sY) {
-        if (Restrictions.INTERSECTION_STRATEGY_SEVERITY == 0) {
+        if (INTERSECTION_STRATEGY_SEVERITY == 0) {
             return false;
         }
 
-        int rect_w = size[0] * Restrictions.BLOCK_SIZE;
-        int rect_h = size[1] * Restrictions.BLOCK_SIZE;
+        int rect_w = size[0] * BLOCK_SIZE;
+        int rect_h = size[1] * BLOCK_SIZE;
 
         // FIXME What is it?
-        int left_block_x = new_x / Restrictions.BLOCK_SIZE;
+        int left_block_x = new_x / BLOCK_SIZE;
         int right_block_x = left_block_x + sX;
-        int top_block_y = new_y / Restrictions.BLOCK_SIZE;
+        int top_block_y = new_y / BLOCK_SIZE;
         int bottom_block_y = top_block_y + sY;
 
         // Check if we intersect another object
@@ -406,8 +425,8 @@ public class GameObject implements Moveable {
                     }
 
                     // Multiple objects on the same block are allowed when they don't intersect
-                    if (Restrictions.INTERSECTION_STRATEGY_SEVERITY > 1) {
-                        //Main.printMsg("INTERSECTS: i=" + i_fixed + ", j=" + j_fixed + ", thisObject=" + this + ", objOnBlock=" + objOnBlock);
+                    if (INTERSECTION_STRATEGY_SEVERITY > 1) {
+                        //printMsg("INTERSECTS: i=" + i_fixed + ", j=" + j_fixed + ", thisObject=" + this + ", objOnBlock=" + objOnBlock);
                         return true;
                     }
 
@@ -417,8 +436,8 @@ public class GameObject implements Moveable {
                     Rectangle objOnBlockRect = new Rectangle(
                             objOnBlock.loc[0],
                             objOnBlock.loc[1],
-                            objOnBlock.size[0] * Restrictions.BLOCK_SIZE,
-                            objOnBlock.size[1] * Restrictions.BLOCK_SIZE
+                            objOnBlock.size[0] * BLOCK_SIZE,
+                            objOnBlock.size[1] * BLOCK_SIZE
                     );
 
                     if (thisObjRect.intersects(objOnBlockRect)) {
@@ -435,13 +454,12 @@ public class GameObject implements Moveable {
         this.isSelected = false;
     }
 
-    // TODO How about delete objects?
     public Rectangle getRect () {
         return new Rectangle(
                 this.loc[0],
                 this.loc[1],
-                this.size[0] * Restrictions.BLOCK_SIZE,
-                this.size[1] * Restrictions.BLOCK_SIZE
+                this.size[0] * BLOCK_SIZE,
+                this.size[1] * BLOCK_SIZE
         );
     }
 
@@ -468,8 +486,7 @@ public class GameObject implements Moveable {
         return playerId;
     }
 
-    /*
-    // TODO Move it to Math.Class
+/*
     public int getRotationDirectionPolar () {
         double destAngle = ...;
         double diffAngles = destAngle - currAngle;
@@ -493,7 +510,7 @@ public class GameObject implements Moveable {
         return 0;
     }
 */
-    // TODO Move it to Math.Class
+
     public int getRotationDirectionRay (Integer [] point) {
 
         if (point == null) throw new NullPointerException("getRotationDirectionRay: destPoint is NULL!");
@@ -521,8 +538,8 @@ public class GameObject implements Moveable {
         */
 
         // Point "O" - center of the object
-        int x0 =              loc[0] + size[0] * Restrictions.BLOCK_SIZE / 2;
-        int y0 = Y_ORIENT  * (loc[1] + size[1] * Restrictions.BLOCK_SIZE / 2);
+        int x0 =              loc[0] + size[0] * BLOCK_SIZE / 2;
+        int y0 = Y_ORIENT  * (loc[1] + size[1] * BLOCK_SIZE / 2);
 
         // Point "P"
         int xp = point[0];
@@ -544,8 +561,8 @@ public class GameObject implements Moveable {
         if (point == null) throw new NullPointerException("angleBetweenRayAndPointLessThan: destination and target points are both NULL!");
 
         // Point "O" - center of the object
-        int x0 = loc[0] + size[0] * Restrictions.BLOCK_SIZE / 2;
-        int y0 = Y_ORIENT  * (loc[1] + size[1] * Restrictions.BLOCK_SIZE / 2);
+        int x0 = loc[0] + size[0] * BLOCK_SIZE / 2;
+        int y0 = Y_ORIENT  * (loc[1] + size[1] * BLOCK_SIZE / 2);
         // Point "P" - destination point of rotation
         int xp = point[0];
         int yp = Y_ORIENT  * point[1];
@@ -578,11 +595,11 @@ public class GameObject implements Moveable {
 
         // len(a2,b2)
         double len = Math.sqrt(sqrVal(xp - x0) + sqrVal(yp - y0));
-        /*Main.printMsg("Current angle between vectors: " +
+        /*printMsg("Current angle between vectors: " +
                 Math.acos(((xp - x0) * Math.cos(this.currAngle) + (yp - y0) * Math.sin(this.currAngle)) / len));
-        Main.printMsg("a1=" + 100*Math.cos(this.currAngle) + ", b1 = " + Math.sin(this.currAngle));
-        Main.printMsg("a2=" + (xp - x0) + ", b2=" + (yp - y0));
-        Main.printMsg("currAngle=" + Math.toDegrees(this.currAngle));*/
+        printMsg("a1=" + 100*Math.cos(this.currAngle) + ", b1 = " + Math.sin(this.currAngle));
+        printMsg("a2=" + (xp - x0) + ", b2=" + (yp - y0));
+        printMsg("currAngle=" + Math.toDegrees(this.currAngle));*/
         return (xp - x0) * Math.cos(this.currAngle) + (yp - y0) * Math.sin(this.currAngle) > len * Math.cos(dAngle);
     }
 
@@ -611,18 +628,4 @@ public class GameObject implements Moveable {
         double K = (N + 1) / (2.0 * N);
         return angleBetweenRayAndPointLessThan(point, K * rotation_speed);
     }
-
-    // TODO Move it to Math.Class
-    public int randomSign() {
-        Random random = new Random();
-        int result = random.nextInt(2) - 1;
-
-        return (result == 0) ? 1 : result;
-    }
-
-    // TODO Move it to Math.Class
-    public int sqrVal(int value) {
-        return value * value;
-    }
-
 }
