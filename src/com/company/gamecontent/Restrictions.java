@@ -20,14 +20,12 @@ public abstract class Restrictions {
     // -1 for typical game map (Y axe direction to south)
     static final int Y_ORIENT = -1; // Y axe is oriented to south
 
-    static final int BLOCK_SIZE = 64;
+    public static final int BLOCK_SIZE = 64;
 
     // 0 - multiple objects on the same block are allowed (even if they overlap)
     // 1 - multiple objects on the same block are allowed when they don't overlap
     // 2 - multiple objects on the same block are not allowed (even if they actually don't overlap)
     static final int INTERSECTION_STRATEGY_SEVERITY = 1;
-//    private static final int MONITOR_MAX_X = 1200; // TODO: calculate it!
-//    private static final int MONITOR_MAX_Y = 720;  // TODO: calculate it!
 
     private static final int MONITOR_MAX_X = 768; // TODO: calculate it!
     private static final int MONITOR_MAX_Y = 768; // TODO: calculate it!

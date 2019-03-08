@@ -8,13 +8,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Random;
 
+import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 import static com.company.gamecontent.Restrictions.INIT_ANGLE;
 import static com.company.gamecontent.Restrictions.Y_ORIENT;
 
 // For details read the DOC "Data Structure"
-public class GameObject implements Moveable {
-    // TODO Use Point3D class loc_x, loc_y, loc_z
-    public Integer[] loc;         // Location of object (x, y, and z for airplanes)
+public class GameObject implements Moveable, Renderable {
+
+    private Parallelepiped parallelepiped;
 
     // TODO Use Point2D class
     protected Integer[] destPoint;   // The map point to move to (has x, y)
@@ -33,9 +34,6 @@ public class GameObject implements Moveable {
 //    bodyBlocks[][] bodyBlocks;
 
     protected int playerId;
-
-    // TODO size_x, size_y, size_z
-    protected int[] size;            // Object dimensions in GameMap cells (sX, sY, sZ)
 
     protected int hitPoints;
     protected int maxHitPoints;
@@ -76,10 +74,14 @@ public class GameObject implements Moveable {
         // TODO: check if the object borders are within map area!
         boolean valid;
 
+        int maxX = GameMap.getInstance().getMaxX();
+        int maxY = GameMap.getInstance().getMaxY();
+        int maxZ = GameMap.getInstance().getMaxY();
+
         // Check object coordinates
-        valid = Main.in_range(0, x, Restrictions.MAX_X, false);
-        valid = valid && Main.in_range(0, y, Restrictions.MAX_Y, false);
-        valid = valid && Main.in_range(0, z, Restrictions.MAX_Z, false);
+        valid = Main.in_range(0, x, maxX, false);
+        valid = valid && Main.in_range(0, y, maxY, false);
+        valid = valid && Main.in_range(0, z, maxZ, false);
 
         // Check object stats
         valid = valid && Main.in_range(0, hp, Restrictions.MAX_HP, false);
@@ -107,11 +109,7 @@ public class GameObject implements Moveable {
         }
 
         this.sprite = sprite;
-        this.loc = new Integer[]{
-                x * Restrictions.BLOCK_SIZE, y * Restrictions.BLOCK_SIZE, z * Restrictions.BLOCK_SIZE
-        };
-
-        this.size = new int[]{sX, sY, sZ};
+        this.parallelepiped = new Parallelepiped(x, y, z, sX, sY, sZ);
 
         this.res = new HashMap<Resource,Integer>();
         this.res.put(Resource.MASS, res.get(Resource.MASS));
@@ -146,18 +144,20 @@ public class GameObject implements Moveable {
         GameMap.getInstance().registerObject(this);
     }
 
+    // wrapper method
     public void render(Graphics g) {
-        int rect_x    = loc[0];
-        int rect_y    = loc[1];
-        int rect_w    = size[0] * Restrictions.BLOCK_SIZE;
-        int rect_h    = size[1] * Restrictions.BLOCK_SIZE;
+        render(g, parallelepiped, currAngle);
+    }
+
+    // Method of the "Renderable" interface
+    public void render(Graphics g, Parallelepiped parallelepiped, double rotation_angle) {
 
         // ----> Drawing sprite with actual orientation
-        this.sprite.render(g, INIT_ANGLE - currAngle, rect_x, rect_y, rect_w, rect_h);
+        this.sprite.render(g, parallelepiped, INIT_ANGLE - rotation_angle);
 
         // ----> Drawing HP rectangle
         if (isSelected) {
-            g.drawRect(rect_x, rect_y, rect_w, rect_h);
+            parallelepiped.render(g);
         }
 
         /* TODO Move it in HUD Class.render() */
@@ -180,19 +180,29 @@ public class GameObject implements Moveable {
 
         // "healthy" HP
         g.setColor(hpColor);
-        g.fillRect(rect_x, rect_y + rect_h, rect_w * percentageHP / 100, 5);
+        g.fillRect(getAbsLoc()[0], getAbsLoc()[1] + getAbsSize()[1], getAbsSize()[0] * percentageHP / 100, 5);
 
         // "loosed" HP
         g.setColor(Color.BLACK);
         g.fillRect(
-                rect_x + rect_w * percentageHP / 100,
-                rect_y + rect_h,
-                rect_w * (100 - percentageHP) / 100,
+                getAbsLoc()[0] + getAbsSize()[0] * percentageHP / 100,
+                getAbsLoc()[1] + getAbsSize()[1],
+                getAbsSize()[1] * (100 - percentageHP) / 100,
                 5
         );
 
-        g.drawRect(rect_x, rect_y + rect_h, rect_w, 5);
+        g.drawRect(getAbsLoc()[0], getAbsLoc()[1] + getAbsSize()[1], getAbsSize()[0], 5);
     }
+
+    public Parallelepiped getParallelepiped() {
+        return parallelepiped;
+    }
+
+    public int[] getAbsLoc() { return parallelepiped.getAbsLoc(); }
+    public int[] getLoc() { return parallelepiped.getLoc(); }
+    public int[] getSize() { return parallelepiped.getSize(); }
+    public int[] getAbsSize() { return parallelepiped.getAbsSize(); }
+    public double[] getAbsCenter() { return parallelepiped.getAbsCenter(); }
 
     public void setDestinationPoint(Integer [] dest) {
         // TODO: check if coordinates are within restrictions
@@ -259,12 +269,12 @@ public class GameObject implements Moveable {
     public void rotateToPointOnRay(Integer[] point) {
 
         if (point == null || angleBetweenRayAndPointSmallEnough(point)) {
-            Main.printMsg("Destination reached or undefined, rotation aborted");
+            //Main.printMsg("Destination reached or undefined, rotation aborted");
             return;
         }
 
         int direction = getRotationDirectionRay(point);
-        Main.printMsg("New rota: " + direction);
+        //Main.printMsg("New rota: " + direction);
 
         // It's clear that the point lies behind the ray that is 180°
         // Otherwise (in case 0°) angleBetweenRayAndPoint*** must return true
@@ -274,7 +284,7 @@ public class GameObject implements Moveable {
 
         this.currAngle += rotation_speed * direction;
         this.currAngle %= Math.toRadians(360); // TODO: maybe it is possible to optimize division (for example write own func which subtract 360 until it gets less than 360)
-        Main.printMsg("New Sprite Ang: " + currAngle);
+        //Main.printMsg("New Sprite Ang: " + currAngle);
 
      }
 
@@ -291,45 +301,40 @@ public class GameObject implements Moveable {
         // TODO 2) If Tank not moving but target moving, Tank must rotate to target
         // if (this instanceof Tank) {
         if (!angleBetweenRayAndPointLessThan(next, Math.toRadians(45))) {
-            Main.printMsg(">= 45");
+            //Main.printMsg(">= 45");
             return true;
         }
-        Main.printMsg("< 45");
-        //}
-
-        // FIXME replace later
-        int size_x = size[0];
-        int size_y = size[1];
+        //Main.printMsg("< 45");
 
         // Store current coordinates (we roll back changes if the calculation reveals that we cannot move)
         int new_x, new_y;
-        int new_z = loc[2];
+        int new_z = getAbsLoc()[2];
+        double new_center_x, new_center_y;
 
-        double norm = Math.sqrt(sqrVal(next[0] - loc[0]) + sqrVal(next[1] - loc[1]));
+        double norm = Math.sqrt(sqrVal(next[0] - getAbsCenter()[0]) + sqrVal(next[1] - getAbsCenter()[1]));
         //Main.printMsg("norm=" + norm + ", speed=" + speed);
 
         // TODO Move it to Math.Class checkNorm()
         // Avoid division by zero and endless wandering around the destination point
         if (norm <= speed) {
             // One step to target
-            new_x = next[0];
-            new_y = next[1];
+            new_center_x = next[0];
+            new_center_y = next[1];
 
         } else {
             // Many steps to target
-            new_x = loc[0] + (int)((next[0] - loc[0]) * speed / norm);
-            new_y = loc[1] + (int)((next[1] - loc[1]) * speed / norm);
+            new_center_x = getAbsCenter()[0] + (int)((next[0] - getAbsCenter()[0]) * speed / norm);
+            new_center_y = getAbsCenter()[1] + (int)((next[1] - getAbsCenter()[1]) * speed / norm);
         }
 
-        //Main.printMsg("move?: x=" + newX + ", y=" + newY + ", norm=" + norm);
+        // move left-top object angle to the same vector which the center was moved to
+        new_x = getAbsLoc()[0] + (int)(new_center_x - getAbsCenter()[0]);
+        new_y = getAbsLoc()[1] + (int)(new_center_y - getAbsCenter()[1]);
 
-        // TODO Rename later!
-        int cube_w = size[0] * Restrictions.BLOCK_SIZE;
-        int cube_h = size[1] * Restrictions.BLOCK_SIZE;
-        int cube_d = size[2] * Restrictions.BLOCK_SIZE;
+        //Main.printMsg("move?: (" + getAbsLoc()[0] + "," + getAbsLoc()[1] + ")->(" + new_x + ", " + new_y + "), norm=" + norm);
 
         // TODO Is this must be here or lower? (about validation data after this)
-        if (isIntersect(new_x, new_y, size_x, size_y)) {
+        if (isIntersect(new_x, new_y, getSize()[0], getSize()[1])) {
             return false;
         }
 
@@ -337,9 +342,9 @@ public class GameObject implements Moveable {
         boolean not_valid;
         not_valid = new_x < 0 || new_y < 0 || new_z < 0;
 
-        not_valid = not_valid || new_x + cube_w >= Restrictions.getMaxXAbs();
-        not_valid = not_valid || new_y + cube_h >= Restrictions.getMaxYAbs();
-        not_valid = not_valid || new_z + cube_d >= Restrictions.getMaxZAbs();
+        not_valid = not_valid || new_x + getAbsSize()[0] >= Restrictions.getMaxXAbs();
+        not_valid = not_valid || new_y + getAbsSize()[1] >= Restrictions.getMaxYAbs();
+        not_valid = not_valid || new_z + getAbsSize()[2] >= Restrictions.getMaxZAbs();
 
         if (not_valid) {
             return false;
@@ -353,8 +358,8 @@ public class GameObject implements Moveable {
 
         GameMap.getInstance().eraseObject(this);
 
-        this.loc[0] = new_x;
-        this.loc[1] = new_y;
+        this.parallelepiped.loc[0] = new_x;
+        this.parallelepiped.loc[1] = new_y;
         GameMap.getInstance().registerObject(this);
 
 //        Main.printMsg("move: x=" + loc[0] + ", y=" + loc[1] + ", obj=" + this);
@@ -362,18 +367,19 @@ public class GameObject implements Moveable {
         return true;
     }
 
+    // TODO: sX always = getSizeX(). sY always = getSizeY() => do we need them as a parameters?
     public boolean isIntersect(int new_x, int new_y, int sX, int sY) {
         if (Restrictions.INTERSECTION_STRATEGY_SEVERITY == 0) {
             return false;
         }
 
-        int rect_w = size[0] * Restrictions.BLOCK_SIZE;
-        int rect_h = size[1] * Restrictions.BLOCK_SIZE;
+        int rect_w = getAbsSize()[0];
+        int rect_h = getAbsSize()[1];
 
         // FIXME What is it?
-        int left_block_x = new_x / Restrictions.BLOCK_SIZE;
+        int left_block_x = new_x / BLOCK_SIZE;
         int right_block_x = left_block_x + sX;
-        int top_block_y = new_y / Restrictions.BLOCK_SIZE;
+        int top_block_y = new_y / BLOCK_SIZE;
         int bottom_block_y = top_block_y + sY;
 
         // Check if we intersect another object
@@ -391,8 +397,8 @@ public class GameObject implements Moveable {
                 }
 
                 // TODO: remove these temporary defense after implement safe check of map bounds:
-                int i_fixed = (i == GameMap.getInstance().getWidth()) ? i-1 : i;
-                int j_fixed = (j == GameMap.getInstance().getWidth()) ? j-1 : j;
+                int i_fixed = (i == GameMap.getInstance().getMaxX()) ? i-1 : i;
+                int j_fixed = (j == GameMap.getInstance().getMaxY()) ? j-1 : j;
 
                 HashSet<GameObject> objectsOnBlock = GameMap.getInstance().objectsOnMap[i_fixed][j_fixed];
                 if (objectsOnBlock.size() == 0) {
@@ -414,12 +420,12 @@ public class GameObject implements Moveable {
                     // Multiple objects on the same block are forbidden even
                     // if they actually don't intersect
                     Rectangle thisObjRect = new Rectangle(new_x, new_y, rect_w, rect_h);
-                    Rectangle objOnBlockRect = new Rectangle(
-                            objOnBlock.loc[0],
-                            objOnBlock.loc[1],
-                            objOnBlock.size[0] * Restrictions.BLOCK_SIZE,
-                            objOnBlock.size[1] * Restrictions.BLOCK_SIZE
-                    );
+                    Rectangle objOnBlockRect = objOnBlock.getRect();
+
+                    // DEBUG
+                    //Main.printMsg("Check 1: (" + new_x + "," + new_y + "," + rect_w + "," + rect_h);
+                    //Main.printMsg("Check 2: (" + objOnBlockRect.getX() + "," + objOnBlockRect.getY() + "," + objOnBlockRect.getWidth() + "," + objOnBlockRect.getHeight());
+                    //Main.printMsg("Check 3: (" + objOnBlock.getAbsLoc()[0] + "," + objOnBlock.getAbsLoc()[1] + "," + objOnBlock.getAbsSize()[0] + "," + objOnBlock.getAbsSize()[1]);
 
                     if (thisObjRect.intersects(objOnBlockRect)) {
                         return true;
@@ -435,14 +441,8 @@ public class GameObject implements Moveable {
         this.isSelected = false;
     }
 
-    // TODO How about delete objects?
     public Rectangle getRect () {
-        return new Rectangle(
-                this.loc[0],
-                this.loc[1],
-                this.size[0] * Restrictions.BLOCK_SIZE,
-                this.size[1] * Restrictions.BLOCK_SIZE
-        );
+        return parallelepiped.getBottomRect();
     }
 
     // TODO Use Patterns here for: Point, point_x, point_y, GameObject, Building
@@ -521,8 +521,8 @@ public class GameObject implements Moveable {
         */
 
         // Point "O" - center of the object
-        int x0 =              loc[0] + size[0] * Restrictions.BLOCK_SIZE / 2;
-        int y0 = Y_ORIENT  * (loc[1] + size[1] * Restrictions.BLOCK_SIZE / 2);
+        double x0 =             getAbsCenter()[0];
+        double y0 = Y_ORIENT  * getAbsCenter()[1];
 
         // Point "P"
         int xp = point[0];
@@ -544,12 +544,17 @@ public class GameObject implements Moveable {
         if (point == null) throw new NullPointerException("angleBetweenRayAndPointLessThan: destination and target points are both NULL!");
 
         // Point "O" - center of the object
-        int x0 = loc[0] + size[0] * Restrictions.BLOCK_SIZE / 2;
-        int y0 = Y_ORIENT  * (loc[1] + size[1] * Restrictions.BLOCK_SIZE / 2);
+        double x0 =             getAbsCenter()[0];
+        double y0 = Y_ORIENT  * getAbsCenter()[1];
         // Point "P" - destination point of rotation
         int xp = point[0];
         int yp = Y_ORIENT  * point[1];
 
+        // Distance to dest point less than 1 pixel
+        // We don't check exactly == 0 because we use type double that can give small deviation
+        if ((Math.abs(xp - x0) < 1) && (Math.abs(yp - y0) < 1)) {
+            return true;
+        }
         /* Here we use the formulae of the angle between two vectors:
                        cos (a1,b1) ^ (a2,b2) = (a1*a2 + b1*b2) / (|(a1,b1)| * |(a2,b2)|)
                        where |(ai,bi)| is then length of the i-vector, that is sqrt(ai*ai + bi*bi)
@@ -578,7 +583,8 @@ public class GameObject implements Moveable {
 
         // len(a2,b2)
         double len = Math.sqrt(sqrVal(xp - x0) + sqrVal(yp - y0));
-        /*Main.printMsg("Current angle between vectors: " +
+        /*Main.printMsg("Len=" + len);
+        Main.printMsg("Current angle between vectors: " +
                 Math.acos(((xp - x0) * Math.cos(this.currAngle) + (yp - y0) * Math.sin(this.currAngle)) / len));
         Main.printMsg("a1=" + 100*Math.cos(this.currAngle) + ", b1 = " + Math.sin(this.currAngle));
         Main.printMsg("a2=" + (xp - x0) + ", b2=" + (yp - y0));
@@ -622,6 +628,11 @@ public class GameObject implements Moveable {
 
     // TODO Move it to Math.Class
     public int sqrVal(int value) {
+        return value * value;
+    }
+
+    // TODO Move it to Math.Class
+    public double sqrVal(double value) {
         return value * value;
     }
 

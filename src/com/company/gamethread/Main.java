@@ -98,7 +98,7 @@ public class Main {
 
         // This is a test. Initialising tanks for Player.
         // We try calculate how much tanks we can place on map by width
-//        int testNumTanks = GameMap.getInstance().getWidth() / 2 - 1;
+//        int testNumTanks = GameMap.getInstance().getMaxX() / 2 - 1;
         int testNumTanks = 2;
 
         ArrayList<Unit> testPlayerUnits = new ArrayList<Unit>();
@@ -126,7 +126,7 @@ public class Main {
 
         // This is a test. Initialising tanks for Player.
         // We try calculate how much tanks we can place on map by width
-//        int testEnemyTanks = GameMap.getInstance().getWidth() / 2 - 1;
+//        int testEnemyTanks = GameMap.getInstance().getMaxX() / 2 - 1;
         int testEnemyTanks = 2;
         ArrayList<Unit> testEnemyUnits = new ArrayList<Unit>();
         for (int i=0; i <= testEnemyTanks - 1; i++) {
@@ -177,13 +177,13 @@ public class Main {
         // FIXME do not use try for all of them.
         try {
             jpOber.setLayout(new BorderLayout());
-            jpOber.setBounds(0,0,GameMap.getInstance().getWidthAbs(), GameMap.getInstance().getHeightAbs());
+            jpOber.setBounds(0,0,GameMap.getInstance().getAbsMaxX(), GameMap.getInstance().getAbsMaxY());
             jpOber.setOpaque(false);
             mouseRectangle.setOpaque(false);
             jpOber.add(mouseRectangle);
 
             //jpUnter.setLayout(null);
-            jpUnter.setBounds(0,0,GameMap.getInstance().getWidthAbs(), GameMap.getInstance().getHeightAbs());
+            jpUnter.setBounds(0,0,GameMap.getInstance().getAbsMaxX(), GameMap.getInstance().getAbsMaxY());
             jpUnter.setOpaque(true);
 
             // Создаём окно, в котором будет запускаться игра
@@ -193,7 +193,7 @@ public class Main {
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
             // Определяем размер приложения
-            frame.setPreferredSize(new Dimension(GameMap.getInstance().getWidthAbs(), GameMap.getInstance().getHeightAbs()));
+            frame.setPreferredSize(new Dimension(GameMap.getInstance().getAbsMaxX(), GameMap.getInstance().getAbsMaxY()));
             frame.pack();                             // Сворачиваем окно до размера приложения
             frame.setResizable(false);
             frame.setFocusable(true);

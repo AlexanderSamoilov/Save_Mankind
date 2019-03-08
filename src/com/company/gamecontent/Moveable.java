@@ -2,10 +2,10 @@ package com.company.gamecontent;
 
 public interface Moveable {
 
-    public void setDestinationPoint(Integer[] dest);
+    void setDestinationPoint(Integer[] dest);
 
-    public void unsetDestinationPoint();
+    void unsetDestinationPoint();
 
-    public boolean moveTo(Integer [] point);
+    boolean moveTo(Integer [] point);
 
 }

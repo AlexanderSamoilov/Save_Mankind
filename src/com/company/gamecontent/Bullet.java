@@ -5,6 +5,8 @@ import com.company.gamethread.Main;
 import java.awt.*;
 import java.util.HashSet;
 
+import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
+
 public class Bullet implements Moveable {
     // NOTE: now this field is used to detect which Unit made a shoot in order to set its "targetObject" to null when the target dies
     // Yes, it is possible to do the same even without this extra field if we just check the "units" list of Player class
@@ -120,8 +122,8 @@ public class Bullet implements Moveable {
     }
 
     public void causeDamage() {
-        int block_x = loc[0] / Restrictions.BLOCK_SIZE;
-        int block_y = loc[1] / Restrictions.BLOCK_SIZE;
+        int block_x = loc[0] / BLOCK_SIZE;
+        int block_y = loc[1] / BLOCK_SIZE;
 
         HashSet<GameObject> objectsOnBlock = (HashSet<GameObject>)GameMap.getInstance().objectsOnMap[block_x][block_y].clone();
 

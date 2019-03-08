@@ -7,6 +7,7 @@ import java.awt.*;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -40,7 +41,7 @@ public class Unit extends GameObject implements Shootable {
         boolean valid = true;
         valid = valid && Main.in_range(
                 0,
-                r * Restrictions.BLOCK_SIZE,
+                r * BLOCK_SIZE,
                 Restrictions.getMaxDetectRadiusAbs(),
                 false
         );
@@ -53,7 +54,7 @@ public class Unit extends GameObject implements Shootable {
             );
         }
 
-        this.detectRadius = r * Restrictions.BLOCK_SIZE;
+        this.detectRadius = r * BLOCK_SIZE;
         this.weapon = weapon;
 
         // 3 - default values
@@ -174,17 +175,17 @@ public class Unit extends GameObject implements Shootable {
         Integer[] target = (targetPoint != null) ? targetPoint : new Integer[]{
                 // FIXME targetObject.loc_x
                 // FIXME targetObject.loc_y
-                targetObject.loc[0], targetObject.loc[1]
+                targetObject.getAbsLoc()[0], targetObject.getAbsLoc()[1]
         };
 
         // TODO Move it in AI_Tools_Class
-        if (withinRadius(target, loc, weapon.getShootRadius()) && isOnLineOfFire(target)) {
+        if (withinRadius(target, new Integer[] { getAbsLoc()[0], getAbsLoc()[1] }, weapon.getShootRadius()) && isOnLineOfFire(target)) {
 //                /* DEBUG */
 //                if (targetObject != null) {
 //                    Main.printMsg("Player #(" + getPlayerId() + ")" + Player.getPlayers()[getPlayerId()] + ", unit #" + this + " wants shoot -> " + targetObject + "(" + targetObject.loc[0] / Restrictions.getBlockSize() + "," + targetObject.loc[1] / Restrictions.getBlockSize() + "): " + targetObject.hitPoints);
 //                }
             Main.printMsg("Player " + this.getPlayerId() + " shoots target");
-            this.weapon.shoot(loc, target);
+            this.weapon.shoot(new Integer[] { getAbsLoc()[0], getAbsLoc()[1] }, target);
             return;
         }
 
@@ -213,10 +214,10 @@ public class Unit extends GameObject implements Shootable {
         // For example, radial search (spiral)
         // Currently for the test purpose we introduce the most stupid way of detection:
         // not circle, but a rectangle with a brute-force iteration
-        int left   = max(0, loc[0] - detectRadius) / Restrictions.BLOCK_SIZE;
-        int right  = min(GameMap.getInstance().getWidthAbs() - 1, loc[0] + detectRadius) / Restrictions.BLOCK_SIZE;
-        int top    = max(0, loc[1] - detectRadius) / Restrictions.BLOCK_SIZE;
-        int bottom = min(GameMap.getInstance().getHeightAbs() - 1, loc[1] + detectRadius) / Restrictions.BLOCK_SIZE;
+        int left   = max(0, getAbsLoc()[0] - detectRadius) / BLOCK_SIZE;
+        int right  = min(GameMap.getInstance().getAbsMaxX() - 1, getAbsLoc()[0] + detectRadius) / BLOCK_SIZE;
+        int top    = max(0, getAbsLoc()[1] - detectRadius) / BLOCK_SIZE;
+        int bottom = min(GameMap.getInstance().getAbsMaxY() - 1, getAbsLoc()[1] + detectRadius) / BLOCK_SIZE;
 //        Main.printMsg("Player " + this.getPlayerId() + ": left=" + left + ", right=" + right + ", top=" + top + ", bottom=" + bottom);
 
         // TODO Use Collections
