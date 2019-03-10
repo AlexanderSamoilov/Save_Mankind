@@ -3,10 +3,7 @@ package com.company.gamecontent;
 import com.company.gamegraphics.Sprite;
 import com.company.gamethread.Main;
 
-import javax.imageio.IIOException;
 import java.awt.*;
-import java.awt.image.BufferStrategy;
-import java.io.IOException;
 import java.util.HashMap;
 
 enum Nature {
@@ -21,10 +18,9 @@ enum Nature {
     PLATE,
 }
 
-public class GameMapBlock {
+public class GameMapBlock implements Renderable {
 
-    private int          loc_x;
-    private int          loc_y;
+    private Parallelepiped parallelepiped;
 
     private Nature       nature;
     private final Sprite sprite = new Sprite(null);
@@ -49,8 +45,7 @@ public class GameMapBlock {
     }
 
     public GameMapBlock(int x, int y, int natType) {
-        loc_x = x;
-        loc_y = y;
+        parallelepiped = new Parallelepiped(x, y, 0, 1, 1, 1);
 
         Nature nat;
         try {
@@ -129,20 +124,14 @@ public class GameMapBlock {
         sprite.setImage(natSprite.get(nature));
     }
 
-    // TODO Remove "occupied"
-    public void render(Graphics g, boolean occupied) {
-        if (occupied) {
-            return;
-        }
+    // wrapper method
+    public void render(Graphics g) {
+        render(g, parallelepiped, 0);
+    }
 
-        this.sprite.render(
-                g,
-                0,
-                loc_x * Restrictions.BLOCK_SIZE,
-                loc_y * Restrictions.BLOCK_SIZE,
-                Restrictions.BLOCK_SIZE,
-                Restrictions.BLOCK_SIZE
-        );
+    // Method of the "Renderable" interface
+    public void render(Graphics g, Parallelepiped parallelepiped, double rotation_angle) {
+        this.sprite.render(g, parallelepiped, rotation_angle);
     }
 
     // TODO Remove getters. Use Class.attr

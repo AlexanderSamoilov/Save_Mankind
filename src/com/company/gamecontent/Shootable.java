@@ -2,16 +2,16 @@ package com.company.gamecontent;
 
 public interface Shootable {
 
-    public boolean setTargetObject(GameObject go);
+    boolean setTargetObject(GameObject go);
 
-    public void setTargetPoint(Integer [] vect);
+    void setTargetPoint(Integer [] vect);
 
-    public GameObject getTargetObject();
+    GameObject getTargetObject();
 
-    public Integer[] getTargetPoint();
+    Integer[] getTargetPoint();
 
-    public void unsetTargetObject();
+    void unsetTargetObject();
 
-    public void unsetTargetPoint();
+    void unsetTargetPoint();
 
 }

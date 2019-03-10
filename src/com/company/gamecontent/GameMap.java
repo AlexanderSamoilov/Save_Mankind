@@ -7,6 +7,8 @@ import java.awt.*;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
+
 public class GameMap {
 
     private static final GameMap instance = new GameMap();
@@ -85,23 +87,23 @@ public class GameMap {
     }
 
     public void render(Graphics g) {
-        //Main.getGraphDriver().fillRect(0,0, getWidthAbs(), getLenAbs());
+        //Main.getGraphDriver().fillRect(0,0, getAbsMaxX(), getAbsMaxY());
 
         // Redraw map blocks and Objects on them
         // TODO What about collections and Maps?
         // FIXME Can't move render landscapeBlocks into function - bad realisation
-        for (int i = 0; i < getWidth(); i++) {
-            for (int j = 0; j < getHeight(); j++) {
-                /* DEBUG */
-                boolean occupied = objectsOnMap[i][j].size() != 0;
-//                boolean occupied = false;
-                this.landscapeBlocks[i][j].render(g, occupied);
+        for (int i = 0; i < getMaxX(); i++) {
+            for (int j = 0; j < getMaxY(); j++) {
+
+                if (objectsOnMap[i][j].size() == 0) { /* DEBUG */
+                    this.landscapeBlocks[i][j].render(g);
+                }
             }
         }
 
         // Rendering objects on a blocks
-        for (int i = 0; i < getWidth(); i++) {
-            for (int j = 0; j < getHeight(); j++) {
+        for (int i = 0; i < getMaxX(); i++) {
+            for (int j = 0; j < getMaxY(); j++) {
                 this.renderObjects(g, objectsOnMap[i][j]);
             }
         }
@@ -142,8 +144,8 @@ public class GameMap {
         this.deselect((HashSet<GameObject>)selectedObjects.clone());
 
         // Check objects in Rect-Selector and add them to selectObjects
-        for (int i = 0; i < getWidth(); i++) {
-            for (int j = 0; j < getHeight(); j++) {
+        for (int i = 0; i < getMaxX(); i++) {
+            for (int j = 0; j < getMaxY(); j++) {
                 if (objectsOnMap[i][j].size() == 0) {
                     continue;
                 }
@@ -200,8 +202,8 @@ public class GameMap {
     private void assignUnit(GameObject selectedObj, Integer[] point){
         Main.printMsg("assignUnit!");
         // FIXME: We must take floor(), not just divide!
-        int block_x = point[0] / Restrictions.BLOCK_SIZE;
-        int block_y = point[1] / Restrictions.BLOCK_SIZE;
+        int block_x = point[0] / BLOCK_SIZE;
+        int block_y = point[1] / BLOCK_SIZE;
 
         // TODO: currently we don't consider "visibility" of the point by the player/enemy.
         HashSet<GameObject> objectsOnBlock = objectsOnMap[block_x][block_y];
@@ -243,13 +245,13 @@ public class GameMap {
     // TODO What is this?
     public void registerObject(GameObject gameObj) {
         // Left-top coordinate of object
-        int obj_x = gameObj.loc[0] / Restrictions.BLOCK_SIZE;
-        int obj_y = gameObj.loc[1] / Restrictions.BLOCK_SIZE;
-        for (int i = obj_x; i <= obj_x + gameObj.size[0]; i++) {
-            for (int j = obj_y; j <= obj_y + gameObj.size[1]; j++) {
+        int obj_x = gameObj.getLoc()[0];
+        int obj_y = gameObj.getLoc()[1];
+        for (int i = obj_x; i <= obj_x + gameObj.getSize()[0]; i++) {
+            for (int j = obj_y; j <= obj_y + gameObj.getSize()[1]; j++) {
                 // TODO: remove these temporary defense after implement safe check of map bounds:
-                int i_fixed = (i == GameMap.getInstance().getWidth()) ? i-1 : i;
-                int j_fixed = (j == GameMap.getInstance().getHeight()) ? j-1 : j;
+                int i_fixed = (i == GameMap.getInstance().getMaxX()) ? i-1 : i;
+                int j_fixed = (j == GameMap.getInstance().getMaxY()) ? j-1 : j;
                 this.objectsOnMap[i_fixed][j_fixed].add(gameObj);
             }
         }
@@ -259,13 +261,13 @@ public class GameMap {
     // TODO What is this?
     public void eraseObject(GameObject gameObj) {
         // Left-top coordinate of object
-        int obj_x = gameObj.loc[0] / Restrictions.BLOCK_SIZE;
-        int obj_y = gameObj.loc[1] / Restrictions.BLOCK_SIZE;
-        for (int i = obj_x; i <= obj_x + gameObj.size[0]; i++) {
-            for (int j = obj_y; j <= obj_y + gameObj.size[1]; j++) {
+        int obj_x = gameObj.getLoc()[0];
+        int obj_y = gameObj.getLoc()[1];
+        for (int i = obj_x; i <= obj_x + gameObj.getSize()[0]; i++) {
+            for (int j = obj_y; j <= obj_y + gameObj.getSize()[1]; j++) {
                 // TODO: remove these temporary defense after implement safe check of map bounds:
-                int i_fixed = (i == GameMap.getInstance().getWidth()) ? i-1 : i;
-                int j_fixed = (j == GameMap.getInstance().getHeight()) ? j-1 : j;
+                int i_fixed = (i == GameMap.getInstance().getMaxX()) ? i-1 : i;
+                int j_fixed = (j == GameMap.getInstance().getMaxY()) ? j-1 : j;
 
                 // TODO: check what if does not exist
                 this.objectsOnMap[i_fixed][j_fixed].remove(gameObj);
@@ -274,29 +276,21 @@ public class GameMap {
     }
 
     // FIXME lndScapeBlocks.width. Remove Getter
-    public int getWidth() {
+    public int getMaxX() {
         // Block = lndScapeBlocks.(x,y)
         return this.landscapeBlocks.length;
     }
 
     // FIXME lndScapeBlocks.height. Remove Getter
-    public int getHeight() {
-        return this.landscapeBlocks[0].length;
-    }
+    public int getMaxY() { return this.landscapeBlocks[0].length; }
 
-    public int getWidthAbs() {
-        return this.getWidth() * Restrictions.BLOCK_SIZE;
-    }
+    public int getAbsMaxX() { return this.getMaxX() * BLOCK_SIZE; }
 
-    public int getHeightAbs() {
-        return this.getHeight() * Restrictions.BLOCK_SIZE;
-    }
+    public int getAbsMaxY() { return this.getMaxY() * BLOCK_SIZE; }
 
     // TODO: make unmodifiable
     // TODO Remove getters. Use Class.attr
-    public HashSet<Bullet> getBullets() {
-        return bullets;
-    }
+    public HashSet<Bullet> getBullets() { return bullets; }
 
     // TODO: check that i,j are within allowed boundaries
     public boolean isBlockVisibleForMe(int i, int j) {
@@ -321,8 +315,8 @@ public class GameMap {
 
     /* DEBUG */
     public void show() {
-        for (int i = 0; i < getWidth(); i++) {
-            for (int j = 0; j < getHeight(); j++) {
+        for (int i = 0; i < getMaxX(); i++) {
+            for (int j = 0; j < getMaxY(); j++) {
                 int plId = -1;
                 GameObject target = null;
                 if (objectsOnMap[i][j].size() != 0) {
@@ -339,8 +333,8 @@ public class GameMap {
     /* TEST-01 */
     // Randomising landscapeBlocks
     public void rerandom() {
-        for(int i=0; i<getWidth();i++)
-            for (int j=0;j<getHeight();j++)
+        for(int i=0; i < getMaxX(); i++)
+            for (int j=0; j < getMaxY(); j++)
             {
                 landscapeBlocks[i][j].changeNature(); // pseudo-random
             }

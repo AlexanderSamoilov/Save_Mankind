@@ -14,6 +14,10 @@ public class MathTools {
         return value * value;
     }
 
+    public static double sqrVal(double value) {
+        return value * value;
+    }
+
     public static boolean withinRadius(Integer [] A, Integer [] B, int radius) {
         return sqrVal(radius) >= sqrVal(A[0] - B[0]) + sqrVal(A[1] - B[1]);
     }

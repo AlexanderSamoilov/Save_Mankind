@@ -1,6 +1,8 @@
 // https://habr.com/post/145433/
 package com.company.gamegraphics;
 
+import com.company.gamecontent.Parallelepiped;
+import com.company.gamecontent.Renderable;
 import com.company.gamethread.Main;
 
 import javax.imageio.ImageIO;
@@ -10,7 +12,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
-public class Sprite {
+public class Sprite implements Renderable {
     private String fileName;
     private BufferedImage image = null;
 
@@ -47,17 +49,18 @@ public class Sprite {
         this.fileName = filename;
     }
 
-    public void render(Graphics g, double rotation_angle, int x, int y, int w, int h) {
+    // Method of the "Renderable" interface
+    public void render(Graphics g, Parallelepiped parallelepiped, double rotation_angle) {
         AffineTransform saveAT = ((Graphics2D) g).getTransform();
 
         if (rotation_angle != 0) {
             this.rotation.setToIdentity();
-            this.rotation.rotate(rotation_angle, (double) (x + w / 2), (double) (y + h / 2));
+            this.rotation.rotate(rotation_angle, parallelepiped.getAbsCenter()[0], parallelepiped.getAbsCenter()[1]);
             ((Graphics2D) g).transform(rotation);
         }
 
         g.setColor(Color.GREEN);
-        g.drawImage(image, x, y, w, h, null);
+        g.drawImage(image, parallelepiped.getAbsLoc()[0], parallelepiped.getAbsLoc()[1], parallelepiped.getAbsSize()[0], parallelepiped.getAbsSize()[1], null);
         ((Graphics2D) g).setTransform(saveAT);
     }
 }
