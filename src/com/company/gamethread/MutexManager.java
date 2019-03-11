@@ -58,14 +58,25 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
             // If at the same time the second thread calls also "insert" then it will try
             // to return still not completely created value which is null, so we should wait a little bit
             // using the condition insertionRes == null until the first thread completes its "insert"
+            int errCounter = 0;
             while (!concurrentAccessOK && insertionRes == null) {
                 try {
                     insertionRes = insert((TypeKey) key, (TypeValue) (s));
-                    Main.printMsg("-> New Semaphore: [" + key.toString() + "]=" + s.toString());
-                    concurrentAccessOK = true;
                 } catch (ConcurrentModificationException e) {
                     // just keep trying
+                    continue;
+                } catch (Exception e) {
+                    errCounter ++;
+                    if (errCounter > 100) {
+                        Main.terminateNoGiveUp(1000, "Got exception too much times!");
+                        // TODO: move to a func
+                        for (StackTraceElement stackTraceElement : e.getStackTrace()) {
+                            Main.printMsg(stackTraceElement.toString());
+                        }
+                    }
+                    continue;
                 }
+                concurrentAccessOK = true;
             }
 
             // Another thread was faster to create a hash value
@@ -74,6 +85,8 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
             /*if (insertionRes != s) {
                 delete s;
             }*/
+
+            Main.printMsg("-> New Semaphore: [" + key.toString() + "]=" + insertionRes.toString());
 
             if (insertionRes instanceof  Semaphore) {
                 if (((Semaphore) insertionRes).availablePermits() > 1) {
