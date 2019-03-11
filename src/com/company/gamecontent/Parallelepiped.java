@@ -63,7 +63,12 @@ public class Parallelepiped implements Renderable, Centerable {
     public void render(Graphics g, Parallelepiped parallelepiped, double rotation_angle) {
         Color origColor = g.getColor();
         g.setColor(color);
-        g.drawRect(parallelepiped.getAbsLoc()[0], parallelepiped.getAbsLoc()[1], parallelepiped.getAbsSize()[0], parallelepiped.getAbsSize()[1]);
+
+        g.drawRect(
+                parallelepiped.getAbsLoc()[0], parallelepiped.getAbsLoc()[1],
+                parallelepiped.getAbsSize()[0], parallelepiped.getAbsSize()[1]
+        );
+
         g.setColor(origColor);
     }
 }

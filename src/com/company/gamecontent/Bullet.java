@@ -1,11 +1,12 @@
 package com.company.gamecontent;
 
-import com.company.gamethread.Main;
-
 import java.awt.*;
 import java.util.HashSet;
 
+import static com.company.gametools.MathTools.sqrVal;
 import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
+
+import static com.company.gamethread.Main.printMsg;
 
 public class Bullet implements Moveable {
     // NOTE: now this field is used to detect which Unit made a shoot in order to set its "targetObject" to null when the target dies
@@ -70,19 +71,19 @@ public class Bullet implements Moveable {
     }
 
     public boolean moveTo(Integer [] next) {
-        //Main.printMsg("next?: x=" + next[0] + ", y=" + next[1]);
+        //printMsg("next?: x=" + next[0] + ", y=" + next[1]);
 
         // Store current coordinates (we roll back changes if the calculation reveals that we cannot move)
         int curr_x = loc[0];
         int curr_y = loc[1];
 
         // Count the distance between current point and next point
-        double norm = Math.sqrt(sqrVal(next[0] - curr_x) + sqrVal(next[1] - curr_y));
+        double norm = Math.sqrt(
+                sqrVal(next[0] - curr_x) + sqrVal(next[1] - curr_y)
+        );
 
-        //Main.printMsg("norm=" + norm + ", speed=" + speed);
-
-        // TODO Move it to Tools.Class checkNorm()
         // Avoid division by zero and endless wandering around the destination point
+        //printMsg("norm=" + norm + ", speed=" + speed);
         if (norm <= speed) {
             // One step to target
             this.loc[0] = next[0];
@@ -93,7 +94,7 @@ public class Bullet implements Moveable {
             this.loc[1] += (int) ((next[1] - curr_y) * speed / norm);
         }
 
-        //Main.printMsg("move?: x=" + loc[0] + ", y=" + loc[1] + ", norm=" + norm);
+        //printMsg("move?: x=" + loc[0] + ", y=" + loc[1] + ", norm=" + norm);
 
         // TODO: check if the object borders are within map area! (Intersection not checked)
         boolean not_valid;
@@ -117,7 +118,7 @@ public class Bullet implements Moveable {
             this.causeDamage();
         }
 
-        //Main.printMsg("move: x=" + loc[0] + ", y=" + loc[1] + ", obj=" + this);
+        //printMsg("move: x=" + loc[0] + ", y=" + loc[1] + ", obj=" + this);
         return true;
     }
 
@@ -128,7 +129,7 @@ public class Bullet implements Moveable {
         HashSet<GameObject> objectsOnBlock = (HashSet<GameObject>)GameMap.getInstance().objectsOnMap[block_x][block_y].clone();
 
         for (GameObject objOnBlock : objectsOnBlock) {
-            Main.printMsg("--- hit -> (" + block_x + "," + block_y + ") -> " + objOnBlock);
+            printMsg("--- hit -> (" + block_x + "," + block_y + ") -> " + objOnBlock);
             if (objOnBlock.hitPoints > damage) {
                 objOnBlock.hitPoints -= damage;
                 continue;
@@ -152,7 +153,7 @@ public class Bullet implements Moveable {
 
                     // The bullet killed exactly the target of that Unit "u"
                     u.unsetTargetObject();
-                    Main.printMsg(objOnBlock + "died, unset is as a target for: " + u);
+                    printMsg(objOnBlock + "died, unset is as a target for: " + u);
                 }
             }
 
@@ -165,11 +166,6 @@ public class Bullet implements Moveable {
 
         // TODO: check it it is safe to make null the object which method is being called at the moment
         GameMap.getInstance().destroyBullet(this);
-    }
-
-    // TODO Move it in Tools.Class
-    public int sqrVal(int value) {
-        return value * value;
     }
 
     // TODO Use Sprite rendering

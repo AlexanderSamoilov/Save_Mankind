@@ -1,16 +1,31 @@
 package com.company.gamecontent;
 
 import com.company.gamegraphics.Sprite;
-import com.company.gamethread.Main;
 
 import java.awt.*;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Random;
 
 import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 import static com.company.gamecontent.Restrictions.INIT_ANGLE;
 import static com.company.gamecontent.Restrictions.Y_ORIENT;
+import static com.company.gamecontent.Restrictions.MAX_X;
+import static com.company.gamecontent.Restrictions.MAX_Y;
+import static com.company.gamecontent.Restrictions.MAX_Z;
+import static com.company.gamecontent.Restrictions.MAX_HP;
+import static com.company.gamecontent.Restrictions.MAX_SPEED;
+import static com.company.gamecontent.Restrictions.MAX_MASS;
+import static com.company.gamecontent.Restrictions.MAX_ENERGY;
+import static com.company.gamecontent.Restrictions.INTERSECTION_STRATEGY_SEVERITY;
+import static com.company.gamecontent.Restrictions.ROTATE_MOD;
+import static com.company.gamecontent.Restrictions.getMaxObjectSizeBlocks;
+
+import static com.company.gametools.MathTools.in_range;
+import static com.company.gametools.MathTools.randomSign;
+import static com.company.gametools.MathTools.sqrVal;
+
+import static com.company.gamethread.Main.printMsg;
+import static com.company.gamethread.Main.terminateNoGiveUp;
 
 // For details read the DOC "Data Structure"
 public class GameObject implements Moveable, Renderable {
@@ -79,30 +94,30 @@ public class GameObject implements Moveable, Renderable {
         int maxZ = GameMap.getInstance().getMaxY();
 
         // Check object coordinates
-        valid = Main.in_range(0, x, maxX, false);
-        valid = valid && Main.in_range(0, y, maxY, false);
-        valid = valid && Main.in_range(0, z, maxZ, false);
+        valid = in_range(0, x, MAX_X, false);
+        valid = valid && in_range(0, y, MAX_Y, false);
+        valid = valid && in_range(0, z, MAX_Z, false);
 
         // Check object stats
-        valid = valid && Main.in_range(0, hp, Restrictions.MAX_HP, false);
-        valid = valid && Main.in_range(-Restrictions.MAX_SPEED, speed, Restrictions.MAX_SPEED, false);
+        valid = valid && in_range(0, hp, MAX_HP, false);
+        valid = valid && in_range(-MAX_SPEED, speed, MAX_SPEED, false);
 
         // Check object dimensions
-        valid = valid && Main.in_range(0, sX, Restrictions.getMaxObjectSizeBlocks() + 1, true);
-        valid = valid && Main.in_range(0, sY, Restrictions.getMaxObjectSizeBlocks() + 1, true);
-        valid = valid && Main.in_range(0, sZ, Restrictions.getMaxObjectSizeBlocks() + 1, true);
+        valid = valid && in_range(0, sX, getMaxObjectSizeBlocks() + 1, true);
+        valid = valid && in_range(0, sY, getMaxObjectSizeBlocks() + 1, true);
+        valid = valid && in_range(0, sZ, getMaxObjectSizeBlocks() + 1, true);
 
         // Check object resources limits
-        valid = valid && Main.in_range(
-                0, res.get(Resource.MASS), Restrictions.MAX_MASS + 1, true
+        valid = valid && in_range(
+                0, res.get(Resource.MASS), MAX_MASS + 1, true
         );
 
-        valid = valid && Main.in_range(
-                0, res.get(Resource.ENERGY), Restrictions.MAX_ENERGY, false
+        valid = valid && in_range(
+                0, res.get(Resource.ENERGY), MAX_ENERGY, false
         );
 
         if (!valid) {
-            Main.terminateNoGiveUp(
+            terminateNoGiveUp(
                     1000,
                     "Failed to initialize " + getClass() + ". Some of parameters are beyond the restricted boundaries."
             );
@@ -151,7 +166,6 @@ public class GameObject implements Moveable, Renderable {
 
     // Method of the "Renderable" interface
     public void render(Graphics g, Parallelepiped parallelepiped, double rotation_angle) {
-
         // ----> Drawing sprite with actual orientation
         this.sprite.render(g, parallelepiped, INIT_ANGLE - rotation_angle);
 
@@ -218,15 +232,15 @@ public class GameObject implements Moveable, Renderable {
             ((Shootable)this).unsetTargetPoint();
         }
 
-        Main.printMsg("Destination OBJ_" + this.playerId + ": x=" + dest[0] + ", y=" + dest[1]);
+        printMsg("Destination OBJ_" + this.playerId + ": x=" + dest[0] + ", y=" + dest[1]);
     }
 
     public void rotateTo(Integer [] point) {
-        if (Restrictions.rotateMode > 0) rotateToPointOnRay(point);
+        if (ROTATE_MOD > 0) rotateToPointOnRay(point);
         //else rotateToAngle(point);
     }
 
-    /*
+/*
     public void rotateToAngle(Integer [] point) {
         double destAngle =...;
         if (Math.abs(currAngle - destAngle) < rotation_speed) {
@@ -234,7 +248,7 @@ public class GameObject implements Moveable, Renderable {
         }
 
         int direction;
-        if (Restrictions.rotateMode > 0) direction = getRotationDirectionRay(point);
+        if (rotateMode > 0) direction = getRotationDirectionRay(point);
         else direction = getRotationDirectionPolar();
 
         // It's clear that the point lies behind the ray that is 180°
@@ -246,11 +260,11 @@ public class GameObject implements Moveable, Renderable {
         // Rotate
         this.currAngle += rotation_speed * direction;
         this.currAngle %= Math.toRadians(360); // TODO: maybe it is possible to optimize division (for example write own func which subtract 360 until it gets less than 360)
-        Main.printMsg("New Sprite Ang: " + currAngle);
+        printMsg("New Sprite Ang: " + currAngle);
     }
 */
 
-    /*
+/*
     public Integer[] getTargetOrDestinationPoint() {
         Integer v[] = null;
         if (destPoint != null) {
@@ -284,8 +298,8 @@ public class GameObject implements Moveable, Renderable {
 
         this.currAngle += rotation_speed * direction;
         this.currAngle %= Math.toRadians(360); // TODO: maybe it is possible to optimize division (for example write own func which subtract 360 until it gets less than 360)
-        //Main.printMsg("New Sprite Ang: " + currAngle);
 
+        //Main.printMsg("New Sprite Ang: " + currAngle);
      }
 
     // TODO next_x, next_y
@@ -311,11 +325,13 @@ public class GameObject implements Moveable, Renderable {
         int new_z = getAbsLoc()[2];
         double new_center_x, new_center_y;
 
-        double norm = Math.sqrt(sqrVal(next[0] - getAbsCenter()[0]) + sqrVal(next[1] - getAbsCenter()[1]));
+        double norm = Math.sqrt(
+                sqrVal(next[0] - getAbsCenter()[0]) + sqrVal(next[1] - getAbsCenter()[1])
+        );
         //Main.printMsg("norm=" + norm + ", speed=" + speed);
 
-        // TODO Move it to Math.Class checkNorm()
         // Avoid division by zero and endless wandering around the destination point
+        //printMsg("norm=" + norm + ", speed=" + speed);
         if (norm <= speed) {
             // One step to target
             new_center_x = next[0];
@@ -341,7 +357,6 @@ public class GameObject implements Moveable, Renderable {
         // TODO: check if the object borders are within map area!
         boolean not_valid;
         not_valid = new_x < 0 || new_y < 0 || new_z < 0;
-
         not_valid = not_valid || new_x + getAbsSize()[0] >= Restrictions.getMaxXAbs();
         not_valid = not_valid || new_y + getAbsSize()[1] >= Restrictions.getMaxYAbs();
         not_valid = not_valid || new_z + getAbsSize()[2] >= Restrictions.getMaxZAbs();
@@ -362,14 +377,14 @@ public class GameObject implements Moveable, Renderable {
         this.parallelepiped.loc[1] = new_y;
         GameMap.getInstance().registerObject(this);
 
-//        Main.printMsg("move: x=" + loc[0] + ", y=" + loc[1] + ", obj=" + this);
+//        printMsg("move: x=" + loc[0] + ", y=" + loc[1] + ", obj=" + this);
 
         return true;
     }
 
     // TODO: sX always = getSizeX(). sY always = getSizeY() => do we need them as a parameters?
     public boolean isIntersect(int new_x, int new_y, int sX, int sY) {
-        if (Restrictions.INTERSECTION_STRATEGY_SEVERITY == 0) {
+        if (INTERSECTION_STRATEGY_SEVERITY == 0) {
             return false;
         }
 
@@ -412,8 +427,8 @@ public class GameObject implements Moveable, Renderable {
                     }
 
                     // Multiple objects on the same block are allowed when they don't intersect
-                    if (Restrictions.INTERSECTION_STRATEGY_SEVERITY > 1) {
-                        //Main.printMsg("INTERSECTS: i=" + i_fixed + ", j=" + j_fixed + ", thisObject=" + this + ", objOnBlock=" + objOnBlock);
+                    if (INTERSECTION_STRATEGY_SEVERITY > 1) {
+                        //printMsg("INTERSECTS: i=" + i_fixed + ", j=" + j_fixed + ", thisObject=" + this + ", objOnBlock=" + objOnBlock);
                         return true;
                     }
 
@@ -468,8 +483,7 @@ public class GameObject implements Moveable, Renderable {
         return playerId;
     }
 
-    /*
-    // TODO Move it to Math.Class
+/*
     public int getRotationDirectionPolar () {
         double destAngle = ...;
         double diffAngles = destAngle - currAngle;
@@ -493,7 +507,7 @@ public class GameObject implements Moveable, Renderable {
         return 0;
     }
 */
-    // TODO Move it to Math.Class
+
     public int getRotationDirectionRay (Integer [] point) {
 
         if (point == null) throw new NullPointerException("getRotationDirectionRay: destPoint is NULL!");
@@ -546,6 +560,7 @@ public class GameObject implements Moveable, Renderable {
         // Point "O" - center of the object
         double x0 =             getAbsCenter()[0];
         double y0 = Y_ORIENT  * getAbsCenter()[1];
+
         // Point "P" - destination point of rotation
         int xp = point[0];
         int yp = Y_ORIENT  * point[1];
@@ -579,16 +594,22 @@ public class GameObject implements Moveable, Renderable {
         Vector (a2,b2) represents the ray from the center of the object towards destination rotation point "P"
         a2 = xp - x0, b2 = yp - y0
 
-         */
+        */
 
         // len(a2,b2)
         double len = Math.sqrt(sqrVal(xp - x0) + sqrVal(yp - y0));
-        /*Main.printMsg("Len=" + len);
-        Main.printMsg("Current angle between vectors: " +
-                Math.acos(((xp - x0) * Math.cos(this.currAngle) + (yp - y0) * Math.sin(this.currAngle)) / len));
-        Main.printMsg("a1=" + 100*Math.cos(this.currAngle) + ", b1 = " + Math.sin(this.currAngle));
-        Main.printMsg("a2=" + (xp - x0) + ", b2=" + (yp - y0));
-        Main.printMsg("currAngle=" + Math.toDegrees(this.currAngle));*/
+/*
+        printMsg("Len = " + len);
+        printMsg(
+            "Current angle between vectors: " +
+            Math.acos(
+                ((xp - x0) * Math.cos(this.currAngle) + (yp - y0) * Math.sin(this.currAngle)) / len
+            )
+        );
+        printMsg("a1 = " + 100*Math.cos(this.currAngle) + ", b1 = " + Math.sin(this.currAngle));
+        printMsg("a2 = " + (xp - x0) + ", b2=" + (yp - y0));
+        printMsg("currAngle = " + Math.toDegrees(this.currAngle));
+*/
         return (xp - x0) * Math.cos(this.currAngle) + (yp - y0) * Math.sin(this.currAngle) > len * Math.cos(dAngle);
     }
 
@@ -617,23 +638,4 @@ public class GameObject implements Moveable, Renderable {
         double K = (N + 1) / (2.0 * N);
         return angleBetweenRayAndPointLessThan(point, K * rotation_speed);
     }
-
-    // TODO Move it to Math.Class
-    public int randomSign() {
-        Random random = new Random();
-        int result = random.nextInt(2) - 1;
-
-        return (result == 0) ? 1 : result;
-    }
-
-    // TODO Move it to Math.Class
-    public int sqrVal(int value) {
-        return value * value;
-    }
-
-    // TODO Move it to Math.Class
-    public double sqrVal(double value) {
-        return value * value;
-    }
-
 }
