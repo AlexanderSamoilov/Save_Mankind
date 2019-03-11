@@ -2,8 +2,10 @@ package com.company.gamecontent;
 
 import com.company.gamecontrollers.MouseController;
 import com.company.gamethread.Main;
+import com.company.gamethread.V_Thread;
 
 import java.awt.*;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -129,8 +131,18 @@ public class GameMap {
             return;
         }
 
-        for (GameObject gameObj : gameObjSet) {
-            gameObj.render(g);
+        try {
+            //Main.printMsg("--->");
+            for (GameObject gameObj : gameObjSet) {
+                gameObj.render(g);
+            }
+            //Main.printMsg("<---");
+        } catch (ConcurrentModificationException e) {
+            Main.printMsg("ConcurrentModificationException has reproduced!");
+            for (StackTraceElement stackTraceElement : e.getStackTrace()) {
+                Main.printMsg(stackTraceElement.toString());
+            }
+            V_Thread.getInstance().terminate(1000);
         }
     }
 

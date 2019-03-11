@@ -19,8 +19,9 @@ public class C_Thread extends Main.ThreadPattern {
     @Override
     public void repeat() throws InterruptedException {
 
-        Main.ParameterizedMutexManager.getInstance().getMutex("V", "recalc").acquire();
-//        Main.printMsg(super.getName() + " is calculating.");
+        Semaphore sem = Main.ParameterizedMutexManager.getInstance().getMutex("V", "recalc");
+        sem.acquire();
+        // Main.printMsg("-> " + super.getName() + " is calculating. Permits: " + String.valueOf(sem.availablePermits()));
         // recalculate positions of each game object
         // TODO: do it according to our documentation (swap pointers worldCurr, worldNext)
         if (GameMap.getInstance().getBullets() != null) {
@@ -42,9 +43,8 @@ public class C_Thread extends Main.ThreadPattern {
                 }
             }
         }
-        ((Semaphore) Main.ParameterizedMutexManager.getInstance().getMutex(
-                "V", "recalc")
-        ).release();
+        // Main.printMsg("<- " + super.getName() + " is calculating. Permits: " + String.valueOf(sem.availablePermits()));
+        sem.release();
     }
 
 }
