@@ -34,7 +34,86 @@ public class Main {
     //private static BufferStrategy bs = null;
     //private static Graphics grap = null;
 
-    private static JFrame frame = new JFrame("Sosochek Konchika Bolshoy");
+    private static JFrame frame = new JFrame("Sosochek Konchika Mnogothreadovyj") {
+
+        /*
+    ATTENTION: Please, don't remove this implementation!
+    I added it to synchronize C-thread with EDT (Swing) thread.
+    Normally EDT thread is working automatically and is drawing asynchronously to the other game threads.
+    This contradicts however with Hayami's game concept where all drawing (which is done by V-Thread)
+    is completely controlled and synchronized with other game threads. For example (it is reproduced better with very small TIME_QUANT):
+
+    DEBUG [16]ConcurrentModificationException has reproduced!
+DEBUG [16]java.util.HashMap$HashIterator.nextNode(HashMap.java:1442)
+DEBUG [16]java.util.HashMap$KeyIterator.next(HashMap.java:1466)
+DEBUG [16]com.company.gamecontent.GameMap.renderObjects(GameMap.java:136)
+DEBUG [16]com.company.gamecontent.GameMap.render(GameMap.java:109)
+DEBUG [16]com.company.gamethread.Main$1.paintComponent(Main.java:96)
+DEBUG [16]javax.swing.JComponent.paint(JComponent.java:1056)
+DEBUG [16]javax.swing.JComponent.paintChildren(JComponent.java:889)
+DEBUG [16]javax.swing.JComponent.paint(JComponent.java:1065)
+DEBUG [16]javax.swing.JComponent.paintChildren(JComponent.java:889)
+DEBUG [16]javax.swing.JComponent.paint(JComponent.java:1065)
+DEBUG [16]javax.swing.JLayeredPane.paint(JLayeredPane.java:586)
+DEBUG [16]javax.swing.JComponent.paintChildren(JComponent.java:889)
+DEBUG [16]javax.swing.JComponent.paintToOffscreen(JComponent.java:5217)
+DEBUG [16]javax.swing.RepaintManager$PaintManager.paintDoubleBuffered(RepaintManager.java:1579)
+DEBUG [16]javax.swing.RepaintManager$PaintManager.paint(RepaintManager.java:1502)
+DEBUG [16]javax.swing.RepaintManager.paint(RepaintManager.java:1272)
+DEBUG [16]javax.swing.JComponent.paint(JComponent.java:1042)
+DEBUG [16]java.awt.GraphicsCallback$PaintCallback.run(GraphicsCallback.java:39)
+DEBUG [16]sun.awt.SunGraphicsCallback.runOneComponent(SunGraphicsCallback.java:79)
+DEBUG [16]sun.awt.SunGraphicsCallback.runComponents(SunGraphicsCallback.java:116)
+DEBUG [16]java.awt.Container.paint(Container.java:1978)
+DEBUG [16]java.awt.Window.paint(Window.java:3906)
+DEBUG [16]javax.swing.RepaintManager$4.run(RepaintManager.java:842)
+DEBUG [16]javax.swing.RepaintManager$4.run(RepaintManager.java:814)
+DEBUG [16]java.security.AccessController.doPrivileged(Native Method)
+DEBUG [16]java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:74)
+DEBUG [16]javax.swing.RepaintManager.paintDirtyRegions(RepaintManager.java:814)
+DEBUG [16]javax.swing.RepaintManager.paintDirtyRegions(RepaintManager.java:789)
+DEBUG [16]javax.swing.RepaintManager.prePaintDirtyRegions(RepaintManager.java:738)
+DEBUG [16]javax.swing.RepaintManager.access$1200(RepaintManager.java:64)
+DEBUG [16]javax.swing.RepaintManager$ProcessingRunnable.run(RepaintManager.java:1732)
+DEBUG [16]java.awt.event.InvocationEvent.dispatch(InvocationEvent.java:311)
+DEBUG [16]java.awt.EventQueue.dispatchEventImpl(EventQueue.java:758)
+DEBUG [16]java.awt.EventQueue.access$500(EventQueue.java:97)
+DEBUG [16]java.awt.EventQueue$3.run(EventQueue.java:709)
+DEBUG [16]java.awt.EventQueue$3.run(EventQueue.java:703)
+DEBUG [16]java.security.AccessController.doPrivileged(Native Method)
+DEBUG [16]java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:74)
+DEBUG [16]java.awt.EventQueue.dispatchEvent(EventQueue.java:728)
+DEBUG [16]java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:205)
+DEBUG [16]java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:116)
+DEBUG [16]java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:105)
+DEBUG [16]java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
+DEBUG [16]java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:93)
+DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
+
+    This stack trace appears because C-Thread and EDT are trying to modify the GameMap.objectsOnMap matrix at the same time.
+
+    Thus we really need synchronous drawing by EDT and therefore we use .paintImmediately() as shown below
+    in order to force EDT to write everything synchronously and only when we order it.
+
+    Moreover when we implement the game driver not in Java there will be no EDT and there will be valid D-V-C thread concept
+    in which V-Thread performing all drawing is fully controlled by us and nothing is done automatically in background.
+
+    The drawback of the synchronous EDT writing is performance degradation on small TIME_QUANT.
+
+*/
+        // this is in a JPanel extended class
+        @Override
+        public void repaint(long tm) {
+            //Main.printMsg("Painting from jpOber.paint[" + Thread.currentThread().getId() + "].");
+            //for (Component c : getComponents()) {
+            //    Main.printMsg("+ " + c.toString());
+            //}
+            JRootPane jRootPane = getRootPane();
+            super.getRootPane().paintImmediately(jRootPane.getVisibleRect());
+            //g.drawArc(10, 10, getWidth() - 20, getHeight() - 20, 0, 360);
+        }
+    };
+
     private static long threadId = -1;
     private static String LOGFILE = "game.log";
 
@@ -355,7 +434,7 @@ public class Main {
             }
         }
 
-        System.out.print("DEBUG  " + str + "\n");
+        System.out.print("DEBUG [" + Thread.currentThread().getId() + "]" + str + "\n");
     }
 
     // FIXME Move to Tools.Class
@@ -557,6 +636,7 @@ public class Main {
             // Just for safety we set here some small timeout unconfigurable
             // to avoid brutal rush of terminate() requests
             timeout(10);
+            printMsg(" --- trying terminate! ---");
         }
 
         ////ew.close();

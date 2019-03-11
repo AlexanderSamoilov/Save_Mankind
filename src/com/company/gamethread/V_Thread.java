@@ -18,19 +18,15 @@ public class V_Thread extends Main.ThreadPattern {
     @Override
     public void repeat() throws InterruptedException {
 
-        Main.ParameterizedMutexManager.getInstance().getMutex(
-                "C", "recalc"
-        ).acquire();
-
-//        Main.printMsg(super.getName() + " is drawing.");
+        Semaphore sem = Main.ParameterizedMutexManager.getInstance().getMutex("C", "recalc");
+        sem.acquire();
+        // Main.printMsg("-> " + super.getName() + " is drawing. Permits: " + String.valueOf(sem.availablePermits()));
         //GameMap.getInstance().rerandom();
         //GameMap.getInstance().render(); - moved to EDT
         //GameMap.getInstance().print();
         Main.getFrame().repaint(0);
-//        Main.printMsg(super.getName() + " is redrawn.");
-        ((Semaphore) Main.ParameterizedMutexManager.getInstance().getMutex(
-                "C", "recalc")
-        ).release();
+        // Main.printMsg("<- " + super.getName() + " is drawing. Permits: " + String.valueOf(sem.availablePermits()));
+        sem.release();
     }
 
 }
