@@ -6,20 +6,7 @@ import java.awt.*;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
-import static com.company.gamecontent.Restrictions.INIT_ANGLE;
-import static com.company.gamecontent.Restrictions.Y_ORIENT;
-import static com.company.gamecontent.Restrictions.MAX_X;
-import static com.company.gamecontent.Restrictions.MAX_Y;
-import static com.company.gamecontent.Restrictions.MAX_Z;
-import static com.company.gamecontent.Restrictions.MAX_HP;
-import static com.company.gamecontent.Restrictions.MAX_SPEED;
-import static com.company.gamecontent.Restrictions.MAX_MASS;
-import static com.company.gamecontent.Restrictions.MAX_ENERGY;
-import static com.company.gamecontent.Restrictions.INTERSECTION_STRATEGY_SEVERITY;
-import static com.company.gamecontent.Restrictions.ROTATE_MOD;
-import static com.company.gamecontent.Restrictions.getMaxObjectSizeBlocks;
-
+import static com.company.gamecontent.Restrictions.*;
 import static com.company.gametools.MathTools.in_range;
 import static com.company.gametools.MathTools.randomSign;
 import static com.company.gametools.MathTools.sqrVal;
@@ -54,6 +41,8 @@ public class GameObject implements Moveable, Renderable {
     protected int maxHitPoints;
     protected int speed;
     protected double rotation_speed;
+    protected int preMoveAngle;
+
 //    protected int armor;             // 0..100% - percentage damage decrement
 
     // absolute damage decrement - minimal HP amount that makes some
@@ -79,7 +68,7 @@ public class GameObject implements Moveable, Renderable {
 
 
     // Here x,y,z - coordinates on grid (not absolute)
-    public GameObject(Sprite sprite, int x, int y, int z, int sX, int sY, int sZ, HashMap<Resource,Integer> res, int hp, int speed, int rot_speed, int arm, int hard, int bch, int ech, int eco) {
+    public GameObject(Sprite sprite, int x, int y, int z, int sX, int sY, int sZ, HashMap<Resource,Integer> res, int hp, int speed, int rot_speed, int preMoveAngle, int arm, int hard, int bch, int ech, int eco) {
         // 1 - parent class specific parameters
         // 2 - validation
         if (sprite == null) {
@@ -101,6 +90,7 @@ public class GameObject implements Moveable, Renderable {
         // Check object stats
         valid = valid && in_range(0, hp, MAX_HP, false);
         valid = valid && in_range(-MAX_SPEED, speed, MAX_SPEED, false);
+        valid = valid && (preMoveAngle <= MAX_PRE_MOVE_ANGLE);
 
         // Check object dimensions
         valid = valid && in_range(0, sX, getMaxObjectSizeBlocks() + 1, true);
@@ -133,6 +123,21 @@ public class GameObject implements Moveable, Renderable {
         this.maxHitPoints = hp;
         this.speed = speed;
         this.rotation_speed = Math.toRadians(rot_speed);
+
+        // Only for Rotatable game objects (the object that have "face").
+        // The object must turn towards the destination/target direction
+        // until the angle between the ray where the objects face looks
+        // and the ray towards the destination/target direction becomes < preMoveAngle
+        // before it starts moving towards the destination/target.
+        // 0 or negative value means that we don't take care and move immediately.
+        // It is used in the method moveTo().
+
+        this.preMoveAngle = 0; // default
+        // Allow this only for Rotatable (that is oriented) game objects
+        if (this instanceof Rotatable) {
+            this.preMoveAngle = preMoveAngle;
+        }
+
 //        this.armor = arm;
 //        this.hardness = hard;
 //        this.burnChanceOnHit = bch;
@@ -305,22 +310,23 @@ public class GameObject implements Moveable, Renderable {
     // TODO next_x, next_y
     // FIXME boolean ?
     public boolean moveTo(Integer [] next) {
-        // FIXME Not good calculate angle every time. Need optimize in future
-        this.rotateTo(next);
+        if (this instanceof Rotatable) {
+            // FIXME Not good calculate angle every time. Need optimize in future
+            this.rotateTo(next);
 
-        // This is only "Tank" object logic
-        //  We not moving while angle to target will not be small enough
-        // TODO 1) If Tank start moving we need move to "looking forward" direction
-        //  and turn Tank in the direction of rotation
-        // TODO 2) If Tank not moving but target moving, Tank must rotate to target
-        // if (this instanceof Tank) {
-        if (!angleBetweenRayAndPointLessThan(next, Math.toRadians(45))) {
-            //Main.printMsg(">= 45");
-            return true;
+            // This is only "Tank" object logic
+            //  We not moving while angle to target will not be small enough
+            // TODO 1) If Tank start moving we need move to "looking forward" direction
+            //  and turn Tank in the direction of rotation
+            // TODO 2) If Tank not moving but target moving, Tank must rotate to target
+            if (this.preMoveAngle > 0) {
+                if (!angleBetweenRayAndPointLessThan(next, Math.toRadians(this.preMoveAngle))) {
+                    return true;
+                }
+            }
         }
-        //Main.printMsg("< 45");
 
-        // Store current coordinates (we roll back changes if the calculation reveals that we cannot move)
+        // Calculate future coordinates where we want to move hypothetically (if nothing prevents this)
         int new_x, new_y;
         int new_z = getAbsLoc()[2];
         double new_center_x, new_center_y;

@@ -188,7 +188,7 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
                                     100, 100, 15, 6, 7
                             ),
                             2, testPlayerTankSprite, 2*i + 1, 1, 0, 1, 1, 1,
-                            testPlayerTankResources, 500, 6, 10,25, 15, 5, 5, 5
+                            testPlayerTankResources, 500, 6, 10, 45,25, 15, 5, 5, 5
                     )
             );
         }
@@ -216,7 +216,7 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
                             ),
                             3, testEnemyTankSprite, Restrictions.MAX_X - 2 - 2*i,
                             Restrictions.getMaxY() - 2, 0, 1, 1, 1,
-                            testEnemyTankResources, 500, 7, 15, 25, 15, 5, 5, 5
+                            testEnemyTankResources, 500, 7, 15, 45, 25, 15, 5, 5, 5
                     )
             );
         }

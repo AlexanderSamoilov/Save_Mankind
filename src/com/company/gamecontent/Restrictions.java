@@ -44,6 +44,8 @@ public abstract class Restrictions {
     private static final int MAX_ARMOR = 90;
     private static final int MAX_HARDNESS = 50;
     static final int MAX_SPEED = 10;
+    static final int MAX_PRE_MOVE_ANGLE = 90;
+
     private static final int MAX_BURN_CHANCE_ON_HIT = 50;
     private static final int MAX_EXPLOSION_CHANCE_ON_HIT = 10;
     private static final int MAX_EXPLOSION_CHANCE_ON_BURN = 10;

@@ -18,7 +18,7 @@ import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 import static com.company.gamethread.Main.printMsg;
 import static com.company.gamethread.Main.terminateNoGiveUp;
 
-public class Unit extends GameObject implements Shootable {
+public class Unit extends GameObject implements Rotatable, Shootable {
 
     // May be NULL (for the wall), but we suppose each unit can use only one type of weapon.
     // it is also supposed that it is not possible to redevelop existing units to use another weapon
@@ -40,9 +40,9 @@ public class Unit extends GameObject implements Shootable {
     private Integer[] targetPoint;
 
     // TODO Initialization of vars to init(), constructor must be empty
-    public Unit(Weapon weapon, int r, Sprite sprite, int x, int y, int z, int sX, int sY, int sZ, HashMap<Resource, Integer> res, int hp, int speed, int rot_speed, int arm, int hard, int bch, int ech, int eco) {
+    public Unit(Weapon weapon, int r, Sprite sprite, int x, int y, int z, int sX, int sY, int sZ, HashMap<Resource, Integer> res, int hp, int speed, int rot_speed, int preMoveAngle, int arm, int hard, int bch, int ech, int eco) {
         // 1 - parent class specific parameters
-        super(sprite, x, y, z, sX, sY, sZ, res, hp, speed, rot_speed, arm, hard, bch, ech, eco);
+        super(sprite, x, y, z, sX, sY, sZ, res, hp, speed, rot_speed, preMoveAngle, arm, hard, bch, ech, eco);
 
         // 2 - child class specific parameters validation
         boolean valid = true;

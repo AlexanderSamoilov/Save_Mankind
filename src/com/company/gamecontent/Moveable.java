@@ -2,7 +2,7 @@ package com.company.gamecontent;
 
 public interface Moveable {
 
-    void setDestinationPoint(Integer[] dest);
+    void setDestinationPoint(Integer[] point);
 
     void unsetDestinationPoint();
 
