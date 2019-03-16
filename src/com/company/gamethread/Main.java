@@ -252,6 +252,23 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
 
     }
 
+    public static void debugMargins(JFrame jFrame, String msg) {
+        /*
+        Main.printMsg("-------------------" + msg + "------------------");
+        printMsg("JFrame.getInsets(left,top,right,bottom):" + jFrame.getInsets().left + "," + jFrame.getInsets().top
+                + "," + jFrame.getInsets().right + "," + jFrame.getInsets().bottom);
+        printMsg("JFrame.getContentPane().getInsets(left,top,right,bottom):" + jFrame.getContentPane().getInsets().left + "," + jFrame.getContentPane().getInsets().top
+                + "," + jFrame.getContentPane().getInsets().right + "," + jFrame.getContentPane().getInsets().bottom);
+
+        Main.printMsg("JFrame.getBounds(): " + jFrame.getBounds().width + " x " + jFrame.getBounds().height);
+        Main.printMsg("JFrame.getContentPane().getBounds(): " + jFrame.getContentPane().getBounds().width + " x " + jFrame.getContentPane().getBounds().height);
+        Main.printMsg("DIFF(JFrame.getBounds() - JFrame.getContentPane().getBounds()):" +
+                (jFrame.getBounds().width - jFrame.getContentPane().getBounds().width) + " x " +
+                (jFrame.getBounds().height - jFrame.getContentPane().getBounds().height));
+        Main.printMsg("**********************************************************");
+        */
+    }
+
     public static void initGraph() {
         // FIXME do not use try for all of them.
         try {
@@ -270,15 +287,37 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
             frame.add(jpOber);     // Добавляем холст на наш фрейм
             frame.add(jpUnter);     // Добавляем холст на наш фрейм
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-            // Определяем размер приложения
-            frame.setPreferredSize(new Dimension(GameMap.getInstance().getAbsMaxX(), GameMap.getInstance().getAbsMaxY()));
-            frame.pack();                             // Сворачиваем окно до размера приложения
-            frame.setResizable(false);
-            frame.setFocusable(true);
-            frame.setLocationRelativeTo(null);        // Установка окна в центр экрана
             //frame.setUndecorated(true);
             //frame.setOpacity(0.50f);
+
+            // Определяем размер приложения
+
+            // frame.setPreferredSize(...) gives bad result!
+            // The frame bounds became cut (less than the bounds of the contained JPanel).
+            // Empirically I found that calling of .setPreferredSize to the contained JRootPane solves it.
+            // Both .getRootPane() and .getContentPane() give good result.
+            frame.getRootPane().setPreferredSize(new Dimension(
+                    GameMap.getInstance().getAbsMaxX(),
+                    GameMap.getInstance().getAbsMaxY()
+                    )
+            );
+
+            debugMargins(frame,"Before JFrame.pack()");
+
+            // https://stackoverflow.com/a/19740999/4807875:
+            // Call setResizable(false) BEFORE calling pack() !!
+            frame.setResizable(false);
+
+            frame.pack();                             // Сворачиваем окно до размера приложения
+            //frame.setResizable(false);
+            frame.setFocusable(true);
+
+            debugMargins(frame,"After JFrame.pack() / Before JFrame.setLocationRelativeTo()");
+
+            frame.setLocationRelativeTo(null);        // Установка окна в центр экрана
+
+
+            debugMargins(frame,"After JFrame.setLocationRelativeTo() / Before frame.addWindowListener()");
 
             // Лучше написать слушателя событий, который может контролировать приложение
             frame.addWindowListener(new WindowAdapter() {
@@ -292,6 +331,8 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
                     );
                 }
             });
+
+            debugMargins(frame,"After JFrame.addWindowListener()");
 
             Main.printMsg(" ------ Make EDT thread to drawing ------ ");
             frame.setVisible(true);
