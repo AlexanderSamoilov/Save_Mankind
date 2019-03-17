@@ -27,8 +27,8 @@ public abstract class Restrictions {
     // 2 - multiple objects on the same block are not allowed (even if they actually don't overlap)
     static final int INTERSECTION_STRATEGY_SEVERITY = 1;
 
-    private static final int MONITOR_MAX_X = 768; // TODO: calculate it!
-    private static final int MONITOR_MAX_Y = 768; // TODO: calculate it!
+    private static final int MONITOR_MAX_X = BLOCK_SIZE * 10; // TODO: calculate it!
+    private static final int MONITOR_MAX_Y = BLOCK_SIZE * 10; // TODO: calculate it!
 
     public static final int MAX_X = Math.min(MONITOR_MAX_X, MONITOR_MAX_Y) / BLOCK_SIZE;
     public static final int MAX_Y = Math.min(MONITOR_MAX_X, MONITOR_MAX_Y) / BLOCK_SIZE;

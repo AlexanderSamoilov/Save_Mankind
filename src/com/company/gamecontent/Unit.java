@@ -211,6 +211,7 @@ public class Unit extends GameObject implements Rotatable, Shootable {
         // For example, radial search (spiral)
         // Currently for the test purpose we introduce the most stupid way of detection:
         // not circle, but a rectangle with a brute-force iteration
+        // TODO: probably we can use the same logic as in GameMap.select()!
         int left   = max(0, getAbsLoc()[0] - detectRadius) / BLOCK_SIZE;
         int right  = min(GameMap.getInstance().getAbsMaxX() - 1, getAbsLoc()[0] + detectRadius) / BLOCK_SIZE;
         int top    = max(0, getAbsLoc()[1] - detectRadius) / BLOCK_SIZE;

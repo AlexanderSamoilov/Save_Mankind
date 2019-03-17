@@ -8,7 +8,7 @@ import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 
 import static com.company.gamethread.Main.printMsg;
 
-public class Bullet implements Moveable {
+public class Bullet implements Moveable, Centerable {
     // NOTE: now this field is used to detect which Unit made a shoot in order to set its "targetObject" to null when the target dies
     // Yes, it is possible to do the same even without this extra field if we just check the "units" list of Player class
     // to test, whether a given Unit exists or does not. However, it look for me as a big overhead if many units check the
@@ -47,6 +47,16 @@ public class Bullet implements Moveable {
     // TODO remove Getters, use Class.attr
     public int getY() {
         return loc[1];
+    }
+
+    // ATTENTION: If the object width or length has uneven size in pixels then this function returns not integer!
+    // We support rotation of such objects around floating coordinate which does not exist on the screen
+    public double[] getAbsCenter() {
+        return new double[] {
+                loc[0] + caliber / 2.0,
+                loc[1] + caliber / 2.0,
+                loc[2] + caliber / 2.0
+        };
     }
 
     // TODO remove Getters, use Class.attr
@@ -96,20 +106,12 @@ public class Bullet implements Moveable {
 
         //printMsg("move?: x=" + loc[0] + ", y=" + loc[1] + ", norm=" + norm);
 
-        // TODO: check if the object borders are within map area! (Intersection not checked)
-        boolean not_valid;
-        not_valid = loc[0] < 0 || loc[1] < 0 || loc[2] < 0;
-        
-        // Check if bullet touch a boarder of the map
-        not_valid = not_valid || loc[0] + caliber >= Restrictions.getMaxXAbs();
-        not_valid = not_valid || loc[1] + caliber >= Restrictions.getMaxYAbs();
-        not_valid = not_valid || loc[2] + caliber >= Restrictions.getMaxZAbs();
-
-        // Roll back
-        if (not_valid) {
-            this.loc[0] = curr_x;
-            this.loc[1] = curr_y;
-
+        if (! GameMap.getInstance().pointWithinMapBorders(
+                new int[] { (int)getAbsCenter()[0], (int)getAbsCenter()[1], (int)getAbsCenter()[2]})
+        ) {
+            // the bullet left the map - forget it!
+            // TODO: check it it is safe to make null the object which method is being called at the moment
+            GameMap.getInstance().destroyBullet(this);
             return false;
         }
 
@@ -153,7 +155,7 @@ public class Bullet implements Moveable {
 
                     // The bullet killed exactly the target of that Unit "u"
                     u.unsetTargetObject();
-                    printMsg(objOnBlock + "died, unset is as a target for: " + u);
+                    printMsg(objOnBlock + " died, unset is as a target for: " + u);
                 }
             }
 

@@ -1,8 +1,10 @@
 package com.company.gamecontent;
 
+import com.company.gamecontent.Parallelepiped.GridRectangle;
 import com.company.gamecontrollers.MouseController;
 import com.company.gamethread.Main;
 import com.company.gamethread.V_Thread;
+import com.company.gametools.MathTools;
 
 import java.awt.*;
 import java.util.ConcurrentModificationException;
@@ -60,7 +62,7 @@ public class GameMap {
             for (int j = 0; j < height; j++) {
                 // Declaring landscape blocks
                 try {
-                    this.landscapeBlocks[i][j] = new GameMapBlock(i, j, map[i][j]);
+                    this.landscapeBlocks[i][j] = new GameMapBlock(i * BLOCK_SIZE, j * BLOCK_SIZE, map[i][j]);
                 } catch (EnumConstantNotPresentException e) {
                     Main.printMsg("Block (" + i + ", " + j + ")");
                     Main.printMsg("Map size: " + width + "x" + height);
@@ -97,7 +99,11 @@ public class GameMap {
         for (int i = 0; i < getMaxX(); i++) {
             for (int j = 0; j < getMaxY(); j++) {
 
-                if (objectsOnMap[i][j].size() == 0) { /* DEBUG */
+                /* For debug purpose: We draw only those blocks which are not occupied, otherwise
+                there will be white space there, because the whole picture is "erased" on each step.
+                To remove/add marking of the occupied blocks with white color please comment/uncomment "if".
+                 */
+                if (objectsOnMap[i][j].size() == 0) {
                     this.landscapeBlocks[i][j].render(g);
                 }
             }
@@ -256,11 +262,11 @@ public class GameMap {
     // TODO Code Duplicate. Collections or method fixBlockPositionOnMap()
     // TODO What is this?
     public void registerObject(GameObject gameObj) {
-        // Left-top coordinate of object
-        int obj_x = gameObj.getLoc()[0];
-        int obj_y = gameObj.getLoc()[1];
-        for (int i = obj_x; i <= obj_x + gameObj.getSize()[0]; i++) {
-            for (int j = obj_y; j <= obj_y + gameObj.getSize()[1]; j++) {
+
+        GridRectangle gridRect = new GridRectangle(gameObj.getRect());
+
+        for (int i = gridRect.left; i <= gridRect.right; i++) {
+            for (int j = gridRect.top; j <= gridRect.bottom; j++) {
                 // TODO: remove these temporary defense after implement safe check of map bounds:
                 int i_fixed = (i == GameMap.getInstance().getMaxX()) ? i-1 : i;
                 int j_fixed = (j == GameMap.getInstance().getMaxY()) ? j-1 : j;
@@ -272,11 +278,11 @@ public class GameMap {
     // TODO Code Duplicate. Collections or method fixBlockPositionOnMap()
     // TODO What is this?
     public void eraseObject(GameObject gameObj) {
-        // Left-top coordinate of object
-        int obj_x = gameObj.getLoc()[0];
-        int obj_y = gameObj.getLoc()[1];
-        for (int i = obj_x; i <= obj_x + gameObj.getSize()[0]; i++) {
-            for (int j = obj_y; j <= obj_y + gameObj.getSize()[1]; j++) {
+
+        GridRectangle gridRect = new GridRectangle(gameObj.getRect());
+
+        for (int i = gridRect.left; i <= gridRect.right; i++) {
+            for (int j = gridRect.top; j <= gridRect.bottom; j++) {
                 // TODO: remove these temporary defense after implement safe check of map bounds:
                 int i_fixed = (i == GameMap.getInstance().getMaxX()) ? i-1 : i;
                 int j_fixed = (j == GameMap.getInstance().getMaxY()) ? j-1 : j;
@@ -296,9 +302,14 @@ public class GameMap {
     // FIXME lndScapeBlocks.height. Remove Getter
     public int getMaxY() { return this.landscapeBlocks[0].length; }
 
+    // TODO: We don't support 3D so far
+    public int getMaxZ() { return Restrictions.getMaxZ(); }
+
     public int getAbsMaxX() { return this.getMaxX() * BLOCK_SIZE; }
 
     public int getAbsMaxY() { return this.getMaxY() * BLOCK_SIZE; }
+
+    public int getAbsMaxZ() { return this.getMaxZ() * BLOCK_SIZE; }
 
     // TODO: make unmodifiable
     // TODO Remove getters. Use Class.attr
@@ -323,6 +334,18 @@ public class GameMap {
 
         // delete - -TODO: move to another class!
 //        b = null;
+    }
+
+    Parallelepiped getParallelepided() {
+        return new Parallelepiped(0, 0, 0, getMaxX(), getMaxY(), getMaxZ());
+    }
+
+    boolean rectWithinMapBorders(Parallelepiped ppd) {
+        return getParallelepided().contains(ppd);
+    }
+
+    boolean pointWithinMapBorders(int[] point) {
+        return getParallelepided().contains(point);
     }
 
     /* DEBUG */

@@ -1,6 +1,8 @@
 package com.company.gamecontent;
 
+import com.company.gamecontent.Parallelepiped.GridRectangle;
 import com.company.gamegraphics.Sprite;
+import com.company.gamethread.Main;
 
 import java.awt.*;
 import java.util.HashMap;
@@ -114,7 +116,7 @@ public class GameObject implements Moveable, Renderable {
         }
 
         this.sprite = sprite;
-        this.parallelepiped = new Parallelepiped(x, y, z, sX, sY, sZ);
+        this.parallelepiped = new Parallelepiped(x * BLOCK_SIZE, y * BLOCK_SIZE, z * BLOCK_SIZE, sX, sY, sZ);
 
         this.res = new HashMap<Resource,Integer>();
         this.res.put(Resource.MASS, res.get(Resource.MASS));
@@ -327,8 +329,7 @@ public class GameObject implements Moveable, Renderable {
         }
 
         // Calculate future coordinates where we want to move hypothetically (if nothing prevents this)
-        int new_x, new_y;
-        int new_z = getAbsLoc()[2];
+        int new_x, new_y, new_z;
         double new_center_x, new_center_y;
 
         double norm = Math.sqrt(
@@ -342,37 +343,39 @@ public class GameObject implements Moveable, Renderable {
             // One step to target
             new_center_x = next[0];
             new_center_y = next[1];
-
         } else {
             // Many steps to target
             new_center_x = getAbsCenter()[0] + (int)((next[0] - getAbsCenter()[0]) * speed / norm);
             new_center_y = getAbsCenter()[1] + (int)((next[1] - getAbsCenter()[1]) * speed / norm);
         }
 
+        // translation vector
+        int dx = (int)(new_center_x - getAbsCenter()[0]);
+        int dy = (int)(new_center_y - getAbsCenter()[1]);
+
         // move left-top object angle to the same vector which the center was moved to
-        new_x = getAbsLoc()[0] + (int)(new_center_x - getAbsCenter()[0]);
-        new_y = getAbsLoc()[1] + (int)(new_center_y - getAbsCenter()[1]);
+        new_x = getAbsLoc()[0] + dx;
+        new_y = getAbsLoc()[1] + dy;
+        new_z = getAbsLoc()[2]; // so far we don't support 3D
 
         //Main.printMsg("move?: (" + getAbsLoc()[0] + "," + getAbsLoc()[1] + ")->(" + new_x + ", " + new_y + "), norm=" + norm);
 
-        // TODO Is this must be here or lower? (about validation data after this)
-        if (isIntersect(new_x, new_y, getSize()[0], getSize()[1])) {
+        if (! GameMap.getInstance().rectWithinMapBorders(
+                new Parallelepiped(new_x, new_y, new_z, getSize()[0], getSize()[1], getSize()[2]))
+        ) {
+            // prevent movement outside the map
+            //Main.printMsg("prevent movement outside the map");
             return false;
         }
 
-        // TODO: check if the object borders are within map area!
-        boolean not_valid;
-        not_valid = new_x < 0 || new_y < 0 || new_z < 0;
-        not_valid = not_valid || new_x + getAbsSize()[0] >= Restrictions.getMaxXAbs();
-        not_valid = not_valid || new_y + getAbsSize()[1] >= Restrictions.getMaxYAbs();
-        not_valid = not_valid || new_z + getAbsSize()[2] >= Restrictions.getMaxZAbs();
-
-        if (not_valid) {
+        Rectangle new_rect = getRect();
+        new_rect.translate(dx, dy); // translocated rectangle
+        if (occupiedByAnotherObject(new_rect)) {
             return false;
         }
 
         // All checks passed - do movement finally:
-        if (new_x == next[0] && new_y == next[1]) {
+        if (new_center_x == next[0] && new_center_y == next[1]) {
             // Destination point reached
             unsetDestinationPoint();
         }
@@ -381,6 +384,8 @@ public class GameObject implements Moveable, Renderable {
 
         this.parallelepiped.loc[0] = new_x;
         this.parallelepiped.loc[1] = new_y;
+        this.parallelepiped.loc[2] = new_z;
+
         GameMap.getInstance().registerObject(this);
 
 //        printMsg("move: x=" + loc[0] + ", y=" + loc[1] + ", obj=" + this);
@@ -388,30 +393,28 @@ public class GameObject implements Moveable, Renderable {
         return true;
     }
 
-    // TODO: sX always = getSizeX(). sY always = getSizeY() => do we need them as a parameters?
-    public boolean isIntersect(int new_x, int new_y, int sX, int sY) {
+    // Checks if the area where the current GameObject wants to step is occupied by some other GameObject.
+    // Depending of INTERSECTION_STRATEGY_SEVERITY we decide how strictly we consider "occupied".
+    // TODO: check not only intersection, but also containing (inclusion).
+    public boolean occupiedByAnotherObject(Rectangle thisObjRect) {
+        // With severity level 0 intersection of two game objects is allowed.
+        // Multiple units can use the same place (unreal, but let it be).
         if (INTERSECTION_STRATEGY_SEVERITY == 0) {
             return false;
         }
 
-        int rect_w = getAbsSize()[0];
-        int rect_h = getAbsSize()[1];
-
         // FIXME What is it?
-        int left_block_x = new_x / BLOCK_SIZE;
-        int right_block_x = left_block_x + sX;
-        int top_block_y = new_y / BLOCK_SIZE;
-        int bottom_block_y = top_block_y + sY;
+        GridRectangle gridRect = new GridRectangle(thisObjRect);
 
         // Check if we intersect another object
         // 1 - obtain the list of the map blocks which are intersected by the line of the object
         // FIXME What is i or j?
-        for (int i = left_block_x; i <= right_block_x; i++) {
-            for (int j = top_block_y; j <= bottom_block_y; j++) {
+        for (int i = gridRect.left; i <= gridRect.right; i++) {
+            for (int j = gridRect.top; j <= gridRect.bottom; j++) {
                 // FIXME What is this?
                 if (
-                    (i != left_block_x) && (i != right_block_x) && 
-                    (j != top_block_y) && (j != bottom_block_y)
+                    (i != gridRect.left) && (i != gridRect.right) &&
+                    (j != gridRect.top) && (j != gridRect.bottom)
                 ) {
                     // Skip all blocks which are in the middle
                     continue;
@@ -432,19 +435,17 @@ public class GameObject implements Moveable, Renderable {
                         continue;
                     }
 
-                    // Multiple objects on the same block are allowed when they don't intersect
                     if (INTERSECTION_STRATEGY_SEVERITY > 1) {
                         //printMsg("INTERSECTS: i=" + i_fixed + ", j=" + j_fixed + ", thisObject=" + this + ", objOnBlock=" + objOnBlock);
+                        // Severity 2: Multiple objects on the same block are forbidden even if they actually don't intersect
                         return true;
                     }
+                    // ELSE: Severity 1: Multiple objects on the same block are allowed when they don't intersect
 
-                    // Multiple objects on the same block are forbidden even
-                    // if they actually don't intersect
-                    Rectangle thisObjRect = new Rectangle(new_x, new_y, rect_w, rect_h);
                     Rectangle objOnBlockRect = objOnBlock.getRect();
 
                     // DEBUG
-                    //Main.printMsg("Check 1: (" + new_x + "," + new_y + "," + rect_w + "," + rect_h);
+                    //Main.printMsg("Check 1: (" + thisObjRect.x + "," + thisObjRect.y + "," + thisObjRect.width + "," + thisObjRect.height);
                     //Main.printMsg("Check 2: (" + objOnBlockRect.getX() + "," + objOnBlockRect.getY() + "," + objOnBlockRect.getWidth() + "," + objOnBlockRect.getHeight());
                     //Main.printMsg("Check 3: (" + objOnBlock.getAbsLoc()[0] + "," + objOnBlock.getAbsLoc()[1] + "," + objOnBlock.getAbsSize()[0] + "," + objOnBlock.getAbsSize()[1]);
 
@@ -463,6 +464,9 @@ public class GameObject implements Moveable, Renderable {
     }
 
     public Rectangle getRect () {
+        return parallelepiped.getAbsBottomRect();
+    }
+    public GridRectangle getGridRect() {
         return parallelepiped.getBottomRect();
     }
 

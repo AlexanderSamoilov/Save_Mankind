@@ -6,7 +6,7 @@ import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 
 public class Parallelepiped implements Renderable, Centerable {
 
-    public int loc[]; // Coordinates of the left-back-bottom point
+    public int loc[]; // Coordinates of the left-top-back point
     private int size[]; // Object dimensions in GameMap cells (sX, sY, sZ)
 
     private final Color color = Color.GREEN;
@@ -41,17 +41,52 @@ public class Parallelepiped implements Renderable, Centerable {
         };
     }
 
-    // TODO: is this new not memory leak prone?
-    public Rectangle getBottomRect() {
+    static class GridRectangle {
+
+        public final int left;
+        public final int right;
+        public final int top;
+        public final int bottom;
+
+        public GridRectangle(Rectangle rect) {
+            left = rect.x / BLOCK_SIZE;
+            right = (rect.x + rect.width - 1) / BLOCK_SIZE;
+            top = rect.y / BLOCK_SIZE;
+            bottom = (rect.y + rect.height - 1) / BLOCK_SIZE;
+        }
+    }
+
+    // TODO: is this "new" not memory leak prone?
+    public GridRectangle getBottomRect() {
+        return new GridRectangle(getAbsBottomRect());
+    }
+
+    // TODO: is this "new" not memory leak prone?
+    public Rectangle getAbsBottomRect() {
         return new Rectangle(getAbsLoc()[0], getAbsLoc()[1], getAbsSize()[0], getAbsSize()[1]);
     }
 
     public Parallelepiped(int x, int y, int z, int sX, int sY, int sZ) {
-        this.loc = new int[] {
-                x * BLOCK_SIZE, y * BLOCK_SIZE, z * BLOCK_SIZE
-        };
-
+        this.loc = new int[] { x, y, z };
         this.size = new int[] {sX, sY, sZ};
+    }
+
+    boolean contains(Parallelepiped otherPpd) {
+        if (
+           (loc[0] <= otherPpd.loc[0]) && (otherPpd.loc[0] + otherPpd.getAbsSize()[0] <= loc[0] + getAbsSize()[0]) &&
+           (loc[1] <= otherPpd.loc[1]) && (otherPpd.loc[1] + otherPpd.getAbsSize()[1] <= loc[1] + getAbsSize()[1]) &&
+           (loc[2] <= otherPpd.loc[2]) && (otherPpd.loc[2] + otherPpd.getAbsSize()[2] <= loc[2] + getAbsSize()[2])
+        ) return true;
+        return false;
+    }
+
+    boolean contains(int[] point) {
+        if (
+           (loc[0] <= point[0]) && (point[0] <= loc[0] + getAbsSize()[0] - 1) &&
+           (loc[1] <= point[1]) && (point[1] <= loc[1] + getAbsSize()[1] - 1) &&
+           (loc[2] <= point[2]) && (point[2] <= loc[2] + getAbsSize()[2] - 1)
+        ) return true;
+        return false;
     }
 
     // wrapper method
