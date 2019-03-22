@@ -1,5 +1,7 @@
 package com.company.gamecontent;
 
+import com.company.gametools.MathTools;
+
 import java.awt.*;
 import java.util.HashSet;
 
@@ -8,7 +10,7 @@ import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 
 import static com.company.gamethread.Main.printMsg;
 
-public class Bullet implements Moveable, Centerable {
+public class Bullet implements Moveable, Centerable, Renderable {
     // NOTE: now this field is used to detect which Unit made a shoot in order to set its "targetObject" to null when the target dies
     // Yes, it is possible to do the same even without this extra field if we just check the "units" list of Player class
     // to test, whether a given Unit exists or does not. However, it look for me as a big overhead if many units check the
@@ -51,11 +53,19 @@ public class Bullet implements Moveable, Centerable {
 
     // ATTENTION: If the object width or length has uneven size in pixels then this function returns not integer!
     // We support rotation of such objects around floating coordinate which does not exist on the screen
-    public double[] getAbsCenter() {
+    public double[] getAbsCenterDouble() {
         return new double[] {
                 loc[0] + caliber / 2.0,
                 loc[1] + caliber / 2.0,
                 loc[2] + caliber / 2.0
+        };
+    }
+
+    public Integer[] getAbsCenterInteger() {
+        return new Integer[] {
+                loc[0] + caliber / 2,
+                loc[1] + caliber / 2,
+                loc[2] + caliber / 2
         };
     }
 
@@ -81,34 +91,22 @@ public class Bullet implements Moveable, Centerable {
     }
 
     public boolean moveTo(Integer [] next) {
-        //printMsg("next?: x=" + next[0] + ", y=" + next[1]);
 
-        // Store current coordinates (we roll back changes if the calculation reveals that we cannot move)
-        int curr_x = loc[0];
-        int curr_y = loc[1];
+        // Calculate future coordinates where we want to move hypothetically (if nothing prevents this)
+        Integer new_center[] = MathTools.getNextPointOnRay(getAbsCenterInteger(), next, speed);
 
-        // Count the distance between current point and next point
-        double norm = Math.sqrt(
-                sqrVal(next[0] - curr_x) + sqrVal(next[1] - curr_y)
-        );
+        // translation vector
+        int dx = (int)(new_center[0] - getAbsCenterInteger()[0]);
+        int dy = (int)(new_center[1] - getAbsCenterInteger()[1]);
 
-        // Avoid division by zero and endless wandering around the destination point
-        //printMsg("norm=" + norm + ", speed=" + speed);
-        if (norm <= speed) {
-            // One step to target
-            this.loc[0] = next[0];
-            this.loc[1] = next[1];
-        } else {
-            // Many steps to target
-            this.loc[0] += (int) ((next[0] - curr_x) * speed / norm);
-            this.loc[1] += (int) ((next[1] - curr_y) * speed / norm);
-        }
+        // move left-top object angle to the same vector which the center was moved to
+        loc[0] += dx; // new "x"
+        loc[1] += dy; // new "y"
+        //loc[2] += dz; // so far we don't support 3D
 
         //printMsg("move?: x=" + loc[0] + ", y=" + loc[1] + ", norm=" + norm);
 
-        if (! GameMap.getInstance().pointWithinMapBorders(
-                new int[] { (int)getAbsCenter()[0], (int)getAbsCenter()[1], (int)getAbsCenter()[2]})
-        ) {
+        if (! GameMap.getInstance().pointWithinMapBorders(new_center)) {
             // the bullet left the map - forget it!
             // TODO: check it it is safe to make null the object which method is being called at the moment
             GameMap.getInstance().destroyBullet(this);
@@ -116,7 +114,7 @@ public class Bullet implements Moveable, Centerable {
         }
 
         // Destination point reached, bullet do damage
-        if (curr_x == loc[0] && curr_y == loc[1]) {
+        if (new_center[0] == next[0] && new_center[1] == next[1]) {
             this.causeDamage();
         }
 
@@ -170,8 +168,13 @@ public class Bullet implements Moveable, Centerable {
         GameMap.getInstance().destroyBullet(this);
     }
 
-    // TODO Use Sprite rendering
+    // wrapper method
     public void render(Graphics g) {
+        render(g, null, 0);
+    }
+
+    // TODO Use Sprite rendering
+    public void render(Graphics g, Parallelepiped parallelepiped, double rotation_angle) {
         g.setColor(Color.BLACK);
         g.fillRect(loc[0], loc[1], caliber, caliber);
 

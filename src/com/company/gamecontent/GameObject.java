@@ -3,6 +3,7 @@ package com.company.gamecontent;
 import com.company.gamecontent.Parallelepiped.GridRectangle;
 import com.company.gamegraphics.Sprite;
 import com.company.gamethread.Main;
+import com.company.gametools.MathTools;
 
 import java.awt.*;
 import java.util.HashMap;
@@ -17,7 +18,7 @@ import static com.company.gamethread.Main.printMsg;
 import static com.company.gamethread.Main.terminateNoGiveUp;
 
 // For details read the DOC "Data Structure"
-public class GameObject implements Moveable, Renderable {
+public class GameObject implements Moveable, Rotatable, Centerable, Renderable, Selectable {
 
     private Parallelepiped parallelepiped;
 
@@ -223,7 +224,8 @@ public class GameObject implements Moveable, Renderable {
     public int[] getLoc() { return parallelepiped.getLoc(); }
     public int[] getSize() { return parallelepiped.getSize(); }
     public int[] getAbsSize() { return parallelepiped.getAbsSize(); }
-    public double[] getAbsCenter() { return parallelepiped.getAbsCenter(); }
+    public double[] getAbsCenterDouble() { return parallelepiped.getAbsCenterDouble(); }
+    public Integer[] getAbsCenterInteger() { return parallelepiped.getAbsCenterInteger(); }
 
     public void setDestinationPoint(Integer [] dest) {
         // TODO: check if coordinates are within restrictions
@@ -330,28 +332,11 @@ public class GameObject implements Moveable, Renderable {
 
         // Calculate future coordinates where we want to move hypothetically (if nothing prevents this)
         int new_x, new_y, new_z;
-        double new_center_x, new_center_y;
-
-        double norm = Math.sqrt(
-                sqrVal(next[0] - getAbsCenter()[0]) + sqrVal(next[1] - getAbsCenter()[1])
-        );
-        //Main.printMsg("norm=" + norm + ", speed=" + speed);
-
-        // Avoid division by zero and endless wandering around the destination point
-        //printMsg("norm=" + norm + ", speed=" + speed);
-        if (norm <= speed) {
-            // One step to target
-            new_center_x = next[0];
-            new_center_y = next[1];
-        } else {
-            // Many steps to target
-            new_center_x = getAbsCenter()[0] + (int)((next[0] - getAbsCenter()[0]) * speed / norm);
-            new_center_y = getAbsCenter()[1] + (int)((next[1] - getAbsCenter()[1]) * speed / norm);
-        }
+        Integer new_center[] = MathTools.getNextPointOnRay(getAbsCenterInteger(), next, speed);
 
         // translation vector
-        int dx = (int)(new_center_x - getAbsCenter()[0]);
-        int dy = (int)(new_center_y - getAbsCenter()[1]);
+        int dx = (int)(new_center[0] - getAbsCenterInteger()[0]);
+        int dy = (int)(new_center[1] - getAbsCenterInteger()[1]);
 
         // move left-top object angle to the same vector which the center was moved to
         new_x = getAbsLoc()[0] + dx;
@@ -375,7 +360,7 @@ public class GameObject implements Moveable, Renderable {
         }
 
         // All checks passed - do movement finally:
-        if (new_center_x == next[0] && new_center_y == next[1]) {
+        if (new_center[0] == next[0] && new_center[1] == next[1]) {
             // Destination point reached
             unsetDestinationPoint();
         }
@@ -545,8 +530,8 @@ public class GameObject implements Moveable, Renderable {
         */
 
         // Point "O" - center of the object
-        double x0 =             getAbsCenter()[0];
-        double y0 = Y_ORIENT  * getAbsCenter()[1];
+        double x0 =             getAbsCenterDouble()[0];
+        double y0 = Y_ORIENT  * getAbsCenterDouble()[1];
 
         // Point "P"
         int xp = point[0];
@@ -568,8 +553,8 @@ public class GameObject implements Moveable, Renderable {
         if (point == null) throw new NullPointerException("angleBetweenRayAndPointLessThan: destination and target points are both NULL!");
 
         // Point "O" - center of the object
-        double x0 =             getAbsCenter()[0];
-        double y0 = Y_ORIENT  * getAbsCenter()[1];
+        double x0 =             getAbsCenterDouble()[0];
+        double y0 = Y_ORIENT  * getAbsCenterDouble()[1];
 
         // Point "P" - destination point of rotation
         int xp = point[0];

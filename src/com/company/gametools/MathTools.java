@@ -29,4 +29,30 @@ public class MathTools {
 
         return (left <= val && val <= right);
     }
+
+    public static Integer[] getNextPointOnRay(Integer srcPoint[], Integer[] destPoint, int step) {
+
+        Integer nextPoint[] = new Integer[3];
+
+        // Count the distance between current point and next point
+        double norm = Math.sqrt(
+                sqrVal(destPoint[0] - srcPoint[0]) + sqrVal(destPoint[1] - srcPoint[1])
+        );
+        //Main.printMsg("norm=" + norm + ", speed=" + speed);
+
+        // Avoid division by zero and endless wandering around the destination point
+        if (norm <= step) {
+            // One step to target
+            nextPoint[0] = destPoint[0];
+            nextPoint[1] = destPoint[1];
+            nextPoint[2] = 0; // destPoint[2]; - we don't support 3D so far
+        } else {
+            // Many steps to target
+            nextPoint[0] = srcPoint[0] + (int)((destPoint[0] - srcPoint[0]) * step / norm);
+            nextPoint[1] = srcPoint[1] + (int)((destPoint[1] - srcPoint[1]) * step / norm);
+            nextPoint[2] = 0; // srcPoint[2] + (int)((destPoint[2] - srcPoint[2]) * step / norm); - we don't support 3D so far
+        }
+
+        return nextPoint;
+    }
 }

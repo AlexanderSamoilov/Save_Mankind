@@ -18,7 +18,7 @@ import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 import static com.company.gamethread.Main.printMsg;
 import static com.company.gamethread.Main.terminateNoGiveUp;
 
-public class Unit extends GameObject implements Rotatable, Shootable {
+public class Unit extends GameObject implements Shootable {
 
     // May be NULL (for the wall), but we suppose each unit can use only one type of weapon.
     // it is also supposed that it is not possible to redevelop existing units to use another weapon

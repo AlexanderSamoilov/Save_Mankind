@@ -55,7 +55,7 @@ public class Sprite implements Renderable {
 
         if (rotation_angle != 0) {
             this.rotation.setToIdentity();
-            this.rotation.rotate(rotation_angle, parallelepiped.getAbsCenter()[0], parallelepiped.getAbsCenter()[1]);
+            this.rotation.rotate(rotation_angle, parallelepiped.getAbsCenterDouble()[0], parallelepiped.getAbsCenterDouble()[1]);
             ((Graphics2D) g).transform(rotation);
         }
 

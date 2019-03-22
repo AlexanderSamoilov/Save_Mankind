@@ -344,7 +344,7 @@ public class GameMap {
         return getParallelepided().contains(ppd);
     }
 
-    boolean pointWithinMapBorders(int[] point) {
+    boolean pointWithinMapBorders(Integer[] point) {
         return getParallelepided().contains(point);
     }
 

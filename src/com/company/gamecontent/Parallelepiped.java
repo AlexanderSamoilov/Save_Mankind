@@ -33,11 +33,19 @@ public class Parallelepiped implements Renderable, Centerable {
 
     // ATTENTION: If the object width or length has uneven size in pixels then this function returns not integer!
     // We support rotation of such objects around floating coordinate which does not exist on the screen
-    public double[] getAbsCenter() {
+    public double[] getAbsCenterDouble() {
         return new double[] {
                 loc[0] + size[0] * BLOCK_SIZE / 2.0,
                 loc[1] + size[1] * BLOCK_SIZE / 2.0,
                 loc[2] + size[2] * BLOCK_SIZE / 2.0
+        };
+    }
+
+    public Integer[] getAbsCenterInteger() {
+        return new Integer[] {
+                loc[0] + size[0] * BLOCK_SIZE / 2,
+                loc[1] + size[1] * BLOCK_SIZE / 2,
+                loc[2] + size[2] * BLOCK_SIZE / 2
         };
     }
 
@@ -80,7 +88,7 @@ public class Parallelepiped implements Renderable, Centerable {
         return false;
     }
 
-    boolean contains(int[] point) {
+    boolean contains(Integer[] point) {
         if (
            (loc[0] <= point[0]) && (point[0] <= loc[0] + getAbsSize()[0] - 1) &&
            (loc[1] <= point[1]) && (point[1] <= loc[1] + getAbsSize()[1] - 1) &&
