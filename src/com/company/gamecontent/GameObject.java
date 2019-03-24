@@ -214,6 +214,10 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         );
 
         g.drawRect(getAbsLoc()[0], getAbsLoc()[1] + getAbsSize()[1], getAbsSize()[0], 5);
+
+        // Mark the center of the object
+        g.setColor(Color.YELLOW);
+        g.drawRect(getAbsCenterInteger()[0], getAbsCenterInteger()[1], 0, 0);
     }
 
     public Parallelepiped getParallelepiped() {
@@ -382,7 +386,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
     // Depending of INTERSECTION_STRATEGY_SEVERITY we decide how strictly we consider "occupied".
     // TODO: check not only intersection, but also containing (inclusion).
     public boolean occupiedByAnotherObject(Rectangle thisObjRect) {
-        // With severity level 0 intersection of two game objects is allowed.
+        // With intersection severity level INTERSECTION_STRATEGY_SEVERITY=0 of two game objects is allowed.
         // Multiple units can use the same place (unreal, but let it be).
         if (INTERSECTION_STRATEGY_SEVERITY == 0) {
             return false;

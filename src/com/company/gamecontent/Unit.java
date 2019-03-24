@@ -2,11 +2,14 @@ package com.company.gamecontent;
 
 import com.company.gamegraphics.Sprite;
 import com.company.gamethread.Main;
+import com.company.gametools.MathTools;
 
 import java.awt.*;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import static com.company.gamecontent.Restrictions.INTERSECTION_STRATEGY_SEVERITY;
+import static com.company.gametools.MathTools.sqrVal;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -39,6 +42,32 @@ public class Unit extends GameObject implements Shootable {
     // The map point to attack now, may be NULL
     private Integer[] targetPoint;
 
+    // Add the given Weapon to the Unit
+    public boolean setWeapon(Weapon w) {
+        /* Special check for the weapon distance. In case of INTERSECTION_STRATEGY_SEVERITY = 2
+           the shooting radius must be at least the object radius + 1 block*sqrt(2).
+           In case of INTERSECTION_STRATEGY_SEVERITY = 1 it must be not less than the object radius.
+           Under "object radius" above we undersnabd the circle (sphere in 3D case) containing the object
+           (circumcircle or circumsphere).
+         */
+
+        if ((w == null) || (INTERSECTION_STRATEGY_SEVERITY == 0)) {
+            this.weapon = w;
+            return true;
+        }
+
+        double shootRadiusMinimal = (INTERSECTION_STRATEGY_SEVERITY - 1) * BLOCK_SIZE * Math.sqrt(2) +
+                0.5 * Math.sqrt(MathTools.sqrVal(getAbsSize()[0]) + MathTools.sqrVal(getAbsSize()[1]));
+        if (w.getShootRadius() < shootRadiusMinimal) {
+            Main.printMsg("ERROR: the given shooting radius " + w.getShootRadius()
+                        + " is less than the minimal value " + shootRadiusMinimal);
+            return false;
+        }
+
+        this.weapon = w;
+        return true;
+    }
+
     // TODO Initialization of vars to init(), constructor must be empty
     public Unit(Weapon weapon, int r, Sprite sprite, int x, int y, int z, int sX, int sY, int sZ, HashMap<Resource, Integer> res, int hp, int speed, int rot_speed, int preMoveAngle, int arm, int hard, int bch, int ech, int eco) {
         // 1 - parent class specific parameters
@@ -53,6 +82,8 @@ public class Unit extends GameObject implements Shootable {
                 false
         );
 
+        if (!setWeapon(weapon)) valid = false;
+
         if (!valid) {
             terminateNoGiveUp(
                     1000,
@@ -62,7 +93,6 @@ public class Unit extends GameObject implements Shootable {
         }
 
         this.detectRadius = r * BLOCK_SIZE;
-        this.weapon = weapon;
 
         // 3 - default values
         this.targetPoint = null;
@@ -179,29 +209,55 @@ public class Unit extends GameObject implements Shootable {
             return;
         }
 
-        Integer[] target = (targetPoint != null) ? targetPoint : new Integer[]{
-                // FIXME targetObject.loc_x
-                // FIXME targetObject.loc_y
-                targetObject.getAbsLoc()[0], targetObject.getAbsLoc()[1]
-        };
+        Integer[] target = (targetPoint != null) ? targetPoint : targetObject.getAbsCenterInteger();
 
         // TODO Move it in AI_Tools_Class
-        if (withinRadius(target, new Integer[] { getAbsLoc()[0], getAbsLoc()[1] }, weapon.getShootRadius()) && isOnLineOfFire(target)) {
-//                /* DEBUG */
-//                if (targetObject != null) {
-//                    printMsg("Player #(" + getPlayerId() + ")" + Player.getPlayers()[getPlayerId()] + ", unit #" + this + " wants shoot -> " + targetObject + "(" + targetObject.loc[0] / Restrictions.getBlockSize() + "," + targetObject.loc[1] / Restrictions.getBlockSize() + "): " + targetObject.hitPoints);
-//                }
-            printMsg("Player " + this.getPlayerId() + " shoots target");
-            this.weapon.shoot(new Integer[] { getAbsLoc()[0], getAbsLoc()[1] }, target);
-            return;
+        if (isOnLineOfFire(target)) {
+            int shootRadius = weapon.getShootRadius();
+
+            if (withinRadius(target, getAbsCenterInteger(), shootRadius)) {
+                printMsg("Player " + this.getPlayerId() + " shoots target");
+                this.weapon.shoot(getAbsCenterInteger(), target);
+                return;
+            }
+
+            // else: shooting point outside the shooting radius
+            if (targetObject != null) {
+                // The target center is outside of the shoot radius
+                // but maybe the border of the target is inside the shoot radius?
+                // We calculate the farthest point on the ray connecting the shooting point
+                // and the target center and take the fragment of the ray with the length
+                // equal to the shooting radius. If the end point on this ray fragment
+                // belongs to the target rectangle then we still can hit the target
+                // (this works by the way even for such weird case when the target rectangle
+                // completely contains the center of the shooter (possible only with INTERSECTION_STRATEGY_SEVERITY=0)
+                Integer[] far = new Integer[3];
+                double dist = Math.sqrt(sqrVal(target[0] - getAbsCenterInteger()[0]) +
+                        sqrVal(target[1] - getAbsCenterInteger()[1]));
+
+                if (dist < 1) {
+                    far[0] = getAbsCenterInteger()[0];
+                    far[1] = getAbsCenterInteger()[1];
+                } else {
+                    far[0] = getAbsCenterInteger()[0] + (int) ((target[0] - getAbsCenterInteger()[0]) * shootRadius / dist);
+                    far[1] = getAbsCenterInteger()[1] + (int) ((target[1] - getAbsCenterInteger()[1]) * shootRadius / dist);
+                }
+
+                if (targetObject.getRect().contains(far[0], far[1])) {
+                    printMsg("Player " + this.getPlayerId() + " shoots target border");
+                    this.weapon.shoot(getAbsCenterInteger(), far);
+                    return;
+                }
+            }
         }
 
-        // This is "else" for expr withinRadius(target, loc, weapon.getShootRadius()) && isOnLineOfFire(target)
+        // This is "else" for expr withinRadius(target, loc, shootRadius) && isOnLineOfFire(target)
         // Either: the target point is too far, so we must come so close that we can shoot it
         // or: something hinders (impediment on the line of fire) - need to relocate
         // TODO Here may be a Def target where unit can't pursuing
         // TODO Move it in AI_Tools_Class
-        printMsg("Some unit of Player " + this.getPlayerId() + " move To!");
+        Main.printMsg("Player " + this.getPlayerId() + ", unit " + this + " at (" + getAbsCenterInteger()[0] + "," + getAbsCenterInteger()[1] +
+                    "): target " + targetObject + " at (" + target[0] + "," + target[1] + ") is too far - cannot shoot now.");
         this.moveTo(getNextPointOnOptimalShootingPath(target));
     }
 
