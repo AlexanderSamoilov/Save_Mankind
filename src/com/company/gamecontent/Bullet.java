@@ -55,17 +55,17 @@ public class Bullet implements Moveable, Centerable, Renderable {
     // We support rotation of such objects around floating coordinate which does not exist on the screen
     public double[] getAbsCenterDouble() {
         return new double[] {
-                loc[0] + caliber / 2.0,
-                loc[1] + caliber / 2.0,
-                loc[2] + caliber / 2.0
+                loc[0] + (caliber - 1) / 2.0,
+                loc[1] + (caliber - 1) / 2.0,
+                loc[2] + (caliber - 1) / 2.0
         };
     }
 
     public Integer[] getAbsCenterInteger() {
         return new Integer[] {
-                loc[0] + caliber / 2,
-                loc[1] + caliber / 2,
-                loc[2] + caliber / 2
+                loc[0] + (caliber - 1) / 2,
+                loc[1] + (caliber - 1) / 2,
+                loc[2] + (caliber - 1) / 2
         };
     }
 
@@ -96,8 +96,8 @@ public class Bullet implements Moveable, Centerable, Renderable {
         Integer new_center[] = MathTools.getNextPointOnRay(getAbsCenterInteger(), next, speed);
 
         // translation vector
-        int dx = (int)(new_center[0] - getAbsCenterInteger()[0]);
-        int dy = (int)(new_center[1] - getAbsCenterInteger()[1]);
+        int dx = new_center[0] - getAbsCenterInteger()[0];
+        int dy = new_center[1] - getAbsCenterInteger()[1];
 
         // move left-top object angle to the same vector which the center was moved to
         loc[0] += dx; // new "x"
@@ -106,7 +106,7 @@ public class Bullet implements Moveable, Centerable, Renderable {
 
         //printMsg("move?: x=" + loc[0] + ", y=" + loc[1] + ", norm=" + norm);
 
-        if (! GameMap.getInstance().pointWithinMapBorders(new_center)) {
+        if (! GameMap.getInstance().contains(new_center)) {
             // the bullet left the map - forget it!
             // TODO: check it it is safe to make null the object which method is being called at the moment
             GameMap.getInstance().destroyBullet(this);
@@ -129,7 +129,7 @@ public class Bullet implements Moveable, Centerable, Renderable {
         HashSet<GameObject> objectsOnBlock = (HashSet<GameObject>)GameMap.getInstance().objectsOnMap[block_x][block_y].clone();
 
         for (GameObject objOnBlock : objectsOnBlock) {
-            printMsg("--- hit -> (" + block_x + "," + block_y + ") -> " + objOnBlock);
+            printMsg("--- hit [" + damage + " dmg] -> (" + block_x + "," + block_y + ") -> " + objOnBlock);
             if (objOnBlock.hitPoints > damage) {
                 objOnBlock.hitPoints -= damage;
                 continue;
@@ -145,6 +145,7 @@ public class Bullet implements Moveable, Centerable, Renderable {
             // It is hard to say what is bigger - the number of Units or the number of killed per game tact
             // I propose to implement the second option now, but implement also the first one in the future and test  which one is faster.
             // TODO: Move global iteration of player and units to function
+            int unset = 0; // DEBUG
             for (Player p : Player.getPlayers()) {
                 for (Unit u : p.getUnits()) {
                     if (u.getTargetObject() != objOnBlock) {
@@ -154,7 +155,13 @@ public class Bullet implements Moveable, Centerable, Renderable {
                     // The bullet killed exactly the target of that Unit "u"
                     u.unsetTargetObject();
                     printMsg(objOnBlock + " died, unset is as a target for: " + u);
+                    unset ++;
                 }
+            }
+
+            // DEBUG
+            if (unset == 0) {
+                printMsg("WARNING: " + objOnBlock + " died from a stray bullet!");
             }
 
             // NOTE: this part must be the last one if we want to support such fun as self-killing

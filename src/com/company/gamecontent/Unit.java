@@ -1,22 +1,20 @@
 package com.company.gamecontent;
 
-import com.company.gamegraphics.Sprite;
-import com.company.gamethread.Main;
-import com.company.gametools.MathTools;
-
 import java.awt.*;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import static com.company.gamecontent.Restrictions.INTERSECTION_STRATEGY_SEVERITY;
-import static com.company.gametools.MathTools.sqrVal;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
+import com.company.gamegraphics.Sprite;
+import com.company.gamethread.Main;
+import com.company.gametools.MathTools;
 
+import com.company.gamecontent.Parallelepiped.GridRectangle;
+import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
+import static com.company.gamecontent.Restrictions.INTERSECTION_STRATEGY_SEVERITY;
+
+import static com.company.gametools.MathTools.sqrVal;
 import static com.company.gametools.MathTools.in_range;
 import static com.company.gametools.MathTools.withinRadius;
-
-import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 
 import static com.company.gamethread.Main.printMsg;
 import static com.company.gamethread.Main.terminateNoGiveUp;
@@ -82,7 +80,7 @@ public class Unit extends GameObject implements Shootable {
                 false
         );
 
-        if (!setWeapon(weapon)) valid = false;
+        valid = valid && setWeapon(weapon);
 
         if (!valid) {
             terminateNoGiveUp(
@@ -220,8 +218,8 @@ public class Unit extends GameObject implements Shootable {
                 this.weapon.shoot(getAbsCenterInteger(), target);
                 return;
             }
-
             // else: shooting point outside the shooting radius
+
             if (targetObject != null) {
                 // The target center is outside of the shoot radius
                 // but maybe the border of the target is inside the shoot radius?
@@ -236,8 +234,8 @@ public class Unit extends GameObject implements Shootable {
                         sqrVal(target[1] - getAbsCenterInteger()[1]));
 
                 if (dist < 1) {
-                    far[0] = getAbsCenterInteger()[0];
-                    far[1] = getAbsCenterInteger()[1];
+                    far[0] = target[0];
+                    far[1] = target[1];
                 } else {
                     far[0] = getAbsCenterInteger()[0] + (int) ((target[0] - getAbsCenterInteger()[0]) * shootRadius / dist);
                     far[1] = getAbsCenterInteger()[1] + (int) ((target[1] - getAbsCenterInteger()[1]) * shootRadius / dist);
@@ -267,16 +265,25 @@ public class Unit extends GameObject implements Shootable {
         // For example, radial search (spiral)
         // Currently for the test purpose we introduce the most stupid way of detection:
         // not circle, but a rectangle with a brute-force iteration
-        // TODO: probably we can use the same logic as in GameMap.select()!
-        int left   = max(0, getAbsLoc()[0] - detectRadius) / BLOCK_SIZE;
-        int right  = min(GameMap.getInstance().getAbsMaxX() - 1, getAbsLoc()[0] + detectRadius) / BLOCK_SIZE;
-        int top    = max(0, getAbsLoc()[1] - detectRadius) / BLOCK_SIZE;
-        int bottom = min(GameMap.getInstance().getAbsMaxY() - 1, getAbsLoc()[1] + detectRadius) / BLOCK_SIZE;
+
+        Rectangle detectionAreaRect = new Rectangle(
+                (int)Math.floor(getAbsCenterDouble()[0] - detectRadius), // left
+                (int)Math.floor(getAbsCenterDouble()[1] - detectRadius), // top
+                2 * detectRadius, // width
+                2 * detectRadius // height
+                );
+
+        // Find the result of intersection of two rectangles: detectionAreaRect and the global map rectangle
+        // and save the result of intersection again to the varible detectionAreaRect
+        // So we actually "crop" the rectangle detectionAreaRect with the map rectangle
+        Rectangle.intersect(detectionAreaRect, GameMap.getInstance().getRect(), detectionAreaRect);
+
+        GridRectangle gridRect = new GridRectangle(detectionAreaRect);
 //        printMsg("Player " + this.getPlayerId() + ": left=" + left + ", right=" + right + ", top=" + top + ", bottom=" + bottom);
 
         // TODO Use Collections
-        for (int i = left; (i <= right) && (targetObject == null); i++) {
-            for(int j = top; (j <= bottom) && (targetObject == null); j++) {
+        for (int i = gridRect.left; (i <= gridRect.right) && (targetObject == null); i++) {
+            for(int j = gridRect.top; (j <= gridRect.bottom) && (targetObject == null); j++) {
                 HashSet<GameObject> objectsOnTheBlock = GameMap.getInstance().objectsOnMap[i][j];
                 if (objectsOnTheBlock.size() == 0) {
                     continue;

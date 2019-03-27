@@ -35,17 +35,17 @@ public class Parallelepiped implements Renderable, Centerable {
     // We support rotation of such objects around floating coordinate which does not exist on the screen
     public double[] getAbsCenterDouble() {
         return new double[] {
-                loc[0] + size[0] * BLOCK_SIZE / 2.0,
-                loc[1] + size[1] * BLOCK_SIZE / 2.0,
-                loc[2] + size[2] * BLOCK_SIZE / 2.0
+                loc[0] + size[0] * (BLOCK_SIZE - 1) / 2.0,
+                loc[1] + size[1] * (BLOCK_SIZE - 1) / 2.0,
+                loc[2] + size[2] * (BLOCK_SIZE - 1) / 2.0
         };
     }
 
     public Integer[] getAbsCenterInteger() {
         return new Integer[] {
-                loc[0] + size[0] * BLOCK_SIZE / 2,
-                loc[1] + size[1] * BLOCK_SIZE / 2,
-                loc[2] + size[2] * BLOCK_SIZE / 2
+                loc[0] + size[0] * (BLOCK_SIZE - 1) / 2,
+                loc[1] + size[1] * (BLOCK_SIZE - 1) / 2,
+                loc[2] + size[2] * (BLOCK_SIZE - 1) / 2
         };
     }
 
@@ -61,6 +61,17 @@ public class Parallelepiped implements Renderable, Centerable {
             right = (rect.x + rect.width - 1) / BLOCK_SIZE;
             top = rect.y / BLOCK_SIZE;
             bottom = (rect.y + rect.height - 1) / BLOCK_SIZE;
+        }
+
+        public boolean isMiddleBlock(int i, int j) {
+            if (
+                    (i > left) && (i < right) &&
+                    (j < top) && (j < bottom)
+            ) {
+                // The block is in the middle (not a side-block)
+                return true;
+            }
+            return false;
         }
     }
 

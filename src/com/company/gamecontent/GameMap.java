@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
+import static com.company.gamecontent.Restrictions.INTERSECTION_STRATEGY_SEVERITY;
 
 public class GameMap {
 
@@ -161,19 +162,24 @@ public class GameMap {
         // TODO Why we Clone them?
         this.deselect((HashSet<GameObject>)selectedObjects.clone());
 
-        // Check objects in Rect-Selector and add them to selectObjects
-        for (int i = 0; i < getMaxX(); i++) {
-            for (int j = 0; j < getMaxY(); j++) {
+        // Check objects in Rect-Selector and add them to selectedObjects
+        GridRectangle gridRect = new GridRectangle(mouseRect);
+        for (int i = gridRect.left; i <= gridRect.right; i++) {
+            for (int j = gridRect.top; j <= gridRect.bottom; j++) {
                 if (objectsOnMap[i][j].size() == 0) {
                     continue;
                 }
 
+                boolean in_the_middle = gridRect.isMiddleBlock(i, j);
+
                 for (GameObject objectOnMap : objectsOnMap[i][j]) {
                     Rectangle objectOnMapRect = objectOnMap.getRect();
+
                     // TODO Why is this working without contains()?
                     if (
-                            !objectOnMapRect.intersects(mouseRect)
-//                                    && !mouseRect.contains(objectOnMapRect)
+                            !in_the_middle && // all middle block are contained (no need to check intersection)
+                            !mouseRect.intersects(objectOnMapRect)
+//                          && !mouseRect.contains(objectOnMapRect)
                     ) {
                         continue;
                     }
@@ -267,10 +273,8 @@ public class GameMap {
 
         for (int i = gridRect.left; i <= gridRect.right; i++) {
             for (int j = gridRect.top; j <= gridRect.bottom; j++) {
-                // TODO: remove these temporary defense after implement safe check of map bounds:
-                int i_fixed = (i == GameMap.getInstance().getMaxX()) ? i-1 : i;
-                int j_fixed = (j == GameMap.getInstance().getMaxY()) ? j-1 : j;
-                this.objectsOnMap[i_fixed][j_fixed].add(gameObj);
+                GameMap.getInstance().validateBlockCoordinates(i, j);
+                this.objectsOnMap[i][j].add(gameObj);
             }
         }
     }
@@ -283,12 +287,9 @@ public class GameMap {
 
         for (int i = gridRect.left; i <= gridRect.right; i++) {
             for (int j = gridRect.top; j <= gridRect.bottom; j++) {
-                // TODO: remove these temporary defense after implement safe check of map bounds:
-                int i_fixed = (i == GameMap.getInstance().getMaxX()) ? i-1 : i;
-                int j_fixed = (j == GameMap.getInstance().getMaxY()) ? j-1 : j;
-
+                GameMap.getInstance().validateBlockCoordinates(i, j);
                 // TODO: check what if does not exist
-                this.objectsOnMap[i_fixed][j_fixed].remove(gameObj);
+                this.objectsOnMap[i][j].remove(gameObj);
             }
         }
     }
@@ -310,6 +311,84 @@ public class GameMap {
     public int getAbsMaxY() { return this.getMaxY() * BLOCK_SIZE; }
 
     public int getAbsMaxZ() { return this.getMaxZ() * BLOCK_SIZE; }
+
+    public void validateBlockCoordinates(int i, int j) {
+        if (
+                (i < 0) || (i > getMaxX() - 1) ||
+                (j < 0) || (j > getMaxY() - 1)
+        ) {
+            Main.terminateNoGiveUp(
+                    1000, "Block (" + i + "," + j +
+                    " is outside of map " + getMaxX() + " x " + getMaxY()
+            );
+        }
+    }
+
+    // Checks if the area "givenRect" is occupied by some GameObject.
+    public boolean occupiedByObject(Rectangle givenRect) {
+        return occupiedByAnotherObject(givenRect, null);
+    }
+
+    // Checks if the area "givenRect" where the given GameObject wants to move to/appear is occupied by some other GameObject.
+    // Depending of INTERSECTION_STRATEGY_SEVERITY we decide how strictly we consider "occupied".
+    // TODO: check not only intersection, but also containing (inclusion).
+    public boolean occupiedByAnotherObject(Rectangle givenRect, GameObject exceptObject) {
+        // With intersection severity level INTERSECTION_STRATEGY_SEVERITY=0 of two game objects is allowed.
+        // Multiple units can use the same place (unreal, but let it be).
+
+        if (INTERSECTION_STRATEGY_SEVERITY == 0) {
+            return false;
+        }
+
+        // FIXME What is it?
+        GridRectangle gridRect = new GridRectangle(givenRect);
+
+        // Check if we intersect another object
+        // 1 - obtain the list of the map blocks which are intersected by the line of the object
+        // FIXME What is i or j?
+        for (int i = gridRect.left; i <= gridRect.right; i++) {
+            for (int j = gridRect.top; j <= gridRect.bottom; j++) {
+                // Skip all blocks which are in the middle
+                if (gridRect.isMiddleBlock(i, j)) {
+                    continue;
+                }
+
+                GameMap.getInstance().validateBlockCoordinates(i, j);
+
+                HashSet<GameObject> objectsOnBlock = GameMap.getInstance().objectsOnMap[i][j];
+                if (objectsOnBlock.size() == 0) {
+                    continue;
+                }
+
+                for (GameObject objOnBlock : objectsOnBlock) {
+                    // Is me?
+                    if ((exceptObject != null) && (objOnBlock == exceptObject)) {
+                        continue;
+                    }
+
+                    if (INTERSECTION_STRATEGY_SEVERITY > 1) {
+                        //printMsg("INTERSECTS: i=" + i + ", j=" + j + ", thisObject=" + this + ", objOnBlock=" + objOnBlock);
+                        // Severity 2: Multiple objects on the same block are forbidden even if they actually don't intersect
+                        return true;
+                    }
+                    // ELSE: Severity 1: Multiple objects on the same block are allowed when they don't intersect
+
+                    Rectangle objOnBlockRect = objOnBlock.getRect();
+
+                    // DEBUG
+                    //Main.printMsg("Check 1: (" + thisObjRect.x + "," + thisObjRect.y + "," + thisObjRect.width + "," + thisObjRect.height);
+                    //Main.printMsg("Check 2: (" + objOnBlockRect.getX() + "," + objOnBlockRect.getY() + "," + objOnBlockRect.getWidth() + "," + objOnBlockRect.getHeight());
+                    //Main.printMsg("Check 3: (" + objOnBlock.getAbsLoc()[0] + "," + objOnBlock.getAbsLoc()[1] + "," + objOnBlock.getAbsSize()[0] + "," + objOnBlock.getAbsSize()[1]);
+
+                    if (givenRect.intersects(objOnBlockRect)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
 
     // TODO: make unmodifiable
     // TODO Remove getters. Use Class.attr
@@ -336,16 +415,20 @@ public class GameMap {
 //        b = null;
     }
 
-    Parallelepiped getParallelepided() {
+    Parallelepiped getParallelepiped() {
         return new Parallelepiped(0, 0, 0, getMaxX(), getMaxY(), getMaxZ());
     }
 
-    boolean rectWithinMapBorders(Parallelepiped ppd) {
-        return getParallelepided().contains(ppd);
+    Rectangle getRect() {
+        return getParallelepiped().getAbsBottomRect();
     }
 
-    boolean pointWithinMapBorders(Integer[] point) {
-        return getParallelepided().contains(point);
+    boolean contains(Parallelepiped ppd) {
+        return getParallelepiped().contains(ppd);
+    }
+
+    boolean contains(Integer[] point) {
+        return getParallelepiped().contains(point);
     }
 
     /* DEBUG */
