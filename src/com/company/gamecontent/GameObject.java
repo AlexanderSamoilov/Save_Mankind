@@ -1,6 +1,9 @@
 package com.company.gamecontent;
 
 import com.company.gamecontent.Parallelepiped.GridRectangle;
+import com.company.gamecontent.ParallelogramHorizontal.GridMatrixHorizontal;
+import com.company.gamecontent.ParallelogramVertical.GridMatrixVectical;
+
 import com.company.gamegraphics.GraphBugfixes;
 import com.company.gamegraphics.GraphExtensions;
 import com.company.gamegraphics.Sprite;
@@ -381,8 +384,383 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         Rectangle new_rect = getRect();
         new_rect.translate(dx, dy); // translocated rectangle
 
-        if (GameMap.getInstance().occupied(new_rect, this)) {
-            return false;
+        //if (GameMap.getInstance().occupied(new_rect, this)) {
+        if (INTERSECTION_STRATEGY_SEVERITY > 0) {
+
+            // Hmm.. we cannot move exactly to the destination point, because it is occupied
+            // However we can get to it as closer as possible.
+
+            // ALGORITHM FOR ANALYSING OF IMPEDIMENTS ON THE WAY OF THE OBJECT WITH RECTANGLE SHAPE
+
+            // Step 1. Detect all map(grid) blocks which are intersected or contained by two parallelograms
+            // which are represented by the movement (translation) of two "forward"-edges of the object rectangle.
+            // In case the movement is completely horizontal or vertical there will be only one parallelogram.
+            // pgmHoriz - parallelogram represented by the movement of the top/bottom edge
+            // pgmVert - parallelogram represented by the movement of the right/left edge
+
+            Graphics currentGraphics = Main.getFrame().getRootPane().getGraphics(); // for DEBUG
+            ParallelogramHorizontal pgmHoriz = null;
+            ParallelogramVertical pgmVert = null;
+            GridMatrixHorizontal pgmHorizOccupiedBlocks = null;
+            GridMatrixVectical pgmVertOccupiedBlocks = null;
+
+            if (dy != 0) { // a)
+                if (dy < 0) pgmHoriz = new ParallelogramHorizontal(new_rect.x, new_rect.y, new_rect.width, getAbsLoc()[1] - new_rect.y + 1, -dx);
+                if (dy > 0) pgmHoriz = new ParallelogramHorizontal(getAbsLoc()[0], getAbsLoc()[1] + getAbsSize()[1] - 1, new_rect.width, new_rect.y - getAbsLoc()[1] + 1, dx);
+                pgmHorizOccupiedBlocks = new GridMatrixHorizontal(pgmHoriz);
+                pgmHoriz.render(currentGraphics); // DEBUG (draw parallelogram)
+                pgmHorizOccupiedBlocks.render(currentGraphics); // DEBUG (draw occupied blocks)
+            }
+            if (dx != 0) { // b)
+                if (dx < 0) pgmVert = new ParallelogramVertical(new_rect.x, new_rect.y, getAbsLoc()[0] - new_rect.x + 1, new_rect.height, -dy);
+                if (dx > 0) pgmVert = new ParallelogramVertical(getAbsLoc()[0] + getAbsSize()[0] - 1, getAbsLoc()[1], new_rect.x - getAbsLoc()[0] + 1, new_rect.height, dy);
+                pgmVertOccupiedBlocks = new GridMatrixVectical(pgmVert);
+                pgmVert.render(currentGraphics); // DEBUG (draw parallelogram)
+                pgmVertOccupiedBlocks.render(currentGraphics); // DEBUG (draw occupied blocks)
+            }
+
+            // Step 2. Iterate through all blocks obtained on the step 1 checking the map regarding which game objects
+            // are located on each block which is being iterated. Store all such blocks to a list/hash with no repetition.
+            // Exclude the current game object (unit) itself.
+            HashSet<Rectangle> affectedObjects = new HashSet<Rectangle>();
+
+            // Checking blocks occupied by the horizontal parallelogram:
+            if (dy != 0) { // a)
+                for (int i = 0; i <= pgmHorizOccupiedBlocks.bottom - pgmHorizOccupiedBlocks.top; i++) {
+                    for (int j = pgmHorizOccupiedBlocks.left[i]; j <= pgmHorizOccupiedBlocks.right[i]; j++) {
+                        HashSet<GameObject> objectsOnBlock = GameMap.getInstance().objectsOnMap[j][i + pgmHorizOccupiedBlocks.top];
+                        for (GameObject gameObject : objectsOnBlock) {
+                            if (gameObject != this) affectedObjects.add(gameObject.getRect());
+                        }
+
+                        // In case of INTERSECTION_STRATEGY_SEVERITY == 2 it is not allowed
+                        // to go through blocks partly occupied by another objects
+                        if (
+                                (INTERSECTION_STRATEGY_SEVERITY > 1) // only one object is allowed on the block
+                             && (!objectsOnBlock.isEmpty())          // somebody is on the block
+                             && (!objectsOnBlock.contains(this))     // but not me
+                        ) {
+                            affectedObjects.add(GameMap.getInstance().landscapeBlocks[j][i + pgmHorizOccupiedBlocks.top].getRect());
+                        }
+                    }
+                }
+            }
+            // Checking blocks occupied by the vertical parallelogram:
+            if (dx != 0) { // b)
+                for (int i = 0; i <= pgmVertOccupiedBlocks.right - pgmVertOccupiedBlocks.left; i++) {
+                    for (int j = pgmVertOccupiedBlocks.top[i]; j <= pgmVertOccupiedBlocks.bottom[i]; j++) {
+                        HashSet<GameObject> objectsOnBlock = GameMap.getInstance().objectsOnMap[i + pgmVertOccupiedBlocks.left][j];
+                        for (GameObject gameObject : objectsOnBlock) {
+                            if (gameObject != this) affectedObjects.add(gameObject.getRect());
+                        }
+
+                        // In case of INTERSECTION_STRATEGY_SEVERITY == 2 it is not allowed
+                        // to go through blocks partly occupied by another objects
+                        if (
+                                (INTERSECTION_STRATEGY_SEVERITY > 1) // only one object is allowed on the block
+                                        && (!objectsOnBlock.isEmpty())          // somebody is on the block
+                                        && (!objectsOnBlock.contains(this))     // but not me
+                        ) {
+                            affectedObjects.add(GameMap.getInstance().landscapeBlocks[i + pgmVertOccupiedBlocks.left][j].getRect());
+                        }
+                    }
+                }
+            }
+
+            /* Step 3. Iterate through all game objects (their rectangles) from the step 2 in order to get:
+               a) All of them whose bottom (if dy > 0)/top(if dy < 0) edge has a common section with that parallelogram,
+               whose edges are parallel Ox, that is pgmHoriz.
+               b) All of them whose left(if dx > 0)/right(if dx < 0) edge has a common section with that parallelogram,
+               whose edges are parallel Oy, that is pgmVert.
+               c) All of them whose left-bottom(if dx > 0, dy > 0)/right-bottom(if dx < 0, dy > 0)/
+               right-top(if dx < 0, dy < 0)/left-top(if dx > 0, dy < 0) vertice belongs to the terminating section between parallelograms.
+             */
+            HashSet<Rectangle> suspectedObjectsA = new HashSet<Rectangle>();
+            HashSet<Rectangle> suspectedObjectsB = new HashSet<Rectangle>();
+            HashSet<Rectangle> suspectedObjectsC = new HashSet<Rectangle>();
+
+            /* Cs corresponds to the direction where the current object is going to move
+               Depending on the direction we choose the corresponding edge or vertice.
+               For example:
+               a) The object is moving to the right and down => Cs is a right-bottom vertice.
+               Cs[0] = x_right_bottom, Cs[1] = y_right_bottom
+               b) If the object is moving just left (dy=0) => Cs is an abscisse of the left edge.
+               Cs[0] = x_left, Cs[1] = null (impossible to choose a point, the whole edge is moving if dy=0)
+               c) If the object is moving just down (dx=0) => Cs is an ordinate of the bottom edge.
+               Cs[1] = y_bottom, Cs[0] = null (impossible to choose a point, the whole edge is moving if dx=0)
+               d) dx=dx=0 => Cs[0]=Cs[1]=null (should be impossible, because we check above that dx!=0 or dy!=0)
+             */
+            Integer [] Cs = new Integer [] {null, null};
+
+            if (dx < 0) Cs[0] = getAbsLoc()[0]; // left of the current object
+            if (dx > 0) Cs[0] = getAbsRight(); // right of the current object
+            if (dy < 0) Cs[1] = getAbsLoc()[1]; // top of the current object
+            if (dy > 0) Cs[1] = getAbsBottom(); // bottom of the current object
+
+            // Ct is where Cs should be moved to hypothetically
+            Integer [] Ct = new Integer []{null, null};
+            if (Cs[0] != null) Ct[0] = Cs[0] + dx;
+            if (Cs[1] != null) Ct[1] = Cs[1] + dy;
+
+            for (Rectangle rect : affectedObjects) {
+
+                GraphExtensions.fillRect(currentGraphics, rect, 1); // DEBUG
+                Integer [] go_top_left = new Integer[] {rect.x, rect.y};
+                Integer [] go_top_right = new Integer[] {rect.x + rect.width - 1, rect.y};
+                Integer [] go_bottom_left = new Integer[] {rect.x, rect.y + rect.height - 1};
+                Integer [] go_bottom_right = new Integer[] {rect.x + rect.width - 1, rect.y + rect.height - 1};
+
+                // a
+                if (dy != 0) {
+                    // NOTE: Here "dy < 0" means movement UP since Y_ORIENT=-1 (we are not in Cartesian system in the game).
+                    if (dy < 0) { // UP
+                        // check intersection/touching of the object rectangle by the bottom edge of the impediment
+                        if (pgmHoriz.intersects(go_bottom_left, go_bottom_right) > -1) {
+                            suspectedObjectsA.add(rect);
+                        }
+                    }
+                    if (dy > 0) { // DOWN
+                        // check intersection/touching of the object rectangle by the top edge of the impediment
+                        if (pgmHoriz.intersects(go_top_left, go_top_right) > -1) {
+                            suspectedObjectsA.add(rect);
+                        }
+                    }
+                }
+
+                // b
+                if (dx != 0) {
+                    if (dx > 0) { // RIGHT
+                        // check intersection/touching of the object rectangle by the left edge of the impediment
+                        if (pgmVert.intersects(go_top_left, go_bottom_left) > -1) {
+                            suspectedObjectsB.add(rect);
+                        }
+                    }
+                    if (dx < 0) { // LEFT
+                        // check intersection/touching of the object rectangle by the right edge of the impediment
+                        if (pgmVert.intersects(go_top_right, go_bottom_right) > -1) {
+                            suspectedObjectsB.add(rect);
+                        }
+                    }
+                }
+
+                // c
+                if ((dx != 0) && (dy != 0)) {
+                    if ((dx > 0) && (dy < 0)) { // UP-RIGHT
+                        // check if the bottom-left vertice of the impediment belongs to the common section CsCt
+                        // connecting pgmHoriz and pgmVert
+                        if (MathTools.sectionContains(Cs, go_bottom_left, Ct) > -1) {
+                            suspectedObjectsC.add(rect);
+                        }
+                    }
+                    if ((dx < 0) && (dy < 0)) { // UP-LEFT
+                        // check if the bottom-left vertice of the impediment belongs to the common section CsCt
+                        // connecting pgmHoriz and pgmVert
+                        if (MathTools.sectionContains(Cs, go_bottom_right, Ct) > -1) {
+                            suspectedObjectsC.add(rect);
+                        }
+                    }
+                    if ((dx > 0) && (dy > 0)) { // DOWN-RIGHT
+                        // check if the top-left vertice of the impediment belongs to the common section CsCt
+                        // connecting pgmHoriz and pgmVert
+                        if (MathTools.sectionContains(Cs, go_top_left, Ct) > -1) {
+                            suspectedObjectsC.add(rect);
+                        }
+                    }
+                    if ((dx < 0) && (dy > 0)) { // DOWN-LEFT
+                        // check if the top-right vertice of the impediment belongs to the common section CsCt
+                        // connecting pgmHoriz and pgmVert
+                        if (MathTools.sectionContains(Cs, go_top_right, Ct) > -1) {
+                            suspectedObjectsC.add(rect);
+                        }
+                    }
+                }
+
+            }
+
+            /* Step 4.
+               a) From the game objects obtained on the step 3a choose only one whose bottom(if dy > 0)/top(if dy < 0) edge
+               is lowest(if dy > 0)/highest(if dy < 0) and remember its ordinate Ya.
+               b) From the game objects obtained on the step 3b choose only one whose left(if dx > 0)/right(if dx < 0) edge
+               is leftest(if dx > 0)/rightest(if dx < 0) and remember its abscissa Xb.
+               c) From the game objects obtained on the step 3c choose only one whose left-bottom(if dx 0, dy > 0)/
+               right-bottom(if dx < 0, dy > 0)/right-top(if dx < 0, dy < 0)/left-top(if dx > 0, dy > 0) vertice
+               is closest to Cs and remember its coordinates Xc, Yc.
+             */
+
+            int opt_line_A_found = 0;
+            int opt_line_B_found = 0;
+            int opt_point_C_found = 0;
+
+            // a
+            Integer Ya = null;
+            if (suspectedObjectsA.size() > 0) opt_line_A_found = 1;
+            for (Rectangle rect : suspectedObjectsA) {
+
+                GraphExtensions.fillRect(currentGraphics, rect, 2); // DEBUG
+
+                if (dy < 0) { // UP
+                    int Y_bottom = GraphBugfixes.getMaxY(rect);
+                    if (Ya == null) {
+                        Ya = Y_bottom; // first time only
+                        continue;
+                    }
+                    // the lowest bottom
+                    if (Y_bottom > Ya) Ya = Y_bottom;
+                }
+                if (dy > 0) { // DOWN
+                    int Y_top = rect.y;
+                    if (Ya == null) {
+                        Ya = Y_top; // first time only
+                        continue;
+                    }
+                    // the highest top
+                    if (Y_top < Ya) Ya = Y_top;
+                }
+            }
+
+            // b
+            Integer Xb = null;
+            if (suspectedObjectsB.size() > 0) opt_line_B_found = 1;
+            for (Rectangle rect : suspectedObjectsB) {
+
+                GraphExtensions.fillRect(currentGraphics, rect, 2); // DEBUG
+
+                if (dx > 0) { // RIGHT
+                    int X_left = rect.x;
+                    if (Xb == null) {
+                        Xb = X_left; // first time only
+                        continue;
+                    }
+                    // the leftest left
+                    if (X_left < Xb) Xb = X_left;
+                }
+                if (dx < 0) { // LEFT
+                    int X_right = GraphBugfixes.getMaxX(rect);
+                    if (Xb == null) {
+                        Xb = X_right; // first time only
+                        continue;
+                    }
+                    // the rightest right
+                    if (X_right > Xb) Xb = X_right;
+                }
+            }
+
+            // c
+            Integer [] Pc = null;
+            Integer [] Pc_opt = null;
+            Long distSqrValMin = null;
+            Long distSqrValCurr = -1L;
+            if (suspectedObjectsC.size() > 0) opt_point_C_found = 1;
+
+            for (Rectangle rect : suspectedObjectsC) {
+
+                GraphExtensions.fillRect(currentGraphics, rect, 2); // DEBUG
+                Integer [] go_top_left = new Integer[] {rect.x, rect.y};
+                Integer [] go_top_right = new Integer[] {rect.x + rect.width - 1, rect.y};
+                Integer [] go_bottom_left = new Integer[] {rect.x, rect.y + rect.height - 1};
+                Integer [] go_bottom_right = new Integer[] {rect.x + rect.width - 1, rect.y + rect.height - 1};
+
+                // TODO: it is known outside of the looop about signs of dx, dy
+                // It is possible to avoid these 4 if-else here?
+                // UP-RIGHT
+                if ((dx > 0) && (dy < 0)) Pc_opt = go_bottom_left;
+                // UP-LEFT
+                if ((dx < 0) && (dy < 0)) Pc_opt = go_bottom_right;
+                // DOWN-RIGHT
+                if ((dx > 0) && (dy > 0)) Pc_opt = go_top_left;
+                // DOWN-LEFT
+                if ((dx < 0) && (dy > 0)) Pc_opt = go_top_right;
+
+                // validation
+                if ((dx == 0) || (dy == 0)) terminateNoGiveUp(1000, "Impossible: dx or dy = 0 on thep 4c.");
+
+                if (Pc == null) { // first time only
+                    Pc = new Integer[] {Pc_opt[0], Pc_opt[1]};
+                    distSqrValMin = MathTools.distSqrVal(Cs, Pc);
+                    continue;
+                }
+
+                distSqrValCurr = MathTools.distSqrVal(Cs, Pc);
+                if (distSqrValCurr < distSqrValMin) {
+                    distSqrValMin = distSqrValCurr;
+                    Pc = new Integer[] {Pc_opt[0], Pc_opt[1]};
+                }
+            }
+
+            /*  Step 5.
+                Having 3 "restricting" points/lines from 4a, 4b, 4c calculate 3 position candidates
+                where the object center should be moved to at the end. Choose that one out of 3
+                which is closest to the center (we choose the minimal, because the FIRST impediment
+                which the object meets on the way stops it).
+             */
+
+            int num_opt_points = 0;
+            Main.printMsg("a_num=" + suspectedObjectsA.size() + ", b_num=" + suspectedObjectsB.size() + ", c_num=" + suspectedObjectsC.size());
+            Main.printMsg("a=" + opt_line_A_found + ", b=" + opt_line_B_found + ", c=" + opt_point_C_found);
+
+            HashMap<Integer, Integer[]> opt_points = new HashMap<Integer, Integer[]>();
+
+            // a (dy != 0)
+            if (opt_line_A_found != 0) {
+                Main.printMsg("Ya=" + Ya);
+                Ya -= (int)Math.signum(dy); // we should not overlap even 1 pixel of the border of the impediment
+                opt_points.put(num_opt_points, new Integer[] {(Ya - Cs[1]) * dx / dy, Ya - Cs[1]});
+                num_opt_points++;
+            }
+            // b (dx != 0)
+            if (opt_line_B_found != 0) {
+                Main.printMsg("Xb=" + Xb);
+                Xb -= (int)Math.signum(dx); // we should not overlap even 1 pixel of the border of the impediment
+                opt_points.put(num_opt_points, new Integer[] {Xb - Cs[0], (Xb - Cs[0]) * dy / dx});
+                num_opt_points++;
+            }
+            // c ( dx != 0 and dy != 0)
+            if (opt_point_C_found != 0) {
+                Main.printMsg("Pc=(" + Pc[0] + ", " + Pc[1] + ")");
+                Pc[0] -= (int)Math.signum(dx); // we should not overlap even 1 pixel of the border of the impediment
+                Pc[1] -= (int)Math.signum(dy); // we should not overlap even 1 pixel of the border of the impediment
+                opt_points.put(num_opt_points, new Integer[] {Pc[0] - Cs[0], Pc[1] - Cs[1]});
+                num_opt_points++;
+            }
+
+            int i_opt = 0;
+            if (num_opt_points > 0) {
+                distSqrValCurr = -1L;
+                distSqrValMin = MathTools.sqrVal(opt_points.get(0)[0]) + MathTools.sqrVal(opt_points.get(0)[1]);
+                for (int i = 0; i < num_opt_points; i++) {
+                    distSqrValCurr = MathTools.sqrVal(opt_points.get(i)[0]) + MathTools.sqrVal(opt_points.get(i)[1]);
+                    if (distSqrValCurr < distSqrValMin) {
+                        distSqrValMin = distSqrValCurr;
+                        i_opt = i;
+                    }
+                }
+
+                int dx_opt = opt_points.get(i_opt)[0];
+                int dy_opt = opt_points.get(i_opt)[1];
+                Main.printMsg("dx_opt=" + dx_opt + ", dy_opt=" + dy_opt);
+                //return false;
+                //}
+
+                if ((dx_opt == 0) && (dy_opt == 0)) {
+                    Main.printMsg("WARNING: cannot move even to 1 pixel, everything occupied!");
+                }
+                if ((dx_opt == dx) && (dy_opt == dy)) {
+                    Main.printMsg("WARNING: The performance-consuming calculation started in vain: dx=dx_opt, dy_dy_opt.");
+                }
+
+                new_center[0] = getAbsCenterInteger()[0] + dx_opt;
+                new_center[1] = getAbsCenterInteger()[1] + dy_opt;
+                new_x = getAbsLoc()[0] + dx_opt;
+                new_y = getAbsLoc()[1] + dy_opt;
+                new_z = getAbsLoc()[2]; // so far we don't support 3D
+
+                new_rect = getRect();
+                new_rect.translate(dx_opt, dy_opt); // translocated rectangle
+            }
+
+            if (GameMap.getInstance().occupied(new_rect, this)) {
+                Main.terminateNoGiveUp(1000, "Objects overlapping has been detected! The algorithm has a bug!");
+            }
         }
 
         // All checks passed - do movement finally:

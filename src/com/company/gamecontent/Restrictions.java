@@ -43,7 +43,7 @@ public abstract class Restrictions {
     static final int MAX_HP = 1000000;
     private static final int MAX_ARMOR = 90;
     private static final int MAX_HARDNESS = 50;
-    static final int MAX_SPEED = 10;
+    static final int MAX_SPEED = 1000;
     static final int MAX_PRE_MOVE_ANGLE = 90;
 
     private static final int MAX_BURN_CHANCE_ON_HIT = 50;

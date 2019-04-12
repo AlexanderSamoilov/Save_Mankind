@@ -188,8 +188,8 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
                             new Weapon(
                                     10, 150, 15, 6, 7
                             ),
-                            2, testPlayerTankSprite, 2*i + 1, 1, 0, 1, 1, 1,
-                            testPlayerTankResources, 5000, 6, 10, 45,25, 15, 5, 5, 5
+                            2, testPlayerTankSprite, 4*i + 1, 1, 0, 3, 3, 3,
+                            testPlayerTankResources, 5000, 600, 10, 45,25, 15, 5, 5, 5
                     )
             );
         }

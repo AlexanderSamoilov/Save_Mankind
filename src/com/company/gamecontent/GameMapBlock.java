@@ -124,6 +124,10 @@ public class GameMapBlock implements Renderable {
         sprite.setImage(natSprite.get(nature));
     }
 
+    public Rectangle getRect() {
+        return parallelepiped.getAbsBottomRect();
+    }
+
     // wrapper method
     public void render(Graphics g) {
         render(g, parallelepiped, 0);
