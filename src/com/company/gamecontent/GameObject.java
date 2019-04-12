@@ -1,6 +1,8 @@
 package com.company.gamecontent;
 
 import com.company.gamecontent.Parallelepiped.GridRectangle;
+import com.company.gamegraphics.GraphBugfixes;
+import com.company.gamegraphics.GraphExtensions;
 import com.company.gamegraphics.Sprite;
 import com.company.gamethread.Main;
 import com.company.gametools.MathTools;
@@ -83,7 +85,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
         int maxX = GameMap.getInstance().getMaxX();
         int maxY = GameMap.getInstance().getMaxY();
-        int maxZ = GameMap.getInstance().getMaxY();
+        int maxZ = GameMap.getInstance().getMaxZ();
 
         // Check object coordinates
         valid = in_range(0, x, MAX_X, false);
@@ -104,7 +106,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         // In order to use the function occupiedByAnotherObject for still not completely created class instance
         // we have to define the objec dimensions first:
         this.parallelepiped = new Parallelepiped(x * BLOCK_SIZE, y * BLOCK_SIZE, z * BLOCK_SIZE, sX, sY, sZ);
-        if (GameMap.getInstance().occupiedByAnotherObject(getRect(), this)) {
+        if (GameMap.getInstance().occupied(getRect(), this)) {
             valid = false;
         }
         // Check object resources limits
@@ -208,22 +210,24 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
         // "healthy" HP
         g.setColor(hpColor);
-        g.fillRect(getAbsLoc()[0], getAbsLoc()[1] + getAbsSize()[1], getAbsSize()[0] * percentageHP / 100, 5);
+        GraphExtensions.fillRect(g, new Rectangle(getAbsLoc()[0], getAbsLoc()[1] + getAbsSize()[1], getAbsSize()[0] * percentageHP / 100, 5), 0);
 
         // "loosed" HP
         g.setColor(Color.BLACK);
-        g.fillRect(
+        GraphExtensions.fillRect(g, new Rectangle(
                 getAbsLoc()[0] + getAbsSize()[0] * percentageHP / 100,
                 getAbsLoc()[1] + getAbsSize()[1],
                 getAbsSize()[1] * (100 - percentageHP) / 100,
-                5
+                5),
+                0
         );
 
-        g.drawRect(getAbsLoc()[0], getAbsLoc()[1] + getAbsSize()[1], getAbsSize()[0], 5);
+        GraphBugfixes.drawRect(g, new Rectangle(getAbsLoc()[0], getAbsLoc()[1] + getAbsSize()[1], getAbsSize()[0], 5));
 
         // Mark the center of the object
         g.setColor(Color.YELLOW);
-        g.drawRect(getAbsCenterInteger()[0], getAbsCenterInteger()[1],1 - BLOCK_SIZE % 2, 1 - BLOCK_SIZE % 2);
+        GraphBugfixes.drawRect(g, new Rectangle(getAbsCenterInteger()[0], getAbsCenterInteger()[1],
+                2 - BLOCK_SIZE % 2, 2 - BLOCK_SIZE % 2));
     }
 
     public Parallelepiped getParallelepiped() {
@@ -236,6 +240,8 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
     public int[] getAbsSize() { return parallelepiped.getAbsSize(); }
     public double[] getAbsCenterDouble() { return parallelepiped.getAbsCenterDouble(); }
     public Integer[] getAbsCenterInteger() { return parallelepiped.getAbsCenterInteger(); }
+    public int getAbsRight() { return parallelepiped.getAbsRight(); }
+    public int getAbsBottom() { return parallelepiped.getAbsBottom(); }
 
     public void setDestinationPoint(Integer [] dest) {
         // TODO: check if coordinates are within restrictions
@@ -254,9 +260,20 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         printMsg("Destination OBJ_" + this.playerId + ": x=" + dest[0] + ", y=" + dest[1]);
     }
 
-    public void rotateTo(Integer [] point) {
+    public boolean rotateTo(Integer [] point) {
         if (ROTATE_MOD > 0) rotateToPointOnRay(point);
         //else rotateToAngle(point);
+
+        // This is only "Tank" object logic
+        //  We not moving while angle to target will not be small enough
+        // TODO 1) If Tank start moving we need move to "looking forward" direction
+        //  and turn Tank in the direction of rotation
+        // TODO 2) If Tank not moving but target moving, Tank must rotate to target
+        if (this.preMoveAngle > 0 && !angleBetweenRayAndPointLessThan(point, Math.toRadians(this.preMoveAngle))) {
+                return true;
+        }
+
+        return false;
     }
 
 /*
@@ -324,36 +341,33 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
     // TODO next_x, next_y
     // FIXME boolean ?
     public boolean moveTo(Integer [] next) {
-        if (this instanceof Rotatable) {
-            // FIXME Not good calculate angle every time. Need optimize in future
-            this.rotateTo(next);
-
-            // This is only "Tank" object logic
-            //  We not moving while angle to target will not be small enough
-            // TODO 1) If Tank start moving we need move to "looking forward" direction
-            //  and turn Tank in the direction of rotation
-            // TODO 2) If Tank not moving but target moving, Tank must rotate to target
-            if (this.preMoveAngle > 0) {
-                if (!angleBetweenRayAndPointLessThan(next, Math.toRadians(this.preMoveAngle))) {
-                    return true;
-                }
-            }
+        // FIXME Not good calculate angle every time. Need optimize in future
+        if (this instanceof Rotatable && rotateTo(next)) {
+            return true;
         }
 
         // Calculate future coordinates where we want to move hypothetically (if nothing prevents this)
         int new_x, new_y, new_z;
         Integer new_center[] = MathTools.getNextPointOnRay(getAbsCenterInteger(), next, speed);
-
+        //Main.printMsg("new_center_x=" + new_center[0] + ", new_center_y=" + new_center[1]);
+        //Main.printMsg("old_center_x=" + getAbsCenterInteger()[0] + ", old_center_y=" + getAbsCenterInteger()[1]);
+        
         // translation vector
         int dx = new_center[0] - getAbsCenterInteger()[0];
         int dy = new_center[1] - getAbsCenterInteger()[1];
+        //Main.printMsg("dx=" + dx + ", dy=" + dy);
+        if ((dx == 0) && (dy == 0)) {
+            // Destination point reached already
+            unsetDestinationPoint();
+            return false;
+        }
 
         // move left-top object angle to the same vector which the center was moved to
         new_x = getAbsLoc()[0] + dx;
         new_y = getAbsLoc()[1] + dy;
         new_z = getAbsLoc()[2]; // so far we don't support 3D
 
-        //Main.printMsg("move?: (" + getAbsLoc()[0] + "," + getAbsLoc()[1] + ")->(" + new_x + ", " + new_y + "), norm=" + norm);
+        //Main.printMsg("move?: (" + getAbsLoc()[0] + "," + getAbsLoc()[1] + ")->(" + new_x + ", " + new_y + "), speed=" + speed);
 
         if (! GameMap.getInstance().contains(
                 // new_x, new_y, new_z - absolute coordinates, not aliquote to the grid vertices
@@ -366,7 +380,8 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
         Rectangle new_rect = getRect();
         new_rect.translate(dx, dy); // translocated rectangle
-        if (GameMap.getInstance().occupiedByAnotherObject(new_rect, this)) {
+
+        if (GameMap.getInstance().occupied(new_rect, this)) {
             return false;
         }
 

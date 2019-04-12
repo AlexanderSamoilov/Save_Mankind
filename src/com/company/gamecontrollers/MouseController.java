@@ -1,6 +1,7 @@
 package com.company.gamecontrollers;
 
 import com.company.gamecontent.GameMap;
+import com.company.gamethread.C_Thread;
 import com.company.gamethread.Main;
 import com.company.gamethread.MutexManager;
 
@@ -40,9 +41,14 @@ public class MouseController extends MouseAdapter {
         this.buttons[e.getButton()] = true;
 
         if (e.getButton() == R_BUTTON) {
-            // TODO: ideally C and V threads should be locked here when we reassigning the targets
-            // currently it also works, but from the next round
+            // C thread should be locked here while we are reassigning the targets
+            // Otherwise there is such a situation possible when C thread assigns a target
+            // and this (D) thread (actually EDT in Java) assigns also a dest point or vice versa
+            C_Thread.getInstance().suspend();
             GameMap.getInstance().assign(new Integer[]{e.getX(), e.getY()});
+            C_Thread.getInstance().resume();
+            // TODO: probably V thread should be also suspended
+            // currently it works, but from the next round
         }
 
         this.last_x = x;
@@ -177,8 +183,8 @@ public class MouseController extends MouseAdapter {
             // is left-top and which is right-bottom
             int rectX = java.lang.Math.min(last_x, e.getX());
             int rectY = java.lang.Math.min(last_y, e.getY());
-            int rectWidth = java.lang.Math.abs(last_x - e.getX());
-            int rectHeight = java.lang.Math.abs(last_y - e.getY());
+            int rectWidth = java.lang.Math.abs(last_x - e.getX()) + 1;
+            int rectHeight = java.lang.Math.abs(last_y - e.getY()) + 1;
 
             // How it works without it?! how the lower layer is recovered after rect painting?
 //            Main.getPanelUnter().repaint(0);

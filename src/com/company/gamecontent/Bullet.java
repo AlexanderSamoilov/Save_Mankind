@@ -1,5 +1,6 @@
 package com.company.gamecontent;
 
+import com.company.gamegraphics.GraphExtensions;
 import com.company.gametools.MathTools;
 
 import java.awt.*;
@@ -28,12 +29,16 @@ public class Bullet implements Moveable, Centerable, Renderable {
     // TODO dest_x, dest_y
     private Integer[] destPoint = null;
 
-    public Bullet(Unit shooter, Integer[] location, Integer[] target, int damage, int speed, int caliber) {
+    public Bullet(Unit shooter, Integer[] center_location, Integer[] target, int damage, int speed, int caliber) {
         this.shooter = shooter;
 
         // TODO: check max caliber and whether the location is valid
         // TODO: so fat we don't consider Z-coordinate
-        this.loc       = new Integer[] {location[0], location[1], 0};
+        this.loc       = new Integer[] {
+                center_location[0] - (caliber - 1) / 2,
+                center_location[1] - (caliber - 1) / 2,
+                0
+        };
         this.destPoint = new Integer[] {target[0], target[1]};
 
         this.damage    = damage;
@@ -182,10 +187,7 @@ public class Bullet implements Moveable, Centerable, Renderable {
 
     // TODO Use Sprite rendering
     public void render(Graphics g, Parallelepiped parallelepiped, double rotation_angle) {
-        g.setColor(Color.BLACK);
-        g.fillRect(loc[0], loc[1], caliber, caliber);
-
         g.setColor(Color.PINK);
-        g.fillRect(loc[0], loc[1], caliber, caliber);
+        GraphExtensions.fillRect(g, new Rectangle(loc[0], loc[1], caliber, caliber), 0);
     }
 }

@@ -184,6 +184,16 @@ public class Unit extends GameObject implements Shootable {
         }
     }
 
+    public boolean shoot(Integer[] point) {
+        // We need to turn gun on the target first and then shoot.
+        if (rotateTo(point)) {
+            return false;
+        }
+        printMsg("Player " + this.getPlayerId() + " shoots target");
+        weapon.shoot(getAbsCenterInteger(), point); // returns true each Nth shoot
+        return true;
+    }
+
     // TODO: Take into account visibility of the target point as well
     // TODO: The target object can be "lost" if it is going much faster than the shooter
     public void processTargets() {
@@ -214,8 +224,7 @@ public class Unit extends GameObject implements Shootable {
             int shootRadius = weapon.getShootRadius();
 
             if (withinRadius(target, getAbsCenterInteger(), shootRadius)) {
-                printMsg("Player " + this.getPlayerId() + " shoots target");
-                this.weapon.shoot(getAbsCenterInteger(), target);
+                shoot(target);
                 return;
             }
             // else: shooting point outside the shooting radius
@@ -243,7 +252,7 @@ public class Unit extends GameObject implements Shootable {
 
                 if (targetObject.getRect().contains(far[0], far[1])) {
                     printMsg("Player " + this.getPlayerId() + " shoots target border");
-                    this.weapon.shoot(getAbsCenterInteger(), far);
+                    shoot(far);
                     return;
                 }
             }
@@ -276,7 +285,7 @@ public class Unit extends GameObject implements Shootable {
         // Find the result of intersection of two rectangles: detectionAreaRect and the global map rectangle
         // and save the result of intersection again to the varible detectionAreaRect
         // So we actually "crop" the rectangle detectionAreaRect with the map rectangle
-        Rectangle.intersect(detectionAreaRect, GameMap.getInstance().getRect(), detectionAreaRect);
+        detectionAreaRect = GameMap.getInstance().crop(detectionAreaRect);
 
         GridRectangle gridRect = new GridRectangle(detectionAreaRect);
 //        printMsg("Player " + this.getPlayerId() + ": left=" + left + ", right=" + right + ", top=" + top + ", bottom=" + bottom);

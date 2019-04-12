@@ -4,7 +4,6 @@ import com.company.gamecontent.Parallelepiped.GridRectangle;
 import com.company.gamecontrollers.MouseController;
 import com.company.gamethread.Main;
 import com.company.gamethread.V_Thread;
-import com.company.gametools.MathTools;
 
 import java.awt.*;
 import java.util.ConcurrentModificationException;
@@ -92,8 +91,6 @@ public class GameMap {
     }
 
     public void render(Graphics g) {
-        //Main.getGraphDriver().fillRect(0,0, getAbsMaxX(), getAbsMaxY());
-
         // Redraw map blocks and Objects on them
         // TODO What about collections and Maps?
         // FIXME Can't move render landscapeBlocks into function - bad realisation
@@ -154,6 +151,12 @@ public class GameMap {
     }
 
     public void select(Rectangle mouseRect) {
+
+        /* crop the selection rectangle to take into account
+           the case when the mouse cursor is outside the map
+         */
+        Rectangle mouseRectCropped = crop(mouseRect);
+
         if (selectedObjects == null) {
             selectedObjects = new HashSet<GameObject>();
         }
@@ -163,7 +166,7 @@ public class GameMap {
         this.deselect((HashSet<GameObject>)selectedObjects.clone());
 
         // Check objects in Rect-Selector and add them to selectedObjects
-        GridRectangle gridRect = new GridRectangle(mouseRect);
+        GridRectangle gridRect = new GridRectangle(mouseRectCropped);
         for (int i = gridRect.left; i <= gridRect.right; i++) {
             for (int j = gridRect.top; j <= gridRect.bottom; j++) {
                 if (objectsOnMap[i][j].size() == 0) {
@@ -178,8 +181,8 @@ public class GameMap {
                     // TODO Why is this working without contains()?
                     if (
                             !in_the_middle && // all middle block are contained (no need to check intersection)
-                            !mouseRect.intersects(objectOnMapRect)
-//                          && !mouseRect.contains(objectOnMapRect)
+                            !mouseRectCropped.intersects(objectOnMapRect)
+//                          && !mouseRectCropped.contains(objectOnMapRect)
                     ) {
                         continue;
                     }
@@ -217,7 +220,7 @@ public class GameMap {
         for (GameObject selectedObj : selectedObjects) {
             // TODO: that is wrong if we allow moveable Buildings
             if (selectedObj instanceof Unit) {
-                this.assignUnit(selectedObj, point);
+                assignUnit(selectedObj, point);
             }
         }
     }
@@ -312,27 +315,27 @@ public class GameMap {
 
     public int getAbsMaxZ() { return this.getMaxZ() * BLOCK_SIZE; }
 
-    public void validateBlockCoordinates(int i, int j) {
+    public void validateBlockCoordinates(int grid_x, int grid_y) {
         if (
-                (i < 0) || (i > getMaxX() - 1) ||
-                (j < 0) || (j > getMaxY() - 1)
+                (grid_x < 0) || (grid_x > getMaxX() - 1) ||
+                (grid_y < 0) || (grid_y > getMaxY() - 1)
         ) {
             Main.terminateNoGiveUp(
-                    1000, "Block (" + i + "," + j +
+                    1000, "Block (" + grid_x + "," + grid_y +
                     " is outside of map " + getMaxX() + " x " + getMaxY()
             );
         }
     }
 
     // Checks if the area "givenRect" is occupied by some GameObject.
-    public boolean occupiedByObject(Rectangle givenRect) {
-        return occupiedByAnotherObject(givenRect, null);
+    public boolean occupied(Rectangle givenRect) {
+        return occupied(givenRect, null);
     }
 
     // Checks if the area "givenRect" where the given GameObject wants to move to/appear is occupied by some other GameObject.
     // Depending of INTERSECTION_STRATEGY_SEVERITY we decide how strictly we consider "occupied".
     // TODO: check not only intersection, but also containing (inclusion).
-    public boolean occupiedByAnotherObject(Rectangle givenRect, GameObject exceptObject) {
+    public boolean occupied(Rectangle givenRect, GameObject exceptObject) {
         // With intersection severity level INTERSECTION_STRATEGY_SEVERITY=0 of two game objects is allowed.
         // Multiple units can use the same place (unreal, but let it be).
 
@@ -340,19 +343,14 @@ public class GameMap {
             return false;
         }
 
-        // FIXME What is it?
         GridRectangle gridRect = new GridRectangle(givenRect);
 
         // Check if we intersect another object
         // 1 - obtain the list of the map blocks which are intersected by the line of the object
-        // FIXME What is i or j?
         for (int i = gridRect.left; i <= gridRect.right; i++) {
             for (int j = gridRect.top; j <= gridRect.bottom; j++) {
-                // Skip all blocks which are in the middle
-                if (gridRect.isMiddleBlock(i, j)) {
-                    continue;
-                }
 
+                // TODO: We could introduce occupied(i, j, exceptMe) and call it in the loop
                 GameMap.getInstance().validateBlockCoordinates(i, j);
 
                 HashSet<GameObject> objectsOnBlock = GameMap.getInstance().objectsOnMap[i][j];
@@ -421,6 +419,15 @@ public class GameMap {
 
     Rectangle getRect() {
         return getParallelepiped().getAbsBottomRect();
+    }
+
+    // crops the given rectangle with the map rectangle (is used to avoid going outside the map)
+    Rectangle crop(Rectangle rect) {
+        // TODO: taking into account Swing bug with drawRect() I would recommend also to check how
+        // properly works this .intersect method.
+        Rectangle croppedRect = new Rectangle(rect);
+        Rectangle.intersect(croppedRect, GameMap.getInstance().getRect(), croppedRect);
+        return croppedRect;
     }
 
     boolean contains(Parallelepiped ppd) {

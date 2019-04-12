@@ -3,6 +3,7 @@ package com.company.gamethread;
 import com.company.gamecontent.*;
 import com.company.gamecontrollers.MouseController;
 import com.company.gamegraphics.Sprite;
+import com.company.gamegraphics.GraphBugfixes;
 
 import javax.swing.*;
 import java.awt.*;
@@ -185,10 +186,10 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
             testPlayerUnits.add(
                     new Unit(
                             new Weapon(
-                                    100, 150, 15, 6, 7
+                                    10, 150, 15, 6, 7
                             ),
                             2, testPlayerTankSprite, 2*i + 1, 1, 0, 1, 1, 1,
-                            testPlayerTankResources, 500, 6, 10, 45,25, 15, 5, 5, 5
+                            testPlayerTankResources, 5000, 6, 10, 45,25, 15, 5, 5, 5
                     )
             );
         }
@@ -212,7 +213,7 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
             testEnemyUnits.add(
                     new Unit(
                             new Weapon(
-                                    300, 150, 10, 8, 5
+                                    30, 150, 10, 8, 5
                             ),
                             3, testEnemyTankSprite, Restrictions.MAX_X - 2 - 2*i,
                             Restrictions.getMaxY() - 2, 0, 1, 1, 1,
@@ -334,6 +335,11 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
 
             debugMargins(frame,"After JFrame.addWindowListener()");
 
+            Main.printMsg(" ------ Rectangle API Test  ------ ");
+            Rectangle myRect = new Rectangle(1, 1, 2, 2);
+            Main.printMsg("getMaxX()=" + myRect.getMaxX() + " getMaxY()=" + myRect.getMaxY());
+            Main.printMsg("getWidth()=" + myRect.getWidth() + " getHeight()=" + myRect.getHeight());
+
             Main.printMsg(" ------ Make EDT thread to drawing ------ ");
             frame.setVisible(true);
 
@@ -403,7 +409,7 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
             g.setColor(Color.RED);
 
             //co.drawArc(getx(), gety(), getWidth() - 20, getHeight() - 20, 0, 360);
-            g.drawRect(x, y, width, height);
+            GraphBugfixes.drawRect(g, new Rectangle(x, y, width, height));
         }
 
         public Rectangle getRect() {

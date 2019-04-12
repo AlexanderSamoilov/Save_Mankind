@@ -1,5 +1,7 @@
 package com.company.gamecontent;
 
+import com.company.gamegraphics.GraphBugfixes;
+
 import java.awt.*;
 
 import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
@@ -31,21 +33,24 @@ public class Parallelepiped implements Renderable, Centerable {
 
     public int[] getSize() { return size; }
 
+    public int getAbsRight() { return loc[0] + size[0] * BLOCK_SIZE - 1; }
+    public int getAbsBottom() { return loc[1] + size[1] * BLOCK_SIZE - 1; }
+
     // ATTENTION: If the object width or length has uneven size in pixels then this function returns not integer!
     // We support rotation of such objects around floating coordinate which does not exist on the screen
     public double[] getAbsCenterDouble() {
         return new double[] {
-                loc[0] + size[0] * (BLOCK_SIZE - 1) / 2.0,
-                loc[1] + size[1] * (BLOCK_SIZE - 1) / 2.0,
-                loc[2] + size[2] * (BLOCK_SIZE - 1) / 2.0
+                loc[0] + (size[0] * BLOCK_SIZE - 1) / 2.0,
+                loc[1] + (size[1] * BLOCK_SIZE - 1) / 2.0,
+                loc[2] + (size[2] * BLOCK_SIZE - 1) / 2.0
         };
     }
 
     public Integer[] getAbsCenterInteger() {
         return new Integer[] {
-                loc[0] + size[0] * (BLOCK_SIZE - 1) / 2,
-                loc[1] + size[1] * (BLOCK_SIZE - 1) / 2,
-                loc[2] + size[2] * (BLOCK_SIZE - 1) / 2
+                loc[0] + (size[0] * BLOCK_SIZE - 1) / 2,
+                loc[1] + (size[1] * BLOCK_SIZE - 1) / 2,
+                loc[2] + (size[2] * BLOCK_SIZE - 1) / 2
         };
     }
 
@@ -63,15 +68,10 @@ public class Parallelepiped implements Renderable, Centerable {
             bottom = (rect.y + rect.height - 1) / BLOCK_SIZE;
         }
 
-        public boolean isMiddleBlock(int i, int j) {
-            if (
-                    (i > left) && (i < right) &&
-                    (j < top) && (j < bottom)
-            ) {
-                // The block is in the middle (not a side-block)
-                return true;
-            }
-            return false;
+        // The block is in the middle (not a side-block)
+        public boolean isMiddleBlock(int grid_x, int grid_y) {
+            return (grid_x > left) && (grid_x < right) &&
+                   (grid_y > top) && (grid_y < bottom);
         }
     }
 
@@ -117,12 +117,7 @@ public class Parallelepiped implements Renderable, Centerable {
     public void render(Graphics g, Parallelepiped parallelepiped, double rotation_angle) {
         Color origColor = g.getColor();
         g.setColor(color);
-
-        g.drawRect(
-                parallelepiped.getAbsLoc()[0], parallelepiped.getAbsLoc()[1],
-                parallelepiped.getAbsSize()[0], parallelepiped.getAbsSize()[1]
-        );
-
+        GraphBugfixes.drawRect(g, parallelepiped.getAbsBottomRect());
         g.setColor(origColor);
     }
 }
