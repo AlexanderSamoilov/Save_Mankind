@@ -2,6 +2,8 @@ package com.company.gamecontent;
 
 import com.company.gamegraphics.GraphExtensions;
 import com.company.gametools.MathTools;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import java.awt.*;
 import java.util.HashSet;
@@ -9,9 +11,9 @@ import java.util.HashSet;
 import static com.company.gametools.MathTools.sqrVal;
 import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 
-import static com.company.gamethread.Main.printMsg;
-
 public class Bullet implements Moveable, Centerable, Renderable {
+    private static Logger LOG = LogManager.getLogger(Bullet.class.getName());
+
     // NOTE: now this field is used to detect which Unit made a shoot in order to set its "targetObject" to null when the target dies
     // Yes, it is possible to do the same even without this extra field if we just check the "units" list of Player class
     // to test, whether a given Unit exists or does not. However, it look for me as a big overhead if many units check the
@@ -109,7 +111,7 @@ public class Bullet implements Moveable, Centerable, Renderable {
         loc[1] += dy; // new "y"
         //loc[2] += dz; // so far we don't support 3D
 
-        //printMsg("move?: x=" + loc[0] + ", y=" + loc[1] + ", norm=" + norm);
+//        LOG.debug("move?: x=" + loc[0] + ", y=" + loc[1] + ", norm=" + norm);
 
         if (! GameMap.getInstance().contains(new_center)) {
             // the bullet left the map - forget it!
@@ -123,7 +125,7 @@ public class Bullet implements Moveable, Centerable, Renderable {
             this.causeDamage();
         }
 
-        //printMsg("move: x=" + loc[0] + ", y=" + loc[1] + ", obj=" + this);
+        LOG.debug("move: x=" + loc[0] + ", y=" + loc[1] + ", obj=" + this);
         return true;
     }
 
@@ -134,7 +136,7 @@ public class Bullet implements Moveable, Centerable, Renderable {
         HashSet<GameObject> objectsOnBlock = (HashSet<GameObject>)GameMap.getInstance().objectsOnMap[block_x][block_y].clone();
 
         for (GameObject objOnBlock : objectsOnBlock) {
-            printMsg("--- hit [" + damage + " dmg] -> (" + block_x + "," + block_y + ") -> " + objOnBlock);
+            LOG.debug("--- hit [" + damage + " dmg] -> (" + block_x + "," + block_y + ") -> " + objOnBlock);
             if (objOnBlock.hitPoints > damage) {
                 objOnBlock.hitPoints -= damage;
                 continue;
@@ -159,14 +161,14 @@ public class Bullet implements Moveable, Centerable, Renderable {
 
                     // The bullet killed exactly the target of that Unit "u"
                     u.unsetTargetObject();
-                    printMsg(objOnBlock + " died, unset is as a target for: " + u);
+                    LOG.debug(objOnBlock + " died, unset is as a target for: " + u);
                     unset ++;
                 }
             }
 
             // DEBUG
             if (unset == 0) {
-                printMsg("WARNING: " + objOnBlock + " died from a stray bullet!");
+                LOG.warn(objOnBlock + " died from a stray bullet!");
             }
 
             // NOTE: this part must be the last one if we want to support such fun as self-killing

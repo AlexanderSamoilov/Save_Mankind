@@ -9,13 +9,18 @@ import java.awt.*;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.HashSet;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 import static com.company.gamecontent.Restrictions.INTERSECTION_STRATEGY_SEVERITY;
 
+
 public class GameMap {
+    private static Logger LOG = LogManager.getLogger(GameMap.class.getName());
 
     private static final GameMap instance = new GameMap();
+
     // TODO what about Units, Buildings? Why Bullets separate of them?
     // TODO Guava has Table<R, C, V> (table.get(x, y)). May be create Generic Class?
     HashSet<GameObject>[][]       objectsOnMap    = null;
@@ -64,8 +69,8 @@ public class GameMap {
                 try {
                     this.landscapeBlocks[i][j] = new GameMapBlock(i * BLOCK_SIZE, j * BLOCK_SIZE, map[i][j]);
                 } catch (EnumConstantNotPresentException e) {
-                    Main.printMsg("Block (" + i + ", " + j + ")");
-                    Main.printMsg("Map size: " + width + "x" + height);
+                    LOG.debug("Block (" + i + ", " + j + ")");
+                    LOG.debug("Map size: " + width + "x" + height);
                     Main.terminateNoGiveUp(
                             1000,
                             getClass() + " init error. Blocks array out of bounds"
@@ -136,15 +141,15 @@ public class GameMap {
         }
 
         try {
-            //Main.printMsg("--->");
+            LOG.debug("--->");
             for (GameObject gameObj : gameObjSet) {
                 gameObj.render(g);
             }
-            //Main.printMsg("<---");
+            LOG.debug("<---");
         } catch (ConcurrentModificationException e) {
-            Main.printMsg("ConcurrentModificationException has reproduced!");
+            LOG.error("ConcurrentModificationException has reproduced!");
             for (StackTraceElement stackTraceElement : e.getStackTrace()) {
-                Main.printMsg(stackTraceElement.toString());
+                LOG.error(stackTraceElement.toString());
             }
             V_Thread.getInstance().terminate(1000);
         }
@@ -225,9 +230,9 @@ public class GameMap {
         }
     }
 
-    // TODO May be move it to Unit?
+    // QUESTION What this do? May be rename?
+    // QUESTION Is this super.method() for GameObject.Unit.setTargets()? Why?
     private void assignUnit(GameObject selectedObj, Integer[] point){
-        Main.printMsg("assignUnit!");
         // FIXME: We must take floor(), not just divide!
         int block_x = point[0] / BLOCK_SIZE;
         int block_y = point[1] / BLOCK_SIZE;
@@ -283,7 +288,8 @@ public class GameMap {
     }
 
     // TODO Code Duplicate. Collections or method fixBlockPositionOnMap()
-    // TODO What is this?
+    // QUESTION What is this?
+    // QUESTION Rename to erase()?
     public void eraseObject(GameObject gameObj) {
 
         GridRectangle gridRect = new GridRectangle(gameObj.getRect());
@@ -304,16 +310,26 @@ public class GameMap {
     }
 
     // FIXME lndScapeBlocks.height. Remove Getter
-    public int getMaxY() { return this.landscapeBlocks[0].length; }
+    public int getMaxY() {
+        return this.landscapeBlocks[0].length;
+    }
 
     // TODO: We don't support 3D so far
-    public int getMaxZ() { return Restrictions.getMaxZ(); }
+    public int getMaxZ() {
+        return Restrictions.getMaxZ();
+    }
 
-    public int getAbsMaxX() { return this.getMaxX() * BLOCK_SIZE; }
+    public int getAbsMaxX() {
+        return this.getMaxX() * BLOCK_SIZE;
+    }
 
-    public int getAbsMaxY() { return this.getMaxY() * BLOCK_SIZE; }
+    public int getAbsMaxY() {
+        return this.getMaxY() * BLOCK_SIZE;
+    }
 
-    public int getAbsMaxZ() { return this.getMaxZ() * BLOCK_SIZE; }
+    public int getAbsMaxZ() {
+        return this.getMaxZ() * BLOCK_SIZE;
+    }
 
     public void validateBlockCoordinates(int grid_x, int grid_y) {
         if (
@@ -365,7 +381,8 @@ public class GameMap {
                     }
 
                     if (INTERSECTION_STRATEGY_SEVERITY > 1) {
-                        //printMsg("INTERSECTS: i=" + i + ", j=" + j + ", thisObject=" + this + ", objOnBlock=" + objOnBlock);
+                        LOG.debug("INTERSECTS: i=" + i + ", j=" + j + ", thisObject=" + this + ", objOnBlock=" + objOnBlock);
+
                         // Severity 2: Multiple objects on the same block are forbidden even if they actually don't intersect
                         return true;
                     }
@@ -374,9 +391,9 @@ public class GameMap {
                     Rectangle objOnBlockRect = objOnBlock.getRect();
 
                     // DEBUG
-                    //Main.printMsg("Check 1: (" + thisObjRect.x + "," + thisObjRect.y + "," + thisObjRect.width + "," + thisObjRect.height);
-                    //Main.printMsg("Check 2: (" + objOnBlockRect.getX() + "," + objOnBlockRect.getY() + "," + objOnBlockRect.getWidth() + "," + objOnBlockRect.getHeight());
-                    //Main.printMsg("Check 3: (" + objOnBlock.getAbsLoc()[0] + "," + objOnBlock.getAbsLoc()[1] + "," + objOnBlock.getAbsSize()[0] + "," + objOnBlock.getAbsSize()[1]);
+//                    LOG.debug("Check 1: (" + thisObjRect.x + "," + thisObjRect.y + "," + thisObjRect.width + "," + thisObjRect.height);
+//                    LOG.debug("Check 2: (" + objOnBlockRect.getx + "," + objOnBlockRect.gety + "," + objOnBlockRect.getWidth() + "," + objOnBlockRect.getHeight());
+//                    LOG.debug("Check 3: (" + objOnBlock.getPixelLoc()[0] + "," + objOnBlock.getPixelLoc()[1] + "," + objOnBlock.getPixelSize()[0] + "," + objOnBlock.getPixelSize()[1]);
 
                     if (givenRect.intersects(objOnBlockRect)) {
                         return true;
@@ -394,7 +411,7 @@ public class GameMap {
 
     // TODO: check that i,j are within allowed boundaries
     public boolean isBlockVisibleForMe(int i, int j) {
-        //Main.printMsg("get: " + i + "." + j + "." + Player.getMyPlayerId());
+//        LOG.debug("get: " + i + "." + j + "." + Player.getMyPlayerId());
         return visibleMap[i][j].get(0);
     }
 
@@ -413,6 +430,7 @@ public class GameMap {
 //        b = null;
     }
 
+    // TODO Rename it to get()
     Parallelepiped getParallelepiped() {
         return new Parallelepiped(0, 0, 0, getMaxX(), getMaxY(), getMaxZ());
     }
@@ -421,7 +439,7 @@ public class GameMap {
         return getParallelepiped().getAbsBottomRect();
     }
 
-    // crops the given rectangle with the map rectangle (is used to avoid going outside the map)
+    // Crops the given rectangle with the map rectangle (is used to avoid going outside the map)
     Rectangle crop(Rectangle rect) {
         // TODO: taking into account Swing bug with drawRect() I would recommend also to check how
         // properly works this .intersect method.
@@ -448,7 +466,7 @@ public class GameMap {
                     for (GameObject currObj : objectsOnMap[i][j]) {
                         plId = currObj.getPlayerId();
                         target = ((Unit) (currObj)).getTargetObject();
-                        Main.printMsg("(" + i + "," + j + ")[" + plId + "]:" + currObj + " -> " + target);
+                        LOG.debug("(" + i + "," + j + ")[" + plId + "]:" + currObj + " -> " + target);
                     }
                 }
             }

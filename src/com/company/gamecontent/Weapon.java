@@ -1,10 +1,14 @@
 package com.company.gamecontent;
 
 import com.company.gamethread.Main;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import java.awt.*;
 
 public class Weapon {
+    private static Logger LOG = LogManager.getLogger(Weapon.class.getName());
+
     // in order to support "shooter" field of class Bullet (see the comment in the class Bullet)
     private Unit owner = null;
 
@@ -52,7 +56,7 @@ public class Weapon {
 
     public void shoot(Integer[] location, Integer[] target) {
         if (reloadCounter == 0) {
-            //Main.printMsg("Player #(" + owner.getPlayerId() + ")" + Player.getPlayers()[owner.getPlayerId()] + ", unit #" + owner + " is shooting -> " + target);
+            LOG.debug("Player #(" + owner.getPlayerId() + ")" + Player.getPlayers()[owner.getPlayerId()] + ", unit #" + owner + " is shooting -> " + target);
             Bullet b = new Bullet(owner, location, target, damage, speed, caliber);
             GameMap.getInstance().registerBullet(b);
         }

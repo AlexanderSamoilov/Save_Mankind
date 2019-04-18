@@ -9,6 +9,8 @@ import com.company.gamegraphics.GraphExtensions;
 import com.company.gamegraphics.Sprite;
 import com.company.gamethread.Main;
 import com.company.gametools.MathTools;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import java.awt.*;
 import java.util.HashMap;
@@ -19,11 +21,11 @@ import static com.company.gametools.MathTools.in_range;
 import static com.company.gametools.MathTools.randomSign;
 import static com.company.gametools.MathTools.sqrVal;
 
-import static com.company.gamethread.Main.printMsg;
 import static com.company.gamethread.Main.terminateNoGiveUp;
 
 // For details read the DOC "Data Structure"
 public class GameObject implements Moveable, Rotatable, Centerable, Renderable, Selectable {
+    private static Logger LOG = LogManager.getLogger(GameObject.class.getName());
 
     private Parallelepiped parallelepiped;
 
@@ -260,7 +262,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
             ((Shootable)this).unsetTargetPoint();
         }
 
-        printMsg("Destination OBJ_" + this.playerId + ": x=" + dest[0] + ", y=" + dest[1]);
+        LOG.debug("Destination OBJ_" + this.playerId + ": x=" + dest[0] + ", y=" + dest[1]);
     }
 
     public boolean rotateTo(Integer [] point) {
@@ -299,7 +301,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         // Rotate
         this.currAngle += rotation_speed * direction;
         this.currAngle %= Math.toRadians(360); // TODO: maybe it is possible to optimize division (for example write own func which subtract 360 until it gets less than 360)
-        printMsg("New Sprite Ang: " + currAngle);
+        LOG.debug("New Sprite Ang: " + currAngle);
     }
 */
 
@@ -322,12 +324,12 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
     public void rotateToPointOnRay(Integer[] point) {
 
         if (point == null || angleBetweenRayAndPointSmallEnough(point)) {
-            //Main.printMsg("Destination reached or undefined, rotation aborted");
+            LOG.debug("Destination reached or undefined, rotation aborted");
             return;
         }
 
         int direction = getRotationDirectionRay(point);
-        //Main.printMsg("New rota: " + direction);
+        LOG.debug("New direction: " + direction);
 
         // It's clear that the point lies behind the ray that is 180°
         // Otherwise (in case 0°) angleBetweenRayAndPoint*** must return true
@@ -338,7 +340,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         this.currAngle += rotation_speed * direction;
         this.currAngle %= Math.toRadians(360); // TODO: maybe it is possible to optimize division (for example write own func which subtract 360 until it gets less than 360)
 
-        //Main.printMsg("New Sprite Ang: " + currAngle);
+        LOG.debug("New Sprite Ang: " + currAngle);
      }
 
     // TODO next_x, next_y
@@ -352,13 +354,13 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         // Calculate future coordinates where we want to move hypothetically (if nothing prevents this)
         int new_x, new_y, new_z;
         Integer new_center[] = MathTools.getNextPointOnRay(getAbsCenterInteger(), next, speed);
-        //Main.printMsg("new_center_x=" + new_center[0] + ", new_center_y=" + new_center[1]);
-        //Main.printMsg("old_center_x=" + getAbsCenterInteger()[0] + ", old_center_y=" + getAbsCenterInteger()[1]);
+        LOG.debug("new_center_x=" + new_center[0] + ", new_center_y=" + new_center[1]);
+        LOG.debug("old_center_x=" + getAbsCenterInteger()[0] + ", old_center_y=" + getAbsCenterInteger()[1]);
         
         // translation vector
         int dx = new_center[0] - getAbsCenterInteger()[0];
         int dy = new_center[1] - getAbsCenterInteger()[1];
-        //Main.printMsg("dx=" + dx + ", dy=" + dy);
+        LOG.debug("dx=" + dx + ", dy=" + dy);
         if ((dx == 0) && (dy == 0)) {
             // Destination point reached already
             unsetDestinationPoint();
@@ -370,14 +372,14 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         new_y = getAbsLoc()[1] + dy;
         new_z = getAbsLoc()[2]; // so far we don't support 3D
 
-        //Main.printMsg("move?: (" + getAbsLoc()[0] + "," + getAbsLoc()[1] + ")->(" + new_x + ", " + new_y + "), speed=" + speed);
+        LOG.debug("move?: (" + getAbsLoc()[0] + "," + getAbsLoc()[1] + ")->(" + new_x + ", " + new_y + "), speed=" + speed);
 
         if (! GameMap.getInstance().contains(
                 // new_x, new_y, new_z - absolute coordinates, not aliquote to the grid vertices
                 new Parallelepiped(new_x, new_y, new_z, getSize()[0], getSize()[1], getSize()[2]))
         ) {
             // prevent movement outside the map
-            //Main.printMsg("prevent movement outside the map");
+            LOG.debug("prevent movement outside the map");
             return false;
         }
 
@@ -695,28 +697,29 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
              */
 
             int num_opt_points = 0;
-            Main.printMsg("a_num=" + suspectedObjectsA.size() + ", b_num=" + suspectedObjectsB.size() + ", c_num=" + suspectedObjectsC.size());
-            Main.printMsg("a=" + opt_line_A_found + ", b=" + opt_line_B_found + ", c=" + opt_point_C_found);
+            LOG.debug("a_num=" + suspectedObjectsA.size() + ", b_num=" + suspectedObjectsB.size() + ", c_num=" + suspectedObjectsC.size());
+            LOG.debug("a=" + opt_line_A_found + ", b=" + opt_line_B_found + ", c=" + opt_point_C_found);
 
             HashMap<Integer, Integer[]> opt_points = new HashMap<Integer, Integer[]>();
 
             // a (dy != 0)
             if (opt_line_A_found != 0) {
-                Main.printMsg("Ya=" + Ya);
+                LOG.debug("Ya=" + Ya);
                 Ya -= (int)Math.signum(dy); // we should not overlap even 1 pixel of the border of the impediment
                 opt_points.put(num_opt_points, new Integer[] {(Ya - Cs[1]) * dx / dy, Ya - Cs[1]});
                 num_opt_points++;
             }
             // b (dx != 0)
             if (opt_line_B_found != 0) {
-                Main.printMsg("Xb=" + Xb);
+                LOG.debug("Xb=" + Xb);
                 Xb -= (int)Math.signum(dx); // we should not overlap even 1 pixel of the border of the impediment
                 opt_points.put(num_opt_points, new Integer[] {Xb - Cs[0], (Xb - Cs[0]) * dy / dx});
                 num_opt_points++;
             }
             // c ( dx != 0 and dy != 0)
             if (opt_point_C_found != 0) {
-                Main.printMsg("Pc=(" + Pc[0] + ", " + Pc[1] + ")");
+                LOG.debug("Pc=(" + Pc[0] + ", " + Pc[1] + ")");
+
                 Pc[0] -= (int)Math.signum(dx); // we should not overlap even 1 pixel of the border of the impediment
                 Pc[1] -= (int)Math.signum(dy); // we should not overlap even 1 pixel of the border of the impediment
                 opt_points.put(num_opt_points, new Integer[] {Pc[0] - Cs[0], Pc[1] - Cs[1]});
@@ -737,15 +740,15 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
                 int dx_opt = opt_points.get(i_opt)[0];
                 int dy_opt = opt_points.get(i_opt)[1];
-                Main.printMsg("dx_opt=" + dx_opt + ", dy_opt=" + dy_opt);
+                LOG.debug("dx_opt=" + dx_opt + ", dy_opt=" + dy_opt);
                 //return false;
                 //}
 
                 if ((dx_opt == 0) && (dy_opt == 0)) {
-                    Main.printMsg("WARNING: cannot move even to 1 pixel, everything occupied!");
+                    LOG.warn("Cannot move even to 1 pixel, everything occupied!");
                 }
                 if ((dx_opt == dx) && (dy_opt == dy)) {
-                    Main.printMsg("WARNING: The performance-consuming calculation started in vain: dx=dx_opt, dy_dy_opt.");
+                    LOG.warn("The performance-consuming calculation started in vain: dx=dx_opt, dy_dy_opt.");
                 }
 
                 new_center[0] = getAbsCenterInteger()[0] + dx_opt;
@@ -777,7 +780,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
         GameMap.getInstance().registerObject(this);
 
-//        printMsg("move: x=" + loc[0] + ", y=" + loc[1] + ", obj=" + this);
+//        LOG.debug("move: x=" + loc[0] + ", y=" + loc[1] + ", obj=" + this);
 
         return true;
     }
@@ -789,6 +792,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
     public Rectangle getRect () {
         return parallelepiped.getAbsBottomRect();
     }
+
     public GridRectangle getGridRect() {
         return parallelepiped.getBottomRect();
     }
@@ -932,18 +936,19 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         // len(a2,b2)
         double len = Math.sqrt(sqrVal(xp - x0) + sqrVal(yp - y0));
 /*
-        printMsg("Len = " + len);
-        printMsg(
+        LOG.debug("Len = " + len);
+        LOG.debug(
             "Current angle between vectors: " +
             Math.acos(
                 ((xp - x0) * Math.cos(this.currAngle) + (yp - y0) * Math.sin(this.currAngle)) / len
             )
         );
-        printMsg("a1 = " + 100*Math.cos(this.currAngle) + ", b1 = " + Math.sin(this.currAngle));
-        printMsg("a2 = " + (xp - x0) + ", b2=" + (yp - y0));
-        printMsg("currAngle = " + Math.toDegrees(this.currAngle));
+        LOG.debug("a1 = " + 100*Math.cos(this.currAngle) + ", b1 = " + Math.sin(this.currAngle));
+        LOG.debug("a2 = " + (xp - x0) + ", b2=" + (yp - y0));
+        LOG.debug("currAngle = " + Math.toDegrees(this.currAngle));
 */
-        return (xp - x0) * Math.cos(this.currAngle) + (yp - y0) * Math.sin(this.currAngle) > len * Math.cos(dAngle);
+        return  (xp - x0) * Math.cos(this.currAngle) +
+                (yp - y0) * Math.sin(this.currAngle) > len * Math.cos(dAngle);
     }
 
     public boolean angleBetweenRayAndPointSmallEnough(Integer [] point) {

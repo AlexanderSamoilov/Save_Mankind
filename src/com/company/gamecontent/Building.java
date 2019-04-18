@@ -1,6 +1,8 @@
 package com.company.gamecontent;
 
 import com.company.gamegraphics.Sprite;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import java.util.HashMap;
 
@@ -8,6 +10,8 @@ import static com.company.gametools.MathTools.in_range;
 import static com.company.gamethread.Main.terminateNoGiveUp;
 
 public class Building extends GameObject {
+    private static Logger LOG = LogManager.getLogger(Building.class.getName());
+
     private int energyConsumption;
     private int upgradeTime;
     private int level;

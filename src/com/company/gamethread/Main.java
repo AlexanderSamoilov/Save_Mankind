@@ -1,18 +1,25 @@
 package com.company.gamethread;
 
+import com.company.gamelogger.LogConfFactory;
+
 import com.company.gamecontent.*;
 import com.company.gamecontrollers.MouseController;
 import com.company.gamegraphics.Sprite;
+
 import com.company.gamegraphics.GraphBugfixes;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.Semaphore;
+
+import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.apache.logging.log4j.core.config.ConfigurationFactory;
 
 
 // FIXME To Class GameManager or GameState
@@ -26,6 +33,12 @@ enum Choice {
 
 
 public class Main {
+    /* ATTENTION! */
+    /* Don't use System.out.println! Since we use very powerful Thread.suspend() method
+    in this software, we must not call anywhere System.out.println(), because it results to deadlock:
+    https://stackoverflow.com/questions/36631153/deadlock-with-system-out-println-and-a-suspended-thread
+    */
+    private static Logger LOG;
 
     //public static Player[] players = new Player[2]; // TODO: move to GameMap?
 
@@ -37,78 +50,83 @@ public class Main {
 
     private static JFrame frame = new JFrame("Sosochek Konchika Mnogothreadovyj") {
 
-        /*
-    ATTENTION: Please, don't remove this implementation!
-    I added it to synchronize C-thread with EDT (Swing) thread.
-    Normally EDT thread is working automatically and is drawing asynchronously to the other game threads.
-    This contradicts however with Hayami's game concept where all drawing (which is done by V-Thread)
-    is completely controlled and synchronized with other game threads. For example (it is reproduced better with very small TIME_QUANT):
 
-    DEBUG [16]ConcurrentModificationException has reproduced!
-DEBUG [16]java.util.HashMap$HashIterator.nextNode(HashMap.java:1442)
-DEBUG [16]java.util.HashMap$KeyIterator.next(HashMap.java:1466)
-DEBUG [16]com.company.gamecontent.GameMap.renderObjects(GameMap.java:136)
-DEBUG [16]com.company.gamecontent.GameMap.render(GameMap.java:109)
-DEBUG [16]com.company.gamethread.Main$1.paintComponent(Main.java:96)
-DEBUG [16]javax.swing.JComponent.paint(JComponent.java:1056)
-DEBUG [16]javax.swing.JComponent.paintChildren(JComponent.java:889)
-DEBUG [16]javax.swing.JComponent.paint(JComponent.java:1065)
-DEBUG [16]javax.swing.JComponent.paintChildren(JComponent.java:889)
-DEBUG [16]javax.swing.JComponent.paint(JComponent.java:1065)
-DEBUG [16]javax.swing.JLayeredPane.paint(JLayeredPane.java:586)
-DEBUG [16]javax.swing.JComponent.paintChildren(JComponent.java:889)
-DEBUG [16]javax.swing.JComponent.paintToOffscreen(JComponent.java:5217)
-DEBUG [16]javax.swing.RepaintManager$PaintManager.paintDoubleBuffered(RepaintManager.java:1579)
-DEBUG [16]javax.swing.RepaintManager$PaintManager.paint(RepaintManager.java:1502)
-DEBUG [16]javax.swing.RepaintManager.paint(RepaintManager.java:1272)
-DEBUG [16]javax.swing.JComponent.paint(JComponent.java:1042)
-DEBUG [16]java.awt.GraphicsCallback$PaintCallback.run(GraphicsCallback.java:39)
-DEBUG [16]sun.awt.SunGraphicsCallback.runOneComponent(SunGraphicsCallback.java:79)
-DEBUG [16]sun.awt.SunGraphicsCallback.runComponents(SunGraphicsCallback.java:116)
-DEBUG [16]java.awt.Container.paint(Container.java:1978)
-DEBUG [16]java.awt.Window.paint(Window.java:3906)
-DEBUG [16]javax.swing.RepaintManager$4.run(RepaintManager.java:842)
-DEBUG [16]javax.swing.RepaintManager$4.run(RepaintManager.java:814)
-DEBUG [16]java.security.AccessController.doPrivileged(Native Method)
-DEBUG [16]java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:74)
-DEBUG [16]javax.swing.RepaintManager.paintDirtyRegions(RepaintManager.java:814)
-DEBUG [16]javax.swing.RepaintManager.paintDirtyRegions(RepaintManager.java:789)
-DEBUG [16]javax.swing.RepaintManager.prePaintDirtyRegions(RepaintManager.java:738)
-DEBUG [16]javax.swing.RepaintManager.access$1200(RepaintManager.java:64)
-DEBUG [16]javax.swing.RepaintManager$ProcessingRunnable.run(RepaintManager.java:1732)
-DEBUG [16]java.awt.event.InvocationEvent.dispatch(InvocationEvent.java:311)
-DEBUG [16]java.awt.EventQueue.dispatchEventImpl(EventQueue.java:758)
-DEBUG [16]java.awt.EventQueue.access$500(EventQueue.java:97)
-DEBUG [16]java.awt.EventQueue$3.run(EventQueue.java:709)
-DEBUG [16]java.awt.EventQueue$3.run(EventQueue.java:703)
-DEBUG [16]java.security.AccessController.doPrivileged(Native Method)
-DEBUG [16]java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:74)
-DEBUG [16]java.awt.EventQueue.dispatchEvent(EventQueue.java:728)
-DEBUG [16]java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:205)
-DEBUG [16]java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:116)
-DEBUG [16]java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:105)
-DEBUG [16]java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
-DEBUG [16]java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:93)
-DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
+//    <editor-fold desc="ATTENTION: Please, don't remove this implementation!">
+//
+//    ATTENTION: Please, don't remove this implementation!
+//    I added it to synchronize C-thread with EDT (Swing) thread.
+//    Normally EDT thread is working automatically and is drawing asynchronously to the other game threads.
+//    This contradicts however with Hayami's game concept where all drawing (which is done by V-Thread)
+//    is completely controlled and synchronized with other game threads. For example (it is reproduced better with very small TIME_QUANT):
+//
+//    DEBUG [16]ConcurrentModificationException has reproduced!
+//    DEBUG [16]java.util.HashMap$HashIterator.nextNode(HashMap.java:1442)
+//    DEBUG [16]java.util.HashMap$KeyIterator.next(HashMap.java:1466)
+//    EBUG [16]com.company.gamecontent.GameMap.renderObjects(GameMap.java:136)
+//    DEBUG [16]com.company.gamecontent.GameMap.render(GameMap.java:109)
+//    DEBUG [16]com.company.gamethread.Main$1.paintComponent(Main.java:96)
+//    DEBUG [16]javax.swing.JComponent.paint(JComponent.java:1056)
+//    DEBUG [16]javax.swing.JComponent.paintChildren(JComponent.java:889)
+//    DEBUG [16]javax.swing.JComponent.paint(JComponent.java:1065)
+//    DEBUG [16]javax.swing.JComponent.paintChildren(JComponent.java:889)
+//    DEBUG [16]javax.swing.JComponent.paint(JComponent.java:1065)
+//    DEBUG [16]javax.swing.JLayeredPane.paint(JLayeredPane.java:586)
+//    DEBUG [16]javax.swing.JComponent.paintChildren(JComponent.java:889)
+//    DEBUG [16]javax.swing.JComponent.paintToOffscreen(JComponent.java:5217)
+//    DEBUG [16]javax.swing.RepaintManager$PaintManager.paintDoubleBuffered(RepaintManager.java:1579)
+//    DEBUG [16]javax.swing.RepaintManager$PaintManager.paint(RepaintManager.java:1502)
+//    DEBUG [16]javax.swing.RepaintManager.paint(RepaintManager.java:1272)
+//    DEBUG [16]javax.swing.JComponent.paint(JComponent.java:1042)
+//    DEBUG [16]java.awt.GraphicsCallback$PaintCallback.run(GraphicsCallback.java:39)
+//    DEBUG [16]sun.awt.SunGraphicsCallback.runOneComponent(SunGraphicsCallback.java:79)
+//    DEBUG [16]sun.awt.SunGraphicsCallback.runComponents(SunGraphicsCallback.java:116)
+//    DEBUG [16]java.awt.Container.paint(Container.java:1978)
+//    DEBUG [16]java.awt.Window.paint(Window.java:3906)
+//    DEBUG [16]javax.swing.RepaintManager$4.run(RepaintManager.java:842)
+//    DEBUG [16]javax.swing.RepaintManager$4.run(RepaintManager.java:814)
+//    DEBUG [16]java.security.AccessController.doPrivileged(Native Method)
+//    DEBUG [16]java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:74)
+//    DEBUG [16]javax.swing.RepaintManager.paintDirtyRegions(RepaintManager.java:814)
+//    DEBUG [16]javax.swing.RepaintManager.paintDirtyRegions(RepaintManager.java:789)
+//    DEBUG [16]javax.swing.RepaintManager.prePaintDirtyRegions(RepaintManager.java:738)
+//    DEBUG [16]javax.swing.RepaintManager.access$1200(RepaintManager.java:64)
+//    DEBUG [16]javax.swing.RepaintManager$ProcessingRunnable.run(RepaintManager.java:1732)
+//    DEBUG [16]java.awt.event.InvocationEvent.dispatch(InvocationEvent.java:311)
+//    DEBUG [16]java.awt.EventQueue.dispatchEventImpl(EventQueue.java:758)
+//    DEBUG [16]java.awt.EventQueue.access$500(EventQueue.java:97)
+//    DEBUG [16]java.awt.EventQueue$3.run(EventQueue.java:709)
+//    DEBUG [16]java.awt.EventQueue$3.run(EventQueue.java:703)
+//    DEBUG [16]java.security.AccessController.doPrivileged(Native Method)
+//    DEBUG [16]java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:74)
+//    DEBUG [16]java.awt.EventQueue.dispatchEvent(EventQueue.java:728)
+//    DEBUG [16]java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:205)
+//    DEBUG [16]java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:116)
+//    DEBUG [16]java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:105)
+//    DEBUG [16]java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
+//    DEBUG [16]java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:93)
+//    DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
+//
+//    This stack trace appears because C-Thread and EDT are trying to modify the GameMap.objectsOnMap matrix at the same time.
+//
+//    Thus we really need synchronous drawing by EDT and therefore we use .paintImmediately as shown below
+//    in order to force EDT to write everything synchronously and only when we order it.
+//
+//    Moreover when we implement the game driver not in Java there will be no EDT and there will be valid D-V-C thread concept
+//    in which V-Thread performing all drawing is fully controlled by us and nothing is done automatically in background.
+//
+//    The drawback of the synchronous EDT writing is performance degradation on small TIME_QUANT.
+//
+//    </editor-fold>
 
-    This stack trace appears because C-Thread and EDT are trying to modify the GameMap.objectsOnMap matrix at the same time.
-
-    Thus we really need synchronous drawing by EDT and therefore we use .paintImmediately() as shown below
-    in order to force EDT to write everything synchronously and only when we order it.
-
-    Moreover when we implement the game driver not in Java there will be no EDT and there will be valid D-V-C thread concept
-    in which V-Thread performing all drawing is fully controlled by us and nothing is done automatically in background.
-
-    The drawback of the synchronous EDT writing is performance degradation on small TIME_QUANT.
-
-*/
         // this is in a JPanel extended class
         @Override
         public void repaint(long tm) {
-            //Main.printMsg("Painting from jpOber.paint[" + Thread.currentThread().getId() + "].");
-            //for (Component c : getComponents()) {
-            //    Main.printMsg("+ " + c.toString());
-            //}
+            LOG.debug("Painting from jpOber.paint[" + Thread.currentThread().getId() + "].");
+
+//            for (Component c : getComponents()) {
+//                LOG.debug("+ " + c.toString());
+//            }
+
             JRootPane jRootPane = getRootPane();
             super.getRootPane().paintImmediately(jRootPane.getVisibleRect());
             //g.drawArc(10, 10, getWidth() - 20, getHeight() - 20, 0, 360);
@@ -116,14 +134,8 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
     };
 
     private static long threadId = -1;
-    private static String LOGFILE = "game.log";
-
-    /* DEBUG */
-    private static boolean TRACE_ON = false;
-    private static boolean OUT_LOG = false;
-
     private static MouseRect mouseRectangle = new MouseRect();
-    private static MouseController mouseController = new MouseController();
+    private static MouseController mouseController;
 
     // public Main();
     private static boolean SIGNAL_TERM_GENERAL = false;
@@ -134,7 +146,7 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
 //        // this is in a JPanel extended class
 //        @Override
 //        public void paintComponent(Graphics g) {
-//            //Main.printMsg("Painting from jpOber.paint[" + Thread.currentThread().getId() + "].");
+//            LOG.debug("Painting from jpOber.paint[" + Thread.currentThread().getId() + "].");
 //            super.paintComponent(g);
 //            //g.drawArc(10, 10, getWidth() - 20, getHeight() - 20, 0, 360);
 //        }
@@ -145,11 +157,18 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
         @Override
         // This is in a JPanel extended class
         public void paintComponent(Graphics g) {
-            //Main.printMsg("Painting from jpUnter.paint[" + Thread.currentThread().getId() + "].");
+            LOG.debug("Painting from jpUnter.paint[" + Thread.currentThread().getId() + "].");
             super.paintComponent(g);
             GameMap.getInstance().render(g);
         }
     };
+
+    private static void initLoggers() {
+        ConfigurationFactory.setConfigurationFactory(new LogConfFactory());
+        LOG = LogManager.getLogger(Main.class.getName());
+
+        LOG.info("Loggers ready!");
+    }
 
     private static void initMap(int [][] terrain_map, int width, int height) {
         try {
@@ -157,13 +176,13 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
         } catch (Exception e) {
             // This can print messages to file
             for (StackTraceElement steElement : e.getStackTrace()) {
-                printMsg(steElement.toString());
+                LOG.error(steElement.toString());
             }
 
             terminateNoGiveUp(1000, null);
         }
 
-        printMsg("Initialized map " + width + "x" + height);
+        LOG.info("Initialized map " + width + "x" + height);
     }
 
     // TODO Move to some inits()
@@ -251,23 +270,26 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
 //                Race.RaceType.ROBOTS,"JavaBot", testEnemyResources, null, testEnemyUnits
 //        );
 
+        LOG.info("Game objects ready!");
     }
 
     public static void debugMargins(JFrame jFrame, String msg) {
-        /*
-        Main.printMsg("-------------------" + msg + "------------------");
-        printMsg("JFrame.getInsets(left,top,right,bottom):" + jFrame.getInsets().left + "," + jFrame.getInsets().top
+        if (!LOG.getLevel().equals(Level.DEBUG) && !LOG.getLevel().equals(Level.ALL)) {
+            return;
+        }
+
+        LOG.debug("-------------------" + msg + "------------------");
+        LOG.debug("JFrame.getInsets(left,top,right,bottom):" + jFrame.getInsets().left + "," + jFrame.getInsets().top
                 + "," + jFrame.getInsets().right + "," + jFrame.getInsets().bottom);
-        printMsg("JFrame.getContentPane().getInsets(left,top,right,bottom):" + jFrame.getContentPane().getInsets().left + "," + jFrame.getContentPane().getInsets().top
+        LOG.debug("JFrame.getContentPane().getInsets(left,top,right,bottom):" + jFrame.getContentPane().getInsets().left + "," + jFrame.getContentPane().getInsets().top
                 + "," + jFrame.getContentPane().getInsets().right + "," + jFrame.getContentPane().getInsets().bottom);
 
-        Main.printMsg("JFrame.getBounds(): " + jFrame.getBounds().width + " x " + jFrame.getBounds().height);
-        Main.printMsg("JFrame.getContentPane().getBounds(): " + jFrame.getContentPane().getBounds().width + " x " + jFrame.getContentPane().getBounds().height);
-        Main.printMsg("DIFF(JFrame.getBounds() - JFrame.getContentPane().getBounds()):" +
+        LOG.debug("JFrame.getBounds(): " + jFrame.getBounds().width + " x " + jFrame.getBounds().height);
+        LOG.debug("JFrame.getContentPane().getBounds(): " + jFrame.getContentPane().getBounds().width + " x " + jFrame.getContentPane().getBounds().height);
+        LOG.debug("DIFF(JFrame.getBounds() - JFrame.getContentPane().getBounds()):" +
                 (jFrame.getBounds().width - jFrame.getContentPane().getBounds().width) + " x " +
                 (jFrame.getBounds().height - jFrame.getContentPane().getBounds().height));
-        Main.printMsg("**********************************************************");
-        */
+        LOG.debug("**********************************************************");
     }
 
     public static void initGraph() {
@@ -317,7 +339,6 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
 
             frame.setLocationRelativeTo(null);        // Установка окна в центр экрана
 
-
             debugMargins(frame,"After JFrame.setLocationRelativeTo() / Before frame.addWindowListener()");
 
             // Лучше написать слушателя событий, который может контролировать приложение
@@ -335,12 +356,14 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
 
             debugMargins(frame,"After JFrame.addWindowListener()");
 
-            Main.printMsg(" ------ Rectangle API Test  ------ ");
-            Rectangle myRect = new Rectangle(1, 1, 2, 2);
-            Main.printMsg("getMaxX()=" + myRect.getMaxX() + " getMaxY()=" + myRect.getMaxY());
-            Main.printMsg("getWidth()=" + myRect.getWidth() + " getHeight()=" + myRect.getHeight());
+            LOG.debug(" ------ Rectangle API Test  ------ ");
 
-            Main.printMsg(" ------ Make EDT thread to drawing ------ ");
+            Rectangle myRect = new Rectangle(1, 1, 2, 2);
+
+            LOG.debug("getMaxx=" + myRect.getMaxX() + " getMaxy=" + myRect.getMaxY());
+            LOG.debug("getWidth()=" + myRect.getWidth() + " getHeight()=" + myRect.getHeight());
+            LOG.debug(" ------ Make EDT thread to drawing ------ ");
+
             frame.setVisible(true);
 
             // Установка фокуса для контроллеров игры
@@ -348,9 +371,11 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
 
             try {
                 Thread.sleep(1000);
-            } catch (InterruptedException e) {}
+            } catch (InterruptedException e) {
 
-            Main.printMsg(" ------ EDT thread finished drawing ------ ");
+            }
+
+            LOG.debug(" ------ EDT thread finished drawing ------ ");
             //System.exit(0);
 
         } catch (Exception e) {
@@ -361,6 +386,14 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
                     "Failed to initialize game graphics. The game will be terminated now."
             );
         }
+
+        LOG.info("Graphics ready!");
+    }
+
+    public static void initControllers() {
+        mouseController = new MouseController();
+
+        LOG.info("Controllers ready!");
     }
 
     // TODO: consider cases when mouse goes outside the Jframe and coordinates are negative
@@ -375,8 +408,8 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
 
         public void redefineRect(int x, int y, int w, int h) {
 
-            //Main.printMsg("before(" + "(" + x + "," + y + " -> (" + wid + "," + hei + ")");
-            //Main.printMsg("after (" + "(" + x0 + "," + y0 + " -> (" + wid0 + "," + hei0 + ")");
+//            LOG.debug("before(" + "(" + x + "," + y + " -> (" + wid + "," + hei + ")");
+//            LOG.debug("after (" + "(" + x0 + "," + y0 + " -> (" + wid0 + "," + hei0 + ")");
 
             // TODO Do right this
             // vanish old rectangle
@@ -399,12 +432,12 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
             this.y      = y;
             this.width  = w;
             this.height = h;
-            //Main.printMsg("rect repaint done.");
         }
 
         @Override  // this is in a JPanel extended class
         public void paintComponent(Graphics g) {
-            //Main.printMsg("Painting from MouseRect.paint[" + Thread.currentThread().getId() + "].");
+            LOG.debug("Painting from MouseRect.paint[" + Thread.currentThread().getId() + "].");
+
             super.paintComponent(g);
             g.setColor(Color.RED);
 
@@ -463,27 +496,6 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
         }
     }
 
-    /* ATTENTION! */
-    /* Don't use System.out.println! Since we use very powerful Thread.suspend() method
-    in this software, we must not call anywhere System.out.println(), because it results to deadlock:
-    https://stackoverflow.com/questions/36631153/deadlock-with-system-out-println-and-a-suspended-thread
-     */
-    // FIXME Move to Tools.Class
-    public static void printMsg(String str) {
-        if (TRACE_ON && !OUT_LOG) {
-            // Write logs in file
-            final File file = new File(LOGFILE);
-
-            try (final Writer writer = new BufferedWriter(new FileWriter(file, true))) {
-                writer.write("[" + Thread.currentThread().getId() + "]" + str + "\n");
-            } catch (Exception e) {
-                System.exit(2);
-            }
-        }
-
-        System.out.print("DEBUG [" + Thread.currentThread().getId() + "]" + str + "\n");
-    }
-
     // FIXME Move to Tools.Class
     public static void timeout(long timeoutMSec) {
         /* TODO: what happens if we pass negative timeout into sleep()? */
@@ -526,9 +538,9 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
             StackTraceElement [] stackTrace = null;
             while (rc) {
                 try {
-                    printMsg("Thread " + super.getId() + " is starting");
+                    LOG.info("Thread " + super.getId() + " is starting");
                     super.start();
-                    printMsg("Thread " + super.getId() + " started.");
+                    LOG.info("Thread " + super.getId() + " started.");
                     rc = false;
                 } catch (Exception e) {
                     stackTrace = e.getStackTrace();
@@ -536,10 +548,10 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
                 }
             }
 
-            printMsg("Thread " +super.getId() + " failed to start after " + attempts + " attempts.");
+            LOG.warn("Thread " +super.getId() + " failed to start after " + attempts + " attempts.");
             if (stackTrace != null) {
                 for (StackTraceElement steElement : stackTrace) {
-                    printMsg(steElement.toString());
+                    LOG.error(steElement.toString());
                 }
             }
 
@@ -551,18 +563,18 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
         public void run() {
             try
             {
-                printMsg("Thread " + super.getId() + " is running");
+                LOG.info("Thread " + super.getId() + " is running");
                 while (!interrupted() && !SIGNAL_TERM) {
                     // All the functionality is incapsulated here.
                     repeat();
                     timeout(TIME_QUANT);
                 }
 
-                printMsg("Thread " + super.getId() + " finished.");
+                LOG.info("Thread " + super.getId() + " finished.");
             }
             catch (InterruptedException e)
             {
-                printMsg("Thread " + super.getId() + " died!");
+                LOG.error("Thread " + super.getId() + " died!");
                 e.printStackTrace();
             }
 
@@ -625,7 +637,7 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
 //            rc = false;
 //        } catch (Exception e) {
 //            for (StackTraceElement steElement : e.getStackTrace()) {
-//                printMsg(steElement.toString());
+//                LOG.error(steElement.toString());
 //            }
 //        }
 //        return rc;
@@ -637,7 +649,7 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
             C_Thread.getInstance().terminate(timeoutMsec);
         } catch (Exception e) {
             for (StackTraceElement steElement : e.getStackTrace()) {
-                printMsg(steElement.toString());
+                LOG.error(steElement.toString());
             }
 
             return false;
@@ -647,7 +659,7 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
             V_Thread.getInstance().terminate(timeoutMsec);
         } catch (Exception e) {
             for (StackTraceElement steElement : e.getStackTrace()) {
-                printMsg(steElement.toString());
+                LOG.error(steElement.toString());
             }
 
             return false;
@@ -657,7 +669,7 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
             D_Thread.getInstance().terminate(timeoutMsec);
         } catch (Exception e) {
             for (StackTraceElement steElement : e.getStackTrace()) {
-                printMsg(steElement.toString());
+                LOG.error(steElement.toString());
             }
 
             return false;
@@ -672,18 +684,18 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
 
     public static void terminateNoGiveUp(long timeoutMsec, String terminateMsg) {
         if (terminateMsg != null && !terminateMsg.equals("")){
-            printMsg(terminateMsg);
+            LOG.fatal(terminateMsg);
         }
 
-        printMsg(" --- total terminate! ---");
+        LOG.debug(" --- total terminate! ---");
 
-        ////ErrWindow ew = displayErrorWindow("The game was interrupted due to exception. Exiting...
+        // ErrWindow ew = displayErrorWindow("The game was interrupted due to exception. Exiting...
         // (if this window does not disappear for a long time, kill the game process manually from OS.)");
         while (!terminate(timeoutMsec)) {
             // Just for safety we set here some small timeout unconfigurable
             // to avoid brutal rush of terminate() requests
             timeout(10);
-            printMsg(" --- trying terminate! ---");
+            LOG.debug(" --- trying terminate! ---");
         }
 
         ////ew.close();
@@ -693,12 +705,14 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
 
     public static void suspendAll() {
         D_Thread.getInstance().suspend();
-        //Main.printMsg("D suspended");
+        LOG.debug("D suspended");
+
         V_Thread.getInstance().suspend();
-        //Main.printMsg("V suspended");
+        LOG.debug("V suspended");
+
         C_Thread.getInstance().suspend();
-        //Main.printMsg("C suspended");
-        Main.printMsg("--- suspended ---");
+        LOG.debug("C suspended");
+        LOG.info("--- suspended ---");
     }
 
     // TODO Move this to ThreadPool
@@ -706,7 +720,7 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
         D_Thread.getInstance().resume();
         V_Thread.getInstance().resume();
         C_Thread.getInstance().resume();
-        Main.printMsg("--- resumed ---");
+        LOG.info("--- resumed ---");
     }
     // This function handles ESC key press (it runs in a special unnamed thread automatically by Java mechanisms)
     // I think that this must be handled in the main thread, because it is the highest priority action - game state managing.
@@ -737,19 +751,16 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
 
     // Main thread of the game. Starts other game thread in the correct order. Exist if and only if all other threads exited.
     public static void main(String[] args) throws InterruptedException {
-        // Init logging
-        File logFile = new File(LOGFILE);
-        if (logFile.exists()) {
-            logFile.delete();
-        }
+        // ---->> Init logging
+        initLoggers();
 
-        printMsg("The game starts.");
+        // ---->> Init Controllers
+        initControllers();
 
         // Remember ID of the main thread to give it to other threads
         threadId = Thread.currentThread().getId();
 
         // ----> Initing GameMap
-        // TODO -> INIT()
         // TODO -> Map.init()
         int width = Restrictions.MAX_X;
         int height = Restrictions.MAX_Y;
@@ -772,7 +783,7 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
         jpUnter.addMouseMotionListener(getMouseController());
         jpUnter.addMouseWheelListener(getMouseController());
 
-        Main.printMsg("players:" + Player.getPlayers().length);
+        LOG.debug("players:" + Player.getPlayers().length);
 
         if (D_Thread.getInstance().start(100, 10)) {
             terminateNoGiveUp(1000, null);
@@ -834,7 +845,7 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
             }
 
             if (deadStatus > 0) {
-                printMsg(deadStatus + " of game threads were unexpectedly terminated. To ensure the correct game flow we must exit. Please, restart the game.");
+                LOG.debug(deadStatus + " of game threads were unexpectedly terminated. To ensure the correct game flow we must exit. Please, restart the game.");
                 break;
             }
         }
@@ -868,7 +879,7 @@ DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
         // For sure
         // TODO Do check this sure
         terminateNoGiveUp(1000, null);
-        printMsg("The game exited.");
+        LOG.warn("The game exited.");
         System.exit(deadStatus);
     }
 }

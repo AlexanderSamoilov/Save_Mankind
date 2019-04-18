@@ -3,6 +3,8 @@ package com.company.gamecontent;
 import com.company.gamegraphics.GraphBugfixes;
 import com.company.gamethread.Main;
 import com.company.gametools.MathTools;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import java.awt.*;
 
@@ -10,6 +12,7 @@ import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 import static java.lang.Thread.sleep;
 
 public class ParallelogramVertical {
+    private static Logger LOG = LogManager.getLogger(ParallelogramVertical.class.getName());
 
     private int x, y; // Coordinates of the left-top-back point
     private int width, height;
@@ -63,8 +66,8 @@ public class ParallelogramVertical {
         double y_top = y_left_top + (p[0] - x_left) * (y_right_top - y_left_top) / (x_right - x_left);
         double y_bottom = y_left_bottom + (p[0] - x_left) * (y_right_bottom - y_left_bottom) / (x_right - x_left);
 
-        //Main.printMsg("x_left=" + x_left + ", x=" + p[0] + ", x_right=" + x_right);
-        //Main.printMsg("y_top=" + y_top + ", y=" + p[1] + ", y_bottom=" + y_bottom);
+        LOG.debug("x_left=" + x_left + ", x=" + p[0] + ", x_right=" + x_right);
+        LOG.debug("y_top=" + y_top + ", y=" + p[1] + ", y_bottom=" + y_bottom);
 
         if ((y_top > p[1]) || (p[1] > y_bottom) || (x_left > p[0]) || (p[0] > x_right)) return -1; // outside
         if ((y_top < p[1]) && (p[1] < y_bottom) && (x_left < p[0]) && (p[0] < x_right)) return 1; // inside
@@ -125,10 +128,10 @@ public class ParallelogramVertical {
                    (edgesContainingA[0] == false) && (edgesContainingA[1] == false)
                 && (edgesContainingA[2] == false) && (edgesContainingA[3] == false)
             ) {
-                Main.printMsg("L=(" + top_left[0] + ", " + top_left[1] + ") , A=(" + A[0] + ", " + A[1] + "), R=(" + top_right[0] + ", " + top_right[1] + "), sectionContains=" + MathTools.sectionContains(top_left, A, top_right));
-                Main.printMsg("L=(" + bottom_left[0] + ", " + bottom_left[1] + ") , A=(" + A[0] + ", " + A[1] + "), R=(" + bottom_right[0] + ", " + bottom_right[1] + "), sectionContains=" + MathTools.sectionContains(bottom_left, A, bottom_right));
-                Main.printMsg("L=(" + top_left[0] + ", " + top_left[1] + ") , A=(" + A[0] + ", " + A[1] + "), R=(" + bottom_left[0] + ", " + bottom_left[1] + "), sectionContains=" + MathTools.sectionContains(top_left, A, bottom_left));
-                Main.printMsg("L=(" + top_right[0] + ", " + top_right[1] + ") , A=(" + A[0] + ", " + A[1] + "), R=(" + bottom_right[0] + ", " + bottom_right[1] + "), sectionContains=" + MathTools.sectionContains(top_right, A, bottom_right));
+                LOG.debug("L=(" + top_left[0] + ", " + top_left[1] + ") , A=(" + A[0] + ", " + A[1] + "), R=(" + top_right[0] + ", " + top_right[1] + "), sectionContains=" + MathTools.sectionContains(top_left, A, top_right));
+                LOG.debug("L=(" + bottom_left[0] + ", " + bottom_left[1] + ") , A=(" + A[0] + ", " + A[1] + "), R=(" + bottom_right[0] + ", " + bottom_right[1] + "), sectionContains=" + MathTools.sectionContains(bottom_left, A, bottom_right));
+                LOG.debug("L=(" + top_left[0] + ", " + top_left[1] + ") , A=(" + A[0] + ", " + A[1] + "), R=(" + bottom_left[0] + ", " + bottom_left[1] + "), sectionContains=" + MathTools.sectionContains(top_left, A, bottom_left));
+                LOG.debug("L=(" + top_right[0] + ", " + top_right[1] + ") , A=(" + A[0] + ", " + A[1] + "), R=(" + bottom_right[0] + ", " + bottom_right[1] + "), sectionContains=" + MathTools.sectionContains(top_right, A, bottom_right));
                 Main.terminateNoGiveUp(1000, "Discrepancy!! .contains(" + A[0] + "," + A[1] + ") is 0, but .sectionContains says that no one edges contains A.");
             }
 
@@ -143,10 +146,10 @@ public class ParallelogramVertical {
                    (edgesContainingB[0] == false) && (edgesContainingB[1] == false)
                 && (edgesContainingB[2] == false) && (edgesContainingB[3] == false)
             ) {
-                Main.printMsg("L=(" + top_left[0] + ", " + top_left[1] + ") , B=(" + B[0] + ", " + B[1] + "), R=(" + top_right[0] + ", " + top_right[1] + "), sectionContains=" + MathTools.sectionContains(top_left, B, top_right));
-                Main.printMsg("L=(" + bottom_left[0] + ", " + bottom_left[1] + ") , B=(" + B[0] + ", " + B[1] + "), R=(" + bottom_right[0] + ", " + bottom_right[1] + "), sectionContains=" + MathTools.sectionContains(bottom_left, B, bottom_right));
-                Main.printMsg("L=(" + top_left[0] + ", " + top_left[1] + ") , B=(" + B[0] + ", " + B[1] + "), R=(" + bottom_left[0] + ", " + bottom_left[1] + "), sectionContains=" + MathTools.sectionContains(top_left, B, bottom_left));
-                Main.printMsg("L=(" + top_right[0] + ", " + top_right[1] + ") , B=(" + B[0] + ", " + B[1] + "), R=(" + bottom_right[0] + ", " + bottom_right[1] + "), sectionContains=" + MathTools.sectionContains(top_right, B, bottom_right));
+                LOG.debug("L=(" + top_left[0] + ", " + top_left[1] + ") , B=(" + B[0] + ", " + B[1] + "), R=(" + top_right[0] + ", " + top_right[1] + "), sectionContains=" + MathTools.sectionContains(top_left, B, top_right));
+                LOG.debug("L=(" + bottom_left[0] + ", " + bottom_left[1] + ") , B=(" + B[0] + ", " + B[1] + "), R=(" + bottom_right[0] + ", " + bottom_right[1] + "), sectionContains=" + MathTools.sectionContains(bottom_left, B, bottom_right));
+                LOG.debug("L=(" + top_left[0] + ", " + top_left[1] + ") , B=(" + B[0] + ", " + B[1] + "), R=(" + bottom_left[0] + ", " + bottom_left[1] + "), sectionContains=" + MathTools.sectionContains(top_left, B, bottom_left));
+                LOG.debug("L=(" + top_right[0] + ", " + top_right[1] + ") , B=(" + B[0] + ", " + B[1] + "), R=(" + bottom_right[0] + ", " + bottom_right[1] + "), sectionContains=" + MathTools.sectionContains(top_right, B, bottom_right));
                 Main.terminateNoGiveUp(1000, "Discrepancy!! .contains(" + B[0] + "," + B[1] + ") is 0, but .sectionContains says that no one edges contains B.");
             }
 
@@ -176,7 +179,7 @@ public class ParallelogramVertical {
             || (MathTools.sectionContains(A, bottom_left, B) == 0)
             || (MathTools.sectionContains(A, bottom_right, B) == 0)
         ) {
-            Main.printMsg("WARNING: The condition (contains(A) == 0) || (contains(B) == 0) did not detect case _a_. Check the algorithm!");
+            LOG.warn("The condition (contains(A) == 0) || (contains(B) == 0) did not detect case _a_. Check the algorithm!");
             return 0; // case "a"
         }
 
@@ -231,7 +234,7 @@ public class ParallelogramVertical {
                  */
                 top[0] = top_y / BLOCK_SIZE;
                 bottom[0] = (bottom_y - top_y + 1) / BLOCK_SIZE;
-                Main.printMsg("WARNING: Using of more general GridMatrixHorizontal instead of GridRectangle width w=1.");
+                LOG.warn("Using of more general GridMatrixHorizontal instead of GridRectangle width w=1.");
                 return;
             }
 
@@ -245,7 +248,7 @@ public class ParallelogramVertical {
                     top[i - left] = pgmVect.y / BLOCK_SIZE;
                     bottom[i - left] = (pgmVect.y + pgmVect.height - 1) / BLOCK_SIZE;
                 }
-                Main.printMsg("WARNING: Using of more general GridMatrixHorizontal instead of GridRectangle.");
+                LOG.warn("Using of more general GridMatrixHorizontal instead of GridRectangle.");
                 return;
             }
 

@@ -1,11 +1,15 @@
 package com.company.gamecontent;
 
 import com.company.gamethread.Main;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.ArrayList;
 
 public class Player {
+    private static Logger LOG = LogManager.getLogger(Player.class.getName());
+
     // It will affect restrictions on type of buildings/weapons owned by the player
     private Race.RaceType race;
     /*(namely:
@@ -34,6 +38,7 @@ public class Player {
     private HashMap<Resource, Integer> resources;
     private ArrayList<Building>        buildings = null;
     private ArrayList<Unit>            units     = null;
+
 
     public Player(Race.RaceType race, String name, HashMap<Resource, Integer> res, ArrayList<Building> buildings, ArrayList<Unit> units) {
         // 1 - parent class specific parameters
@@ -99,7 +104,7 @@ public class Player {
         /* DEBUG */
         if (this.units != null){
             for (Unit printUnit : this.units) {
-                Main.printMsg("INITIAL Player #(" + id + ")" + this +" unit: " + printUnit + "(" + printUnit.getWeapon().getOwner() + ").");
+                LOG.debug("INITIAL Player #(" + id + ")" + this +" unit: " + printUnit + "(" + printUnit.getWeapon().getOwner() + ").");
             }
         }
 
@@ -125,7 +130,6 @@ public class Player {
     }
 
     // Add exception handling etc.
-    // TODO rename to Remove()?
     public void destroy(GameObject gameObj) {
         if (gameObj instanceof Building) {
             this.removeBuilding((Building) gameObj);

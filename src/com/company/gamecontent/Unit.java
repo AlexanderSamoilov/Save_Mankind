@@ -5,8 +5,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import com.company.gamegraphics.Sprite;
-import com.company.gamethread.Main;
 import com.company.gametools.MathTools;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.company.gamecontent.Parallelepiped.GridRectangle;
 import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
@@ -16,10 +18,10 @@ import static com.company.gametools.MathTools.sqrVal;
 import static com.company.gametools.MathTools.in_range;
 import static com.company.gametools.MathTools.withinRadius;
 
-import static com.company.gamethread.Main.printMsg;
 import static com.company.gamethread.Main.terminateNoGiveUp;
 
 public class Unit extends GameObject implements Shootable {
+    private static Logger LOG = LogManager.getLogger(Unit.class.getName());
 
     // May be NULL (for the wall), but we suppose each unit can use only one type of weapon.
     // it is also supposed that it is not possible to redevelop existing units to use another weapon
@@ -57,7 +59,7 @@ public class Unit extends GameObject implements Shootable {
         double shootRadiusMinimal = (INTERSECTION_STRATEGY_SEVERITY - 1) * BLOCK_SIZE * Math.sqrt(2) +
                 0.5 * Math.sqrt(MathTools.sqrVal(getAbsSize()[0]) + MathTools.sqrVal(getAbsSize()[1]));
         if (w.getShootRadius() < shootRadiusMinimal) {
-            Main.printMsg("ERROR: the given shooting radius " + w.getShootRadius()
+            LOG.error("The given shooting radius " + w.getShootRadius()
                         + " is less than the minimal value " + shootRadiusMinimal);
             return false;
         }
@@ -115,7 +117,7 @@ public class Unit extends GameObject implements Shootable {
             return false;
         }
 
-//        printMsg("Player " + this.getPlayerId() + " get Object of Player " + targetObj.playerId + " as target!");
+        LOG.debug("Player " + this.getPlayerId() + " get Object of Player " + targetObj.playerId + " as target!");
         this.targetObject = targetObj;
 
         this.unsetTargetPoint();
@@ -189,7 +191,7 @@ public class Unit extends GameObject implements Shootable {
         if (rotateTo(point)) {
             return false;
         }
-        printMsg("Player " + this.getPlayerId() + " shoots target");
+        LOG.debug("Player " + this.getPlayerId() + " shoots target");
         weapon.shoot(getAbsCenterInteger(), point); // returns true each Nth shoot
         return true;
     }
@@ -200,19 +202,19 @@ public class Unit extends GameObject implements Shootable {
         validateTargetTypesNumber();
 
         if (destPoint != null) {
-//            printMsg("Player " + this.getPlayerId() + " move to destPoint");
+            LOG.debug("Player " + this.getPlayerId() + " move to destPoint");
             this.moveTo(destPoint);
             return;
         }
 
         if (!hasWeapon()) {
-//            printMsg("Player " + this.getPlayerId() + " has no weapon :(");
+            LOG.debug("Player " + this.getPlayerId() + " has no weapon :(");
             return;
         }
 
         // TODO Move it in AI_Tools_Class
         if ((targetPoint == null) && (targetObject == null)) {
-//            printMsg("Player " + this.getPlayerId() + " searchTargetsInRadius");
+            LOG.debug("Player " + this.getPlayerId() + " searchTargetsInRadius");
             searchTargetsInRadius();
             return;
         }
@@ -251,7 +253,7 @@ public class Unit extends GameObject implements Shootable {
                 }
 
                 if (targetObject.getRect().contains(far[0], far[1])) {
-                    printMsg("Player " + this.getPlayerId() + " shoots target border");
+                    LOG.debug("Player " + this.getPlayerId() + " shoots target border");
                     shoot(far);
                     return;
                 }
@@ -263,7 +265,7 @@ public class Unit extends GameObject implements Shootable {
         // or: something hinders (impediment on the line of fire) - need to relocate
         // TODO Here may be a Def target where unit can't pursuing
         // TODO Move it in AI_Tools_Class
-        Main.printMsg("Player " + this.getPlayerId() + ", unit " + this + " at (" + getAbsCenterInteger()[0] + "," + getAbsCenterInteger()[1] +
+        LOG.warn("Player " + this.getPlayerId() + ", unit " + this + " at (" + getAbsCenterInteger()[0] + "," + getAbsCenterInteger()[1] +
                     "): target " + targetObject + " at (" + target[0] + "," + target[1] + ") is too far - cannot shoot now.");
         this.moveTo(getNextPointOnOptimalShootingPath(target));
     }
@@ -288,7 +290,7 @@ public class Unit extends GameObject implements Shootable {
         detectionAreaRect = GameMap.getInstance().crop(detectionAreaRect);
 
         GridRectangle gridRect = new GridRectangle(detectionAreaRect);
-//        printMsg("Player " + this.getPlayerId() + ": left=" + left + ", right=" + right + ", top=" + top + ", bottom=" + bottom);
+//        LOG.debug("Player " + this.getPlayerId() + ": left=" + left + ", right=" + right + ", top=" + top + ", bottom=" + bottom);
 
         // TODO Use Collections
         for (int i = gridRect.left; (i <= gridRect.right) && (targetObject == null); i++) {
@@ -298,7 +300,7 @@ public class Unit extends GameObject implements Shootable {
                     continue;
                 }
 
-//                printMsg("Player " + this.getPlayerId() + " found something in position (" + i + ", " + j + ")!");
+                LOG.debug("Player " + this.getPlayerId() + " found something in position (" + i + ", " + j + ")!");
                 for (GameObject thatObject : objectsOnTheBlock) {
                     // Not me
                     // TODO !is_allie
@@ -322,7 +324,7 @@ public class Unit extends GameObject implements Shootable {
     }
 
     public void render(Graphics g) {
-//        printMsg("Rendering UNIT: " + this.getPlayerId());
+        LOG.debug("Rendering UNIT: " + this.getPlayerId());
         super.render(g);
 
         if (!hasWeapon()) {

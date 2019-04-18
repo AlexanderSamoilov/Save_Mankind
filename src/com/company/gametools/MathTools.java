@@ -44,7 +44,7 @@ public class MathTools {
         double norm = Math.sqrt(
                 sqrVal(destPoint[0] - srcPoint[0]) + sqrVal(destPoint[1] - srcPoint[1])
         );
-        //Main.printMsg("norm=" + norm + ", speed=" + speed);
+        //LOG.debug("norm=" + norm + ", speed=" + speed);
 
         // Avoid division by zero and endless wandering around the destination point
         if (norm <= step) {
