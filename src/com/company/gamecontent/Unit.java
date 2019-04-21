@@ -265,7 +265,7 @@ public class Unit extends GameObject implements Shootable {
         // or: something hinders (impediment on the line of fire) - need to relocate
         // TODO Here may be a Def target where unit can't pursuing
         // TODO Move it in AI_Tools_Class
-        LOG.warn("Player " + this.getPlayerId() + ", unit " + this + " at (" + getAbsCenterInteger()[0] + "," + getAbsCenterInteger()[1] +
+        LOG.debug("Player " + this.getPlayerId() + ", unit " + this + " at (" + getAbsCenterInteger()[0] + "," + getAbsCenterInteger()[1] +
                     "): target " + targetObject + " at (" + target[0] + "," + target[1] + ") is too far - cannot shoot now.");
         this.moveTo(getNextPointOnOptimalShootingPath(target));
     }

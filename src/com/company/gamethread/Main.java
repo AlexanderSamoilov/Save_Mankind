@@ -167,7 +167,7 @@ public class Main {
         ConfigurationFactory.setConfigurationFactory(new LogConfFactory());
         LOG = LogManager.getLogger(Main.class.getName());
 
-        LOG.info("Loggers ready!");
+        LOG.info("The loggers are ready!");
     }
 
     private static void initMap(int [][] terrain_map, int width, int height) {
@@ -270,11 +270,11 @@ public class Main {
 //                Race.RaceType.ROBOTS,"JavaBot", testEnemyResources, null, testEnemyUnits
 //        );
 
-        LOG.info("Game objects ready!");
+        LOG.info("The game objects have been initialized!");
     }
 
     public static void debugMargins(JFrame jFrame, String msg) {
-        if (!LOG.getLevel().equals(Level.DEBUG) && !LOG.getLevel().equals(Level.ALL)) {
+        if (LOG.getLevel().toInt() >= Level.INFO.toInt()) {
             return;
         }
 
@@ -360,7 +360,7 @@ public class Main {
 
             Rectangle myRect = new Rectangle(1, 1, 2, 2);
 
-            LOG.debug("getMaxx=" + myRect.getMaxX() + " getMaxy=" + myRect.getMaxY());
+            LOG.debug("getMaxX=" + myRect.getMaxX() + " getMaxY=" + myRect.getMaxY());
             LOG.debug("getWidth()=" + myRect.getWidth() + " getHeight()=" + myRect.getHeight());
             LOG.debug(" ------ Make EDT thread to drawing ------ ");
 
@@ -387,13 +387,13 @@ public class Main {
             );
         }
 
-        LOG.info("Graphics ready!");
+        LOG.info("The graphics are ready!");
     }
 
     public static void initControllers() {
         mouseController = new MouseController();
 
-        LOG.info("Controllers ready!");
+        LOG.info("The controllers are ready!");
     }
 
     // TODO: consider cases when mouse goes outside the Jframe and coordinates are negative
@@ -441,7 +441,7 @@ public class Main {
             super.paintComponent(g);
             g.setColor(Color.RED);
 
-            //co.drawArc(getx(), gety(), getWidth() - 20, getHeight() - 20, 0, 360);
+//            co.drawArc(getX(), getY(), getWidth() - 20, getHeight() - 20, 0, 360);
             GraphBugfixes.drawRect(g, new Rectangle(x, y, width, height));
         }
 

@@ -392,7 +392,7 @@ public class GameMap {
 
                     // DEBUG
 //                    LOG.debug("Check 1: (" + thisObjRect.x + "," + thisObjRect.y + "," + thisObjRect.width + "," + thisObjRect.height);
-//                    LOG.debug("Check 2: (" + objOnBlockRect.getx + "," + objOnBlockRect.gety + "," + objOnBlockRect.getWidth() + "," + objOnBlockRect.getHeight());
+//                    LOG.debug("Check 2: (" + objOnBlockRect.getX() + "," + objOnBlockRect.getY() + "," + objOnBlockRect.getWidth() + "," + objOnBlockRect.getHeight());
 //                    LOG.debug("Check 3: (" + objOnBlock.getPixelLoc()[0] + "," + objOnBlock.getPixelLoc()[1] + "," + objOnBlock.getPixelSize()[0] + "," + objOnBlock.getPixelSize()[1]);
 
                     if (givenRect.intersects(objOnBlockRect)) {

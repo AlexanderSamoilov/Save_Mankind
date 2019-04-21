@@ -17,7 +17,7 @@ public class D_Thread extends Main.ThreadPattern {
     public void repeat() throws InterruptedException {
 
 //        LOG.debug(super.getName() + " is managing the dashboard.");
-//        LOG.debug("x=" + Main.getMouseController().getx);
+//        LOG.debug("x=" + Main.getMouseController().getX());
 //        LOG.debug("Main thread id for me: " + Main.getThreadId());
     }
 

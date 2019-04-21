@@ -29,14 +29,14 @@ public class LogOptions {
     // WARNING. Keys: %c, %l, %M do program's speed very slow!
 
     // Example of good format of output:
-    //    2019-04-16 22:06:54 gamethread.Main > mainfunc() INFO: The game starts.
-    static final String STDOUT_LAYOUT = "%d{yyyy-MM-dd HH:mm:ss} %-30.30c{2} > %20.20M() %5level: %msg%n%throwable";
+    //    2019-04-16 22:06:54 [22] gamethread.Main > mainfunc() INFO: The game starts.
+    static final String STDOUT_LAYOUT = "%d{yyyy-MM-dd HH:mm:ss} [%-2.2tid] %-30.30c{2} > %20.20M() %5level: %msg%n%throwable";
 
     // Example of good format of output:
-    //    2019-04-16 22:06:54 FATAL: The game dead.
-    static final String   FILE_LAYOUT = "%d{yyyy-MM-dd HH:mm:ss} %5level: %msg%n%throwable";
+    //    2019-04-16 22:06:54 [22] FATAL: The game dead.
+    static final String   FILE_LAYOUT = "%d{yyyy-MM-dd HH:mm:ss} [%-2.2tid] %5level: %msg%n%throwable";
 
     // Example of good format of output:
-    //    DEBUG: x=12, y=16.
-    static final String  DEBUG_LAYOUT = "%5level: %msg%n";
+    //    [22] DEBUG: x=12, y=16.
+    static final String  DEBUG_LAYOUT = "[%-2.2tid] %5level: %msg%n";
 }

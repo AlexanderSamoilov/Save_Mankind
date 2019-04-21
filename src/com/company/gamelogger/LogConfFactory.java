@@ -126,7 +126,7 @@ public class LogConfFactory extends ConfigurationFactory {
         // ---->> LOGGER BUILDER
         // Adding Root Logger.
         // If not create this, log4j add it and configure anyway with ERROR lvl and SYSTEM_OUT appender.
-        // We not need custom logger, because we must setting logger names in all classes.
+        // We don't need custom logger, because we must setting logger names in all classes.
         RootLoggerComponentBuilder gameLoggerBuilder = builder.newRootLogger(LEVEL);
 
         // Adding stdout as reference appender for logger
