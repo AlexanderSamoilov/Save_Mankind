@@ -22,7 +22,7 @@ public class Point2D <T> {
         this(p.x, p.y);
     }
 
-    public String show() {
+    public String toString() {
         return "(" + x + ", " + y + ")";
     }
 }

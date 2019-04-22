@@ -34,7 +34,7 @@ public class Point3D <T> {
         return new Point((int) this.x, (int) this.y);
     }
 
-    public String show() {
+    public String toString() {
         return "(" + this.x + ", " + this.y + ", " + this.z + ")";
     }
 }
