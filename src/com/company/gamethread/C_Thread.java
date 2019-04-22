@@ -4,9 +4,12 @@ import com.company.gamecontent.*;
 
 import java.util.HashSet;
 import java.util.concurrent.Semaphore;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 // Singleton
 public class C_Thread extends Main.ThreadPattern {
+    private static Logger LOG = LogManager.getLogger(C_Thread.class.getName());
 
     private static final C_Thread instance = new C_Thread("C-Thread");
     public static C_Thread getInstance() {
@@ -21,7 +24,9 @@ public class C_Thread extends Main.ThreadPattern {
 
         Semaphore sem = Main.ParameterizedMutexManager.getInstance().getMutex("V", "recalc");
         sem.acquire();
-        // Main.printMsg("-> " + super.getName() + " is calculating. Permits: " + String.valueOf(sem.availablePermits()));
+
+        LOG.debug("-> " + super.getName() + " is calculating. Permits: " + String.valueOf(sem.availablePermits()));
+
         // recalculate positions of each game object
         // TODO: do it according to our documentation (swap pointers worldCurr, worldNext)
         if (GameMap.getInstance().getBullets() != null) {
@@ -43,7 +48,8 @@ public class C_Thread extends Main.ThreadPattern {
                 }
             }
         }
-        // Main.printMsg("<- " + super.getName() + " is calculating. Permits: " + String.valueOf(sem.availablePermits()));
+
+        LOG.debug("<- " + super.getName() + " is calculating. Permits: " + String.valueOf(sem.availablePermits()));
         sem.release();
     }
 

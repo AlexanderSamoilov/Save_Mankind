@@ -3,17 +3,19 @@ package com.company.gamecontrollers;
 import com.company.gamecontent.GameMap;
 import com.company.gamethread.C_Thread;
 import com.company.gamethread.Main;
-import com.company.gamethread.MutexManager;
 
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
-import java.awt.image.BufferedImage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 
 // TODO If we not releasing controller for Enemy, than this class must be static
 public class MouseController extends MouseAdapter {
+    private static Logger LOG = LogManager.getLogger(MouseController.class.getName());
+
     private final int NUM_BUTTONS = 4;
 
     private static final int NO_BUTTON = 0;
@@ -45,6 +47,7 @@ public class MouseController extends MouseAdapter {
             // Otherwise there is such a situation possible when C thread assigns a target
             // and this (D) thread (actually EDT in Java) assigns also a dest point or vice versa
             C_Thread.getInstance().suspend();
+
             GameMap.getInstance().assign(new Integer[]{e.getX(), e.getY()});
             C_Thread.getInstance().resume();
             // TODO: probably V thread should be also suspended
@@ -57,7 +60,7 @@ public class MouseController extends MouseAdapter {
         this.x = e.getX();
         this.y = e.getY();
 
-        Main.printMsg("pressed:(" + e.getButton() + ") x=" + x + ", y=" + y);
+        LOG.debug("pressed:(" + e.getButton() + ") x=" + x + ", y=" + y);
     }
 
     @Override
@@ -86,7 +89,7 @@ public class MouseController extends MouseAdapter {
 ////
 ////                Main.resumeAll();
 //
-//                Main.printMsg("released_drag(" + e.getButton() + "): x=" + x + ", y=" + y);
+//                  LOG.debug("released_drag(" + e.getButton() + "): x=" + x + ", y=" + y);
 //            } else {
 //                // TODO This idea is temporary
 //                Main.suspendAll();
@@ -96,11 +99,11 @@ public class MouseController extends MouseAdapter {
 //
 ////                Main.resumeAll();
 //
-//                Main.printMsg("released_press(" + e.getButton() + "): x=" + x + ", y=" + y);
+//                  LOG.debug("released_press(" + e.getButton() + "): x=" + x + ", y=" + y);
 //            }
 
             // TODO: add here failback for the case of unexpected suspend state
-            Main.printMsg("Left Mouse Button released(" + e.getButton() + "): x=" + x + ", y=" + y);
+            LOG.debug("Left Mouse Button released(" + e.getButton() + "): x=" + x + ", y=" + y);
 
             // TODO Idea about realisation of MouseRect and MouseController
             /*
@@ -113,16 +116,16 @@ public class MouseController extends MouseAdapter {
 
                 // Point selection of unit by rect-selection
                 GameMap.getInstance().select(new Rectangle(e.getX(), e.getY(), 1, 1));
-                Main.printMsg("released_press(" + e.getButton() + "): x=" + x + ", y=" + y);
+                LOG.debug("released_press(" + e.getButton() + "): x=" + x + ", y=" + y);
             } else {
                 // Selection of units by rect-selection
                 GameMap.getInstance().select(Main.getMouseRect().getRect());
-                Main.printMsg("released_drag(" + e.getButton() + "): x=" + x + ", y=" + y);
+                LOG.debug("released_drag(" + e.getButton() + "): x=" + x + ", y=" + y);
             }
 
 //        } else {
-//            // TODO: add here fail back for the case of unexpected suspend state
-//            Main.printMsg("released(" + e.getButton() + "): x=" + x + ", y=" + y);
+//              // TODO: add here fail back for the case of unexpected suspend state
+                LOG.debug("released(" + e.getButton() + "): x=" + x + ", y=" + y);
         }
 
         // Remove previous rect-selection
@@ -153,7 +156,8 @@ public class MouseController extends MouseAdapter {
         this.x = e.getX();
         this.y = e.getY();
         //moving = true;
-        //Main.printMsg("moved: x=" + x + ", y=" + y);
+
+        LOG.debug("moved: x=" + x + ", y=" + y);
     }
 
     @Override
@@ -168,7 +172,9 @@ public class MouseController extends MouseAdapter {
         int right_button_down  = MouseEvent.BUTTON3_DOWN_MASK;
 
         if ((e.getModifiersEx() & (left_button_down | middle_button_down | right_button_down)) == left_button_down) {
-            Main.printMsg("dragged(" + e.getButton() + ":" + e.getModifiersEx() + "): (" + last_x + "," + last_y + " -> (" + e.getX() + "," + e.getY() + ")");
+            LOG.debug("dragged(" + e.getButton() + ":" + e.getModifiersEx() + "):" +
+                    " (" + last_x + "," + last_y + " -> (" + e.getX() + "," + e.getY() + ")"
+            );
 
             /* I want and I WILL use Thread.suspend() anyway! */
             // BUT I must do it very very careful, especially regarding printouts.
@@ -190,7 +196,8 @@ public class MouseController extends MouseAdapter {
 //            Main.getPanelUnter().repaint(0);
             Main.getMouseRect().redefineRect(rectX, rectY, rectWidth, rectHeight);
 
-//            Main.printMsg("repainted.");
+            LOG.debug("repainted.");
+
 //            last_drag_x = e.getX();
 //            last_drag_y = e.getY();
         }
@@ -202,7 +209,7 @@ public class MouseController extends MouseAdapter {
 
     @Override
     public void mouseWheelMoved(MouseWheelEvent e) {
-        Main.printMsg("wheelMoved(" + e.getButton() + "): x=" + e.getX() + ", y=" + e.getY());
+        LOG.debug("wheelMoved(" + e.getButton() + "): x=" + e.getX() + ", y=" + e.getY());
     }
 
     // TODO May be delete this
@@ -222,7 +229,8 @@ public class MouseController extends MouseAdapter {
             GameMap.getInstance().assign(e.getX(), e.getY());
         }
         */
-        Main.printMsg("clicked(" + e.getButton() + "): x=" + e.getX() + ", y=" + e.getY());
+
+        LOG.debug("clicked(" + e.getButton() + "): x=" + e.getX() + ", y=" + e.getY());
     }
 
     /*

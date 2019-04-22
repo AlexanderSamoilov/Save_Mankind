@@ -1,7 +1,8 @@
 package com.company.gamecontent;
 
 import com.company.gamegraphics.Sprite;
-import com.company.gamethread.Main;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
 import java.util.HashMap;
@@ -19,6 +20,7 @@ enum Nature {
 }
 
 public class GameMapBlock implements Renderable {
+    private static Logger LOG = LogManager.getLogger(GameMapBlock.class.getName());
 
     private Parallelepiped parallelepiped;
 
@@ -170,7 +172,7 @@ public class GameMapBlock implements Renderable {
         try {
             sprite.setImage(natSprite.get(nature));
         } catch (Exception e) {
-            Main.printMsg("Warning: could not change sprite image.");
+            LOG.warn("Could not change sprite image.");
         }
     }
 }

@@ -1,10 +1,15 @@
 package com.company.gamethread;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.ConcurrentModificationException;
 import java.util.concurrent.Semaphore;
 
 // Singleton
 public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <TypeKey, TypeValue> {
+    private static Logger LOG = LogManager.getLogger(MutexManager.class.getName());
+
     //private static MutexManager instance = new MutexManager(); // sun.reflect.generics.reflectiveObjects.TypeVariableImpl cannot be cast to java.lang.Class
     //public static MutexManager getInstance() { return instance; } // sun.reflect.generics.reflectiveObjects.TypeVariableImpl cannot be cast to java.lang.Class
 
@@ -49,8 +54,8 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
             //return super.insert((TypeKey)key, (TypeValue)(super.TypeV.getConstructor(TypeV).));
 
             Semaphore s = new Semaphore(1);
-            //Main.printMsg(insert((TypeKey)key, (TypeValue)(s)).toString());
-            //Main.printMsg(obtain((TypeKey)key).toString());
+            LOG.debug(insert((TypeKey)key, (TypeValue)(s)).toString());
+            LOG.debug(obtain((TypeKey)key).toString());
             TypeValue insertionRes = null;
             boolean concurrentAccessOK = false;
             // I suspect that it is possible that one thread executes half of "insert" operation
@@ -71,7 +76,7 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
                         Main.terminateNoGiveUp(1000, "Got exception too much times!");
                         // TODO: move to a func
                         for (StackTraceElement stackTraceElement : e.getStackTrace()) {
-                            Main.printMsg(stackTraceElement.toString());
+                            LOG.error(stackTraceElement.toString());
                         }
                     }
                     continue;
@@ -86,7 +91,7 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
                 delete s;
             }*/
 
-            Main.printMsg("-> New Semaphore: [" + key.toString() + "]=" + insertionRes.toString());
+            LOG.debug("-> New Semaphore: [" + key.toString() + "]=" + insertionRes.toString());
 
             if (insertionRes instanceof  Semaphore) {
                 if (((Semaphore) insertionRes).availablePermits() > 1) {
@@ -99,11 +104,11 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
 
     // for debugging
     public void printHash() {
-        Main.printMsg("__________");
+        LOG.debug("__________");
         for (Object key : keySet()) {
             Semaphore value = (Semaphore)get(key);
-            Main.printMsg(key + " => " + value);
+            LOG.debug(key + " => " + value);
         }
-        Main.printMsg("__________");
+        LOG.debug("__________");
     }
 }
