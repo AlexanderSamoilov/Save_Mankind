@@ -10,7 +10,8 @@ import com.company.gametools.MathTools;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.company.gamecontent.Parallelepiped.GridRectangle;
+import com.company.gamegeom.Parallelepiped.GridRectangle;
+
 import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 import static com.company.gamecontent.Restrictions.INTERSECTION_STRATEGY_SEVERITY;
 

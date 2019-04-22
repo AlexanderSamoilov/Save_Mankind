@@ -20,7 +20,7 @@ public abstract class Restrictions {
     // -1 for typical game map (Y axe direction to south)
     static final int Y_ORIENT = -1; // Y axe is oriented to south
 
-    static final int BLOCK_SIZE = 64;
+    public static final int BLOCK_SIZE = 64;
 
     // 0 - multiple objects on the same block are allowed (even if they overlap)
     // 1 - multiple objects on the same block are allowed when they don't overlap

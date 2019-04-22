@@ -1,4 +1,4 @@
-package com.company.gamecontent;
+package com.company.gamegeom;
 
 import com.company.gamegraphics.GraphBugfixes;
 import com.company.gamethread.Main;
@@ -20,7 +20,7 @@ public class ParallelogramVertical {
 
     private final Color color = Color.BLUE;
 
-    ParallelogramVertical(int x, int y, int width, int height, int shift) {
+    public ParallelogramVertical(int x, int y, int width, int height, int shift) {
         this.x = x;
         this.y = y;
         this.width = width;
@@ -36,7 +36,7 @@ public class ParallelogramVertical {
     */
     // TODO: To avoid check of discrepancy in "intersects()" better to use some common way for both functions
     // and not check if two different ways give the same result
-    int contains(Integer [] p) {
+    public int contains(Integer [] p) {
 
         int x_left = this.x;
         int x_right = this.x + this.width - 1;
@@ -81,7 +81,7 @@ public class ParallelogramVertical {
        0 - section [A; B] just touches some of parallelogram edges or vertices,
       -1 - section [A; B] lays completely in the exterior (does not even touch)
     */
-    int intersects(Integer [] A, Integer [] B) {
+    public int intersects(Integer [] A, Integer [] B) {
 
         // Validation. We are not supposed that the section turns to a point.
         // We call this function to check intersection of a parallelogram interior with a section [A; B].
@@ -194,7 +194,7 @@ public class ParallelogramVertical {
         return -1;
     }
 
-    static class GridMatrixVectical {
+    public static class GridMatrixVectical {
 
         public final Integer left;
         public final Integer right;

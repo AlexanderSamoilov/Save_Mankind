@@ -1,6 +1,8 @@
 package com.company.gamecontent;
 
-import com.company.gamecontent.Parallelepiped.GridRectangle;
+import com.company.gamegeom.Parallelepiped.GridRectangle;
+import com.company.gamegeom.Parallelepiped;
+
 import com.company.gamecontrollers.MouseController;
 import com.company.gamethread.Main;
 import com.company.gamethread.V_Thread;

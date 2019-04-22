@@ -1,5 +1,7 @@
 package com.company.gamecontent;
 
+import com.company.gamegeom.Parallelepiped;
+
 import java.awt.*;
 
 public interface Renderable {

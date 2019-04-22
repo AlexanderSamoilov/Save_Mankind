@@ -1,8 +1,11 @@
 package com.company.gamecontent;
 
-import com.company.gamecontent.Parallelepiped.GridRectangle;
-import com.company.gamecontent.ParallelogramHorizontal.GridMatrixHorizontal;
-import com.company.gamecontent.ParallelogramVertical.GridMatrixVectical;
+import com.company.gamegeom.Parallelepiped;
+import com.company.gamegeom.Parallelepiped.GridRectangle;
+import com.company.gamegeom.ParallelogramHorizontal;
+import com.company.gamegeom.ParallelogramHorizontal.GridMatrixHorizontal;
+import com.company.gamegeom.ParallelogramVertical;
+import com.company.gamegeom.ParallelogramVertical.GridMatrixVectical;
 
 import com.company.gamegraphics.GraphBugfixes;
 import com.company.gamegraphics.GraphExtensions;
