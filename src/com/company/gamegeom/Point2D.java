@@ -1,6 +1,5 @@
 package com.company.gamegeom;
 
-// FIXME final!
 // TODO operation +, -, ==, >= ...
 public class Point2D <T> {
     /**

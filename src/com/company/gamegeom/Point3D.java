@@ -2,7 +2,6 @@ package com.company.gamegeom;
 
 import java.awt.*;
 
-// FIXME final!
 // TODO operation +, -, ==, >= ...
 public class Point3D <T> {
     /**
