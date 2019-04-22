@@ -10,7 +10,8 @@ import com.company.gametools.MathTools;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.company.gamecontent.Parallelepiped.GridRectangle;
+import com.company.gamegeom.GridRect;
+
 import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 import static com.company.gamecontent.Restrictions.INTERSECTION_STRATEGY_SEVERITY;
 
@@ -289,7 +290,7 @@ public class Unit extends GameObject implements Shootable {
         // So we actually "crop" the rectangle detectionAreaRect with the map rectangle
         detectionAreaRect = GameMap.getInstance().crop(detectionAreaRect);
 
-        GridRectangle gridRect = new GridRectangle(detectionAreaRect);
+        GridRect gridRect = new GridRect(detectionAreaRect);
 //        LOG.debug("Player " + this.getPlayerId() + ": left=" + left + ", right=" + right + ", top=" + top + ", bottom=" + bottom);
 
         // TODO Use Collections

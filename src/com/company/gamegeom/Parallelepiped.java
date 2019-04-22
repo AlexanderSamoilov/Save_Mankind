@@ -1,5 +1,7 @@
-package com.company.gamecontent;
+package com.company.gamegeom;
 
+import com.company.gamecontent.Centerable;
+import com.company.gamecontent.Renderable;
 import com.company.gamegraphics.GraphBugfixes;
 
 import java.awt.*;
@@ -54,30 +56,9 @@ public class Parallelepiped implements Renderable, Centerable {
         };
     }
 
-    static class GridRectangle {
-
-        public final int left;
-        public final int right;
-        public final int top;
-        public final int bottom;
-
-        public GridRectangle(Rectangle rect) {
-            left = rect.x / BLOCK_SIZE;
-            right = (rect.x + rect.width - 1) / BLOCK_SIZE;
-            top = rect.y / BLOCK_SIZE;
-            bottom = (rect.y + rect.height - 1) / BLOCK_SIZE;
-        }
-
-        // The block is in the middle (not a side-block)
-        public boolean isMiddleBlock(int grid_x, int grid_y) {
-            return (grid_x > left) && (grid_x < right) &&
-                   (grid_y > top) && (grid_y < bottom);
-        }
-    }
-
     // TODO: is this "new" not memory leak prone?
-    public GridRectangle getBottomRect() {
-        return new GridRectangle(getAbsBottomRect());
+    public GridRect getBottomRect() {
+        return new GridRect(getAbsBottomRect());
     }
 
     // TODO: is this "new" not memory leak prone?
@@ -90,7 +71,7 @@ public class Parallelepiped implements Renderable, Centerable {
         this.size = new int[] {sX, sY, sZ};
     }
 
-    boolean contains(Parallelepiped otherPpd) {
+    public boolean contains(Parallelepiped otherPpd) {
         if (
            (loc[0] <= otherPpd.loc[0]) && (otherPpd.loc[0] + otherPpd.getAbsSize()[0] <= loc[0] + getAbsSize()[0]) &&
            (loc[1] <= otherPpd.loc[1]) && (otherPpd.loc[1] + otherPpd.getAbsSize()[1] <= loc[1] + getAbsSize()[1]) &&
@@ -99,7 +80,7 @@ public class Parallelepiped implements Renderable, Centerable {
         return false;
     }
 
-    boolean contains(Integer[] point) {
+    public boolean contains(Integer[] point) {
         if (
            (loc[0] <= point[0]) && (point[0] <= loc[0] + getAbsSize()[0] - 1) &&
            (loc[1] <= point[1]) && (point[1] <= loc[1] + getAbsSize()[1] - 1) &&

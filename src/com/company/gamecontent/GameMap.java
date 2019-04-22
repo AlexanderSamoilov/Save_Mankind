@@ -1,6 +1,8 @@
 package com.company.gamecontent;
 
-import com.company.gamecontent.Parallelepiped.GridRectangle;
+import com.company.gamegeom.GridRect;
+import com.company.gamegeom.Parallelepiped;
+
 import com.company.gamecontrollers.MouseController;
 import com.company.gamethread.Main;
 import com.company.gamethread.V_Thread;
@@ -171,7 +173,7 @@ public class GameMap {
         this.deselect((HashSet<GameObject>)selectedObjects.clone());
 
         // Check objects in Rect-Selector and add them to selectedObjects
-        GridRectangle gridRect = new GridRectangle(mouseRectCropped);
+        GridRect gridRect = new GridRect(mouseRectCropped);
         for (int i = gridRect.left; i <= gridRect.right; i++) {
             for (int j = gridRect.top; j <= gridRect.bottom; j++) {
                 if (objectsOnMap[i][j].size() == 0) {
@@ -277,7 +279,7 @@ public class GameMap {
     // TODO What is this?
     public void registerObject(GameObject gameObj) {
 
-        GridRectangle gridRect = new GridRectangle(gameObj.getRect());
+        GridRect gridRect = new GridRect(gameObj.getRect());
 
         for (int i = gridRect.left; i <= gridRect.right; i++) {
             for (int j = gridRect.top; j <= gridRect.bottom; j++) {
@@ -292,7 +294,7 @@ public class GameMap {
     // QUESTION Rename to erase()?
     public void eraseObject(GameObject gameObj) {
 
-        GridRectangle gridRect = new GridRectangle(gameObj.getRect());
+        GridRect gridRect = new GridRect(gameObj.getRect());
 
         for (int i = gridRect.left; i <= gridRect.right; i++) {
             for (int j = gridRect.top; j <= gridRect.bottom; j++) {
@@ -359,7 +361,7 @@ public class GameMap {
             return false;
         }
 
-        GridRectangle gridRect = new GridRectangle(givenRect);
+        GridRect gridRect = new GridRect(givenRect);
 
         // Check if we intersect another object
         // 1 - obtain the list of the map blocks which are intersected by the line of the object

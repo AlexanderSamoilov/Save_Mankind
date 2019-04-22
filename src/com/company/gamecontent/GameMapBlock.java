@@ -1,5 +1,6 @@
 package com.company.gamecontent;
 
+import com.company.gamegeom.Parallelepiped;
 import com.company.gamegraphics.Sprite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

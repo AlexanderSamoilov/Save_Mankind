@@ -1,7 +1,8 @@
 // https://habr.com/post/145433/
 package com.company.gamegraphics;
 
-import com.company.gamecontent.Parallelepiped;
+import com.company.gamegeom.Parallelepiped;
+
 import com.company.gamecontent.Renderable;
 import com.company.gamethread.Main;
 
@@ -11,8 +12,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class Sprite implements Renderable {
 //    private static Logger LOG = LogManager.getLogger(Sprite.class.getName());
