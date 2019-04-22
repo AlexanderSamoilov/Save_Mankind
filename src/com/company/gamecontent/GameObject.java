@@ -1,7 +1,7 @@
 package com.company.gamecontent;
 
 import com.company.gamegeom.Parallelepiped;
-import com.company.gamegeom.GridRect;
+import com.company.gamegeom.Parallelepiped.GridRectangle;
 import com.company.gamegeom.ParallelogramHorizontal;
 import com.company.gamegeom.ParallelogramHorizontal.GridMatrixHorizontal;
 import com.company.gamegeom.ParallelogramVertical;
@@ -796,7 +796,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         return parallelepiped.getAbsBottomRect();
     }
 
-    public GridRect getGridRect() {
+    public GridRectangle getGridRect() {
         return parallelepiped.getBottomRect();
     }
 
