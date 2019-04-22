@@ -66,8 +66,8 @@ public class ParallelogramVertical {
         double y_top = y_left_top + (p[0] - x_left) * (y_right_top - y_left_top) / (x_right - x_left);
         double y_bottom = y_left_bottom + (p[0] - x_left) * (y_right_bottom - y_left_bottom) / (x_right - x_left);
 
-        LOG.debug("x_left=" + x_left + ", x=" + p[0] + ", x_right=" + x_right);
-        LOG.debug("y_top=" + y_top + ", y=" + p[1] + ", y_bottom=" + y_bottom);
+        LOG.trace("x_left=" + x_left + ", x=" + p[0] + ", x_right=" + x_right);
+        LOG.trace("y_top=" + y_top + ", y=" + p[1] + ", y_bottom=" + y_bottom);
 
         if ((y_top > p[1]) || (p[1] > y_bottom) || (x_left > p[0]) || (p[0] > x_right)) return -1; // outside
         if ((y_top < p[1]) && (p[1] < y_bottom) && (x_left < p[0]) && (p[0] < x_right)) return 1; // inside

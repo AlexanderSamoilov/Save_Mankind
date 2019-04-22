@@ -192,7 +192,7 @@ public class Unit extends GameObject implements Shootable {
         if (rotateTo(point)) {
             return false;
         }
-        LOG.debug("Player " + this.getPlayerId() + " shoots target");
+        LOG.trace("Player " + this.getPlayerId() + " shoots target");
         weapon.shoot(getAbsCenterInteger(), point); // returns true each Nth shoot
         return true;
     }
@@ -203,7 +203,7 @@ public class Unit extends GameObject implements Shootable {
         validateTargetTypesNumber();
 
         if (destPoint != null) {
-            LOG.debug("Player " + this.getPlayerId() + " move to destPoint");
+            LOG.trace("Player " + this.getPlayerId() + " move to destPoint");
             this.moveTo(destPoint);
             return;
         }
@@ -215,7 +215,7 @@ public class Unit extends GameObject implements Shootable {
 
         // TODO Move it in AI_Tools_Class
         if ((targetPoint == null) && (targetObject == null)) {
-            LOG.debug("Player " + this.getPlayerId() + " searchTargetsInRadius");
+            LOG.trace("Player " + this.getPlayerId() + " searchTargetsInRadius");
             searchTargetsInRadius();
             return;
         }
@@ -254,7 +254,7 @@ public class Unit extends GameObject implements Shootable {
                 }
 
                 if (targetObject.getRect().contains(far[0], far[1])) {
-                    LOG.debug("Player " + this.getPlayerId() + " shoots target border");
+                    LOG.trace("Player " + this.getPlayerId() + " shoots target border");
                     shoot(far);
                     return;
                 }
@@ -301,7 +301,7 @@ public class Unit extends GameObject implements Shootable {
                     continue;
                 }
 
-                LOG.debug("Player " + this.getPlayerId() + " found something in position (" + i + ", " + j + ")!");
+                LOG.trace("Player " + this.getPlayerId() + " found something in position (" + i + ", " + j + ")!");
                 for (GameObject thatObject : objectsOnTheBlock) {
                     // Not me
                     // TODO !is_allie
@@ -325,7 +325,7 @@ public class Unit extends GameObject implements Shootable {
     }
 
     public void render(Graphics g) {
-        LOG.debug("Rendering UNIT: " + this.getPlayerId());
+        LOG.trace("Rendering UNIT: " + this.getPlayerId());
         super.render(g);
 
         if (!hasWeapon()) {

@@ -20,12 +20,12 @@ public class V_Thread extends Main.ThreadPattern {
 
         Semaphore sem = Main.ParameterizedMutexManager.getInstance().getMutex("C", "recalc");
         sem.acquire();
-//         LOG.debug("-> " + super.getName() + " is drawing. Permits: " + String.valueOf(sem.availablePermits()));
+//         LOG.trace("-> " + super.getName() + " is drawing. Permits: " + String.valueOf(sem.availablePermits()));
         //GameMap.getInstance().rerandom();
         //GameMap.getInstance().render(); - moved to EDT
         //GameMap.getInstance().print();
         Main.getFrame().repaint(0);
-//         LOG.debug("<- " + super.getName() + " is drawing. Permits: " + String.valueOf(sem.availablePermits()));
+//         LOG.trace("<- " + super.getName() + " is drawing. Permits: " + String.valueOf(sem.availablePermits()));
         sem.release();
     }
 

@@ -327,12 +327,12 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
     public void rotateToPointOnRay(Integer[] point) {
 
         if (point == null || angleBetweenRayAndPointSmallEnough(point)) {
-            LOG.debug("Destination reached or undefined, rotation aborted");
+            LOG.trace("Destination reached or undefined, rotation aborted");
             return;
         }
 
         int direction = getRotationDirectionRay(point);
-        LOG.debug("New direction: " + direction);
+        LOG.trace("New direction: " + direction);
 
         // It's clear that the point lies behind the ray that is 180°
         // Otherwise (in case 0°) angleBetweenRayAndPoint*** must return true
@@ -343,7 +343,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         this.currAngle += rotation_speed * direction;
         this.currAngle %= Math.toRadians(360); // TODO: maybe it is possible to optimize division (for example write own func which subtract 360 until it gets less than 360)
 
-        LOG.debug("New Sprite Ang: " + currAngle);
+        LOG.trace("New Sprite Ang: " + currAngle);
      }
 
     // TODO next_x, next_y
@@ -357,13 +357,13 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         // Calculate future coordinates where we want to move hypothetically (if nothing prevents this)
         int new_x, new_y, new_z;
         Integer new_center[] = MathTools.getNextPointOnRay(getAbsCenterInteger(), next, speed);
-        LOG.debug("new_center_x=" + new_center[0] + ", new_center_y=" + new_center[1]);
-        LOG.debug("old_center_x=" + getAbsCenterInteger()[0] + ", old_center_y=" + getAbsCenterInteger()[1]);
+        LOG.trace("new_center_x=" + new_center[0] + ", new_center_y=" + new_center[1]);
+        LOG.trace("old_center_x=" + getAbsCenterInteger()[0] + ", old_center_y=" + getAbsCenterInteger()[1]);
         
         // translation vector
         int dx = new_center[0] - getAbsCenterInteger()[0];
         int dy = new_center[1] - getAbsCenterInteger()[1];
-        LOG.debug("dx=" + dx + ", dy=" + dy);
+        LOG.trace("dx=" + dx + ", dy=" + dy);
         if ((dx == 0) && (dy == 0)) {
             // Destination point reached already
             unsetDestinationPoint();
@@ -375,7 +375,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         new_y = getAbsLoc()[1] + dy;
         new_z = getAbsLoc()[2]; // so far we don't support 3D
 
-        LOG.debug("move?: (" + getAbsLoc()[0] + "," + getAbsLoc()[1] + ")->(" + new_x + ", " + new_y + "), speed=" + speed);
+        LOG.trace("move?: (" + getAbsLoc()[0] + "," + getAbsLoc()[1] + ")->(" + new_x + ", " + new_y + "), speed=" + speed);
 
         if (! GameMap.getInstance().contains(
                 // new_x, new_y, new_z - absolute coordinates, not aliquote to the grid vertices

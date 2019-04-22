@@ -143,11 +143,11 @@ public class GameMap {
         }
 
         try {
-            LOG.debug("--->");
+            LOG.trace("--->");
             for (GameObject gameObj : gameObjSet) {
                 gameObj.render(g);
             }
-            LOG.debug("<---");
+            LOG.trace("<---");
         } catch (ConcurrentModificationException e) {
             LOG.error("ConcurrentModificationException has reproduced!");
             for (StackTraceElement stackTraceElement : e.getStackTrace()) {
@@ -383,7 +383,7 @@ public class GameMap {
                     }
 
                     if (INTERSECTION_STRATEGY_SEVERITY > 1) {
-                        LOG.debug("INTERSECTS: i=" + i + ", j=" + j + ", thisObject=" + this + ", objOnBlock=" + objOnBlock);
+                        LOG.trace("INTERSECTS: i=" + i + ", j=" + j + ", thisObject=" + this + ", objOnBlock=" + objOnBlock);
 
                         // Severity 2: Multiple objects on the same block are forbidden even if they actually don't intersect
                         return true;
@@ -393,9 +393,9 @@ public class GameMap {
                     Rectangle objOnBlockRect = objOnBlock.getRect();
 
                     // DEBUG
-//                    LOG.debug("Check 1: (" + thisObjRect.x + "," + thisObjRect.y + "," + thisObjRect.width + "," + thisObjRect.height);
-//                    LOG.debug("Check 2: (" + objOnBlockRect.getX() + "," + objOnBlockRect.getY() + "," + objOnBlockRect.getWidth() + "," + objOnBlockRect.getHeight());
-//                    LOG.debug("Check 3: (" + objOnBlock.getAbsLoc()[0] + "," + objOnBlock.getAbsLoc()[1] + "," + objOnBlock.getAbsSize()[0] + "," + objOnBlock.getAbsSize()[1]);
+                    LOG.trace("Check 1: (" + givenRect.x + "," + givenRect.y + "," + givenRect.width + "," + givenRect.height);
+                    LOG.trace("Check 2: (" + objOnBlockRect.getX() + "," + objOnBlockRect.getY() + "," + objOnBlockRect.getWidth() + "," + objOnBlockRect.getHeight());
+                    LOG.trace("Check 3: (" + objOnBlock.getAbsLoc()[0] + "," + objOnBlock.getAbsLoc()[1] + "," + objOnBlock.getAbsSize()[0] + "," + objOnBlock.getAbsSize()[1]);
 
                     if (givenRect.intersects(objOnBlockRect)) {
                         return true;

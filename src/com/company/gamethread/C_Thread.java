@@ -25,7 +25,7 @@ public class C_Thread extends Main.ThreadPattern {
         Semaphore sem = Main.ParameterizedMutexManager.getInstance().getMutex("V", "recalc");
         sem.acquire();
 
-        LOG.debug("-> " + super.getName() + " is calculating. Permits: " + String.valueOf(sem.availablePermits()));
+        LOG.trace("-> " + super.getName() + " is calculating. Permits: " + String.valueOf(sem.availablePermits()));
 
         // recalculate positions of each game object
         // TODO: do it according to our documentation (swap pointers worldCurr, worldNext)
@@ -49,7 +49,7 @@ public class C_Thread extends Main.ThreadPattern {
             }
         }
 
-        LOG.debug("<- " + super.getName() + " is calculating. Permits: " + String.valueOf(sem.availablePermits()));
+        LOG.trace("<- " + super.getName() + " is calculating. Permits: " + String.valueOf(sem.availablePermits()));
         sem.release();
     }
 

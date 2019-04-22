@@ -54,8 +54,8 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
             //return super.insert((TypeKey)key, (TypeValue)(super.TypeV.getConstructor(TypeV).));
 
             Semaphore s = new Semaphore(1);
-            LOG.debug(insert((TypeKey)key, (TypeValue)(s)).toString());
-            LOG.debug(obtain((TypeKey)key).toString());
+            LOG.trace(insert((TypeKey)key, (TypeValue)(s)).toString());
+            LOG.trace(obtain((TypeKey)key).toString());
             TypeValue insertionRes = null;
             boolean concurrentAccessOK = false;
             // I suspect that it is possible that one thread executes half of "insert" operation

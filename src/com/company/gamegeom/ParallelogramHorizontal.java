@@ -66,8 +66,8 @@ public class ParallelogramHorizontal {
         double x_left = x_left_top + (p[1] - y_top) * (x_left_bottom - x_left_top) / (y_bottom - y_top);
         double x_right = x_right_top + (p[1] - y_top) * (x_right_bottom - x_right_top) / (y_bottom - y_top);
 
-        LOG.debug("x_left=" + x_left + ", x=" + p[0] + ", x_right=" + x_right);
-        LOG.debug("y_top=" + y_top + ", y=" + p[1] + ", y_bottom=" + y_bottom);
+        LOG.trace("x_left=" + x_left + ", x=" + p[0] + ", x_right=" + x_right);
+        LOG.trace("y_top=" + y_top + ", y=" + p[1] + ", y_bottom=" + y_bottom);
 
         if ((y_top > p[1]) || (p[1] > y_bottom) || (x_left > p[0]) || (p[0] > x_right)) return -1; // outside
         if ((y_top < p[1]) && (p[1] < y_bottom) && (x_left < p[0]) && (p[0] < x_right)) return 1; // inside

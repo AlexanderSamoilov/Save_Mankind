@@ -157,7 +157,7 @@ public class MouseController extends MouseAdapter {
         this.y = e.getY();
         //moving = true;
 
-        LOG.debug("moved: x=" + x + ", y=" + y);
+        LOG.trace("moved: x=" + x + ", y=" + y);
     }
 
     @Override
@@ -196,7 +196,7 @@ public class MouseController extends MouseAdapter {
 //            Main.getPanelUnter().repaint(0);
             Main.getMouseRect().redefineRect(rectX, rectY, rectWidth, rectHeight);
 
-            LOG.debug("repainted.");
+            LOG.trace("repainted.");
 
 //            last_drag_x = e.getX();
 //            last_drag_y = e.getY();

@@ -127,7 +127,7 @@ public class Bullet implements Moveable, Centerable, Renderable {
             this.causeDamage();
         }
 
-        LOG.debug("move: x=" + loc[0] + ", y=" + loc[1] + ", obj=" + this);
+        LOG.trace("move: x=" + loc[0] + ", y=" + loc[1] + ", obj=" + this);
         return true;
     }
 

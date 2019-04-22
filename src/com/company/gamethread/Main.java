@@ -121,10 +121,10 @@ public class Main {
         // this is in a JPanel extended class
         @Override
         public void repaint(long tm) {
-            LOG.debug("Painting from jpOber.paint[" + Thread.currentThread().getId() + "].");
+            LOG.trace("Painting from jpOber.paint[" + Thread.currentThread().getId() + "].");
 
 //            for (Component c : getComponents()) {
-//                LOG.debug("+ " + c.toString());
+//                LOG.trace("+ " + c.toString());
 //            }
 
             JRootPane jRootPane = getRootPane();
@@ -146,7 +146,7 @@ public class Main {
 //        // this is in a JPanel extended class
 //        @Override
 //        public void paintComponent(Graphics g) {
-//            LOG.debug("Painting from jpOber.paint[" + Thread.currentThread().getId() + "].");
+//            LOG.trace("Painting from jpOber.paint[" + Thread.currentThread().getId() + "].");
 //            super.paintComponent(g);
 //            //g.drawArc(10, 10, getWidth() - 20, getHeight() - 20, 0, 360);
 //        }
@@ -157,7 +157,7 @@ public class Main {
         @Override
         // This is in a JPanel extended class
         public void paintComponent(Graphics g) {
-            LOG.debug("Painting from jpUnter.paint[" + Thread.currentThread().getId() + "].");
+            LOG.trace("Painting from jpUnter.paint[" + Thread.currentThread().getId() + "].");
             super.paintComponent(g);
             GameMap.getInstance().render(g);
         }
@@ -408,8 +408,8 @@ public class Main {
 
         public void redefineRect(int x, int y, int w, int h) {
 
-//            LOG.debug("before(" + "(" + x + "," + y + " -> (" + wid + "," + hei + ")");
-//            LOG.debug("after (" + "(" + x0 + "," + y0 + " -> (" + wid0 + "," + hei0 + ")");
+//            LOG.trace("before(" + "(" + x + "," + y + " -> (" + wid + "," + hei + ")");
+//            LOG.trace("after (" + "(" + x0 + "," + y0 + " -> (" + wid0 + "," + hei0 + ")");
 
             // TODO Do right this
             // vanish old rectangle
@@ -436,7 +436,7 @@ public class Main {
 
         @Override  // this is in a JPanel extended class
         public void paintComponent(Graphics g) {
-            LOG.debug("Painting from MouseRect.paint[" + Thread.currentThread().getId() + "].");
+            LOG.trace("Painting from MouseRect.paint[" + Thread.currentThread().getId() + "].");
 
             super.paintComponent(g);
             g.setColor(Color.RED);
@@ -687,7 +687,7 @@ public class Main {
             LOG.fatal(terminateMsg);
         }
 
-        LOG.debug(" --- total terminate! ---");
+        LOG.info(" --- total terminate! ---");
 
         // ErrWindow ew = displayErrorWindow("The game was interrupted due to exception. Exiting...
         // (if this window does not disappear for a long time, kill the game process manually from OS.)");
@@ -845,7 +845,7 @@ public class Main {
             }
 
             if (deadStatus > 0) {
-                LOG.debug(deadStatus + " of game threads were unexpectedly terminated. To ensure the correct game flow we must exit. Please, restart the game.");
+                LOG.error(deadStatus + " of game threads were unexpectedly terminated. To ensure the correct game flow we must exit. Please, restart the game.");
                 break;
             }
         }
