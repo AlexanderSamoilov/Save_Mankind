@@ -24,7 +24,7 @@ public class LogConfFactory extends ConfigurationFactory {
         builder.setStatusLevel(LEVEL);
 
         String logFilePath = FILE_PATH + "/" + FILE_NAME;
-        boolean debugging = LEVEL.equals(Level.DEBUG) || LEVEL.equals(Level.ALL);
+        boolean debugging = LEVEL.intLevel() >= Level.DEBUG.intLevel();
 
         // ---->> FILTERS
         // Warning! Stupid Java programmers forgot to make multiple-add filters normally, like other components.

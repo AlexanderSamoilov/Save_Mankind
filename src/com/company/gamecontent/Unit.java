@@ -7,8 +7,8 @@ import java.util.HashSet;
 import com.company.gamegraphics.Sprite;
 import com.company.gametools.MathTools;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.company.gamecontent.Parallelepiped.GridRectangle;
 import static com.company.gamecontent.Restrictions.BLOCK_SIZE;

@@ -3,8 +3,8 @@ package com.company.gamecontent;
 import com.company.gamegraphics.GraphBugfixes;
 import com.company.gamethread.Main;
 import com.company.gametools.MathTools;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
 

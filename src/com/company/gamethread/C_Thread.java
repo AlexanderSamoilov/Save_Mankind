@@ -4,8 +4,8 @@ import com.company.gamecontent.*;
 
 import java.util.HashSet;
 import java.util.concurrent.Semaphore;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 // Singleton
 public class C_Thread extends Main.ThreadPattern {

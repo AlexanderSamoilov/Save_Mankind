@@ -1,8 +1,8 @@
 package com.company.gamecontent;
 
 import com.company.gamegraphics.Sprite;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
 import java.util.HashMap;

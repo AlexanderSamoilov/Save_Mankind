@@ -16,9 +16,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.Semaphore;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.ConfigurationFactory;
 
 
@@ -274,7 +274,7 @@ public class Main {
     }
 
     public static void debugMargins(JFrame jFrame, String msg) {
-        if (LOG.getLevel().toInt() >= Level.INFO.toInt()) {
+        if (LOG.getLevel().intLevel() <= Level.INFO.intLevel()) {
             return;
         }
 

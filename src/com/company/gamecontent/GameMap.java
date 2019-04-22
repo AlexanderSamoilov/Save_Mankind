@@ -9,8 +9,8 @@ import java.awt.*;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.HashSet;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 import static com.company.gamecontent.Restrictions.INTERSECTION_STRATEGY_SEVERITY;
@@ -393,7 +393,7 @@ public class GameMap {
                     // DEBUG
 //                    LOG.debug("Check 1: (" + thisObjRect.x + "," + thisObjRect.y + "," + thisObjRect.width + "," + thisObjRect.height);
 //                    LOG.debug("Check 2: (" + objOnBlockRect.getX() + "," + objOnBlockRect.getY() + "," + objOnBlockRect.getWidth() + "," + objOnBlockRect.getHeight());
-//                    LOG.debug("Check 3: (" + objOnBlock.getPixelLoc()[0] + "," + objOnBlock.getPixelLoc()[1] + "," + objOnBlock.getPixelSize()[0] + "," + objOnBlock.getPixelSize()[1]);
+//                    LOG.debug("Check 3: (" + objOnBlock.getAbsLoc()[0] + "," + objOnBlock.getAbsLoc()[1] + "," + objOnBlock.getAbsSize()[0] + "," + objOnBlock.getAbsSize()[1]);
 
                     if (givenRect.intersects(objOnBlockRect)) {
                         return true;
