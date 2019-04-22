@@ -72,7 +72,7 @@ public class Parallelepiped implements Renderable, Centerable {
         // The block is in the middle (not a side-block)
         public boolean isMiddleBlock(int grid_x, int grid_y) {
             return (grid_x > left) && (grid_x < right) &&
-                    (grid_y > top) && (grid_y < bottom);
+                   (grid_y > top) && (grid_y < bottom);
         }
     }
 

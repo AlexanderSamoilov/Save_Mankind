@@ -203,8 +203,8 @@ public class ParallelogramHorizontal {
 
         // NOTE: This implementation works only for Y_ORIENT = -1
         // This function returns the matrix of grid blocks occupied by the given parallelogram
-        // GridMatrix is a more general case for GridRect
-        // It distinct to GridRect GridMatrixHorizontal does not have the same number of blocks on each row.
+        // GridMatrix is a more general case for GridRectangle
+        // It distinct to GridRectangle GridMatrixHorizontal does not have the same number of blocks on each row.
         // It may sometimes be bigger to 1 extra block. It is mathematically possible to calculate
         // when there will be this extra block, but the algorithm will be so much complicated
         // that I am not sure that it will properly work in the integer world of PC.
@@ -228,27 +228,27 @@ public class ParallelogramHorizontal {
                 int left_x = Math.min(pgmHoriz.x, pgmHoriz.x + pgmHoriz.shift);
                 int right_x = Math.max(pgmHoriz.x + pgmHoriz.width - 1, pgmHoriz.x + pgmHoriz.width - 1 + pgmHoriz.shift);
 
-                // TODO: make the types convertable (inherit GridRect from GridMatrixHorizontal?)
-                /*return GridRect(
+                // TODO: make the types convertable (inherit GridRectangle from GridMatrixHorizontal?)
+                /*return Parallelepiped.GridRectangle(
                         new Rectangle(left_x, pgmHoriz.y, right_x - left_x + 1, 1));
                  */
                 left[0] = left_x / BLOCK_SIZE;
                 right[0] = (right_x - left_x + 1) / BLOCK_SIZE;
-                LOG.warn("Using of more general GridMatrixHorizontal instead of GridRect width h=1.");
+                LOG.warn("Using of more general GridMatrixHorizontal instead of GridRectangle width h=1.");
                 return;
             }
 
             // edge case: parallelogram turns to a rectangle
             if (pgmHoriz.shift == 0) {
-                // TODO: make the types convertable (inherit GridRect from GridMatrixHorizontal?)
-                /*return GridRect(
+                // TODO: make the types convertable (inherit GridRectangle from GridMatrixHorizontal?)
+                /*return Parallelepiped.GridRectangle(
                         new Rectangle(pgmHoriz.x, pgmHoriz.y, pgmHoriz.width, pgmHoriz.height));
                  */
                 for (int i = top; i <= bottom; i++) {
                     left[i - top] = pgmHoriz.x / BLOCK_SIZE;
                     right[i - top] = (pgmHoriz.x + pgmHoriz.width - 1) / BLOCK_SIZE;
                 }
-                LOG.warn("Using of more general GridMatrixHorizontal instead of GridRect.");
+                LOG.warn("Using of more general GridMatrixHorizontal instead of GridRectangle.");
                 return;
             }
 
