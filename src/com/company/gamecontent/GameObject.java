@@ -16,6 +16,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -82,6 +83,10 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
     // Here x,y,z - coordinates on grid (not absolute)
     public GameObject(Sprite sprite, int x, int y, int z, int sX, int sY, int sZ, HashMap<Resource,Integer> res, int hp, int speed, int rot_speed, int preMoveAngle, int arm, int hard, int bch, int ech, int eco) {
+        // Creation of new game objects should be allowed from the main thread (game initializazion)
+        // or from the calculation thread (on each game stage factories produce new units for example)
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
+
         // 1 - parent class specific parameters
         // 2 - validation
         if (sprite == null) {
@@ -185,11 +190,15 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
     // wrapper method
     public void render(Graphics g) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
+
         render(g, parallelepiped, currAngle);
     }
 
     // Method of the "Renderable" interface
     public void render(Graphics g, Parallelepiped parallelepiped, double rotation_angle) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
+
         // ----> Drawing sprite with actual orientation
         this.sprite.render(g, parallelepiped, INIT_ANGLE - rotation_angle);
 
@@ -252,6 +261,8 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
     public int getAbsBottom() { return parallelepiped.getAbsBottom(); }
 
     public void setDestinationPoint(Integer [] dest) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
+
         // TODO: check if coordinates are within restrictions
         if (destPoint == null) {
             this.destPoint = new Integer[2];
@@ -269,6 +280,8 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
     }
 
     public boolean rotateTo(Integer [] point) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+
         if (ROTATE_MOD > 0) rotateToPointOnRay(point);
         //else rotateToAngle(point);
 
@@ -286,6 +299,8 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
 /*
     public void rotateToAngle(Integer [] point) {
+    Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+
         double destAngle =...;
         if (Math.abs(currAngle - destAngle) < rotation_speed) {
             return;
@@ -325,6 +340,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 */
 
     public void rotateToPointOnRay(Integer[] point) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         if (point == null || angleBetweenRayAndPointSmallEnough(point)) {
             LOG.trace("Destination reached or undefined, rotation aborted");
@@ -349,6 +365,8 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
     // TODO next_x, next_y
     // FIXME boolean ?
     public boolean moveTo(Integer [] next) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+
         // FIXME Not good calculate angle every time. Need optimize in future
         if (this instanceof Rotatable && rotateTo(next)) {
             return true;
@@ -789,6 +807,8 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
     }
 
     public void deselect() {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
+
         this.isSelected = false;
     }
 
@@ -807,14 +827,20 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
     // TODO Remove setters. Use Class.attr = newVal
     public void setOwner(int plId) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C", "D")));
+
         this.playerId = plId;
     }
 
     public void unsetDestinationPoint() {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
+
         this.destPoint = null;
     }
 
     public void select() {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
+
         this.isSelected = true;
     }
 

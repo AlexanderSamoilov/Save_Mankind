@@ -1,10 +1,14 @@
 package com.company.gamecontent;
 
 import com.company.gamegraphics.Sprite;
+import com.company.gamethread.Main;
+import com.company.gamethread.MutexManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import static com.company.gametools.MathTools.in_range;
 import static com.company.gamethread.Main.terminateNoGiveUp;
@@ -21,6 +25,7 @@ public class Building extends GameObject {
     public Building(int energyConsumption, int upgradeTime, Sprite sprite, int x, int y, int z, int sX, int sY, int sZ, HashMap<Resource, Integer> res, int hp, int arm, int hard, int bch, int ech, int eco) {
         // 1 - parent class specific parameters
         super(sprite, x, y, z, sX, sY, sZ, res, hp, 0, 0, 0, arm, hard, bch, ech, eco);
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
 
         // 2 - child class specific parameters validation
         boolean valid = true;
@@ -49,6 +54,8 @@ public class Building extends GameObject {
     }
 
     public int upgrade() {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+
         if (level >= Restrictions.getMaxUpgradeLevel()) {
             return level; // return current level - impossible to upgrade more
         }

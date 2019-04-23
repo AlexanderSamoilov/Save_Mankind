@@ -2,11 +2,14 @@ package com.company.gamecontent;
 
 import com.company.gamegeom.Parallelepiped;
 import com.company.gamegraphics.Sprite;
+import com.company.gamethread.Main;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 
 enum Nature {
     SAND,
@@ -48,6 +51,8 @@ public class GameMapBlock implements Renderable {
     }
 
     public GameMapBlock(int x, int y, int natType) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M")));
+
         parallelepiped = new Parallelepiped(x, y, 0, 1, 1, 1);
 
         Nature nat;
@@ -133,11 +138,15 @@ public class GameMapBlock implements Renderable {
 
     // wrapper method
     public void render(Graphics g) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
+
         render(g, parallelepiped, 0);
     }
 
     // Method of the "Renderable" interface
     public void render(Graphics g, Parallelepiped parallelepiped, double rotation_angle) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V", "D")));
+
         this.sprite.render(g, parallelepiped, rotation_angle);
     }
 
@@ -169,6 +178,8 @@ public class GameMapBlock implements Renderable {
     /* TEST-01 */
     // Randomising landscapeBlocks
     public void changeNature() {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M")));
+
         nature = Nature.values()[(nature.ordinal() + 1) % Nature.values().length];
         try {
             sprite.setImage(natSprite.get(nature));

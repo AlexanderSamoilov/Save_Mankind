@@ -4,8 +4,10 @@ import com.company.gamethread.Main;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 public class Player {
     private static Logger LOG = LogManager.getLogger(Player.class.getName());
@@ -41,6 +43,8 @@ public class Player {
 
 
     public Player(Race.RaceType race, String name, HashMap<Resource, Integer> res, ArrayList<Building> buildings, ArrayList<Unit> units) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M")));
+
         // 1 - parent class specific parameters
         /* ...*/
 
@@ -131,6 +135,8 @@ public class Player {
 
     // Add exception handling etc.
     public void destroy(GameObject gameObj) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+
         if (gameObj instanceof Building) {
             this.removeBuilding((Building) gameObj);
         }
@@ -144,6 +150,8 @@ public class Player {
     }
 
     private void removeBuilding (Building building) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+
         if (!buildings.contains(building)) {
             /* DEBUG */
             Main.terminateNoGiveUp(
@@ -158,6 +166,8 @@ public class Player {
     }
 
     private void removeUnit (Unit unit) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+
         if (!units.contains(unit)) {
             /* DEBUG */
             Main.terminateNoGiveUp(

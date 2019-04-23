@@ -8,6 +8,7 @@ import com.company.gamethread.Main;
 import com.company.gamethread.V_Thread;
 
 import java.awt.*;
+import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,6 +42,8 @@ public class GameMap {
     private GameMap() {}
 
     public void init(int[][] map, int width, int height) throws EnumConstantNotPresentException {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M")));
+
         if (initialized) {
             Main.terminateNoGiveUp(
                     1000,
@@ -98,6 +101,8 @@ public class GameMap {
     }
 
     public void render(Graphics g) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
+
         // Redraw map blocks and Objects on them
         // TODO What about collections and Maps?
         // FIXME Can't move render landscapeBlocks into function - bad realisation
@@ -126,6 +131,8 @@ public class GameMap {
     }
 
     private void renderBullets(Graphics g) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
+
         // TODO: fix ConcurrentModificationException
         if (bullets == null) {
             return;
@@ -137,6 +144,8 @@ public class GameMap {
     }
 
     private void renderObjects(Graphics g, HashSet<GameObject> gameObjSet) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
+
         // FIXME Exception in thread "AWT-EventQueue-0" java.util.ConcurrentModificationException\
         if (gameObjSet.size() == 0) {
             return;
@@ -158,6 +167,7 @@ public class GameMap {
     }
 
     public void select(Rectangle mouseRect) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("D")));
 
         /* crop the selection rectangle to take into account
            the case when the mouse cursor is outside the map
@@ -209,6 +219,8 @@ public class GameMap {
     }
 
     private void deselect(HashSet<GameObject> objects) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("D")));
+
         if (selectedObjects == null) {
             return;
         }
@@ -220,6 +232,8 @@ public class GameMap {
     }
 
     public void assign(Integer[] point) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
+
         if (selectedObjects == null || selectedObjects.size() == 0) {
             return;
         }
@@ -235,6 +249,8 @@ public class GameMap {
     // QUESTION What this do? May be rename?
     // QUESTION Is this super.method() for GameObject.Unit.setTargets()? Why?
     private void assignUnit(GameObject selectedObj, Integer[] point){
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
+
         // FIXME: We must take floor(), not just divide!
         int block_x = point[0] / BLOCK_SIZE;
         int block_y = point[1] / BLOCK_SIZE;
@@ -278,6 +294,7 @@ public class GameMap {
     // TODO Code Duplicate. Collections or method fixBlockPositionOnMap()
     // TODO What is this?
     public void registerObject(GameObject gameObj) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
 
         GridRectangle gridRect = new GridRectangle(gameObj.getRect());
 
@@ -293,6 +310,7 @@ public class GameMap {
     // QUESTION What is this?
     // QUESTION Rename to erase()?
     public void eraseObject(GameObject gameObj) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
 
         GridRectangle gridRect = new GridRectangle(gameObj.getRect());
 
@@ -418,12 +436,16 @@ public class GameMap {
     }
 
     public void registerBullet(Bullet b) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+
         // TODO: check validity of bullet coordinates, return and process bad result
         bullets.add(b);
     }
 
     // TODO Move it in Spawner class
     public void destroyBullet(Bullet b) {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+
         // TODO; check if exists
         bullets.remove(b);
         b.unsetDestinationPoint();
@@ -478,6 +500,7 @@ public class GameMap {
     /* TEST-01 */
     // Randomising landscapeBlocks
     public void rerandom() {
+        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M")));
         for(int i=0; i < getMaxX(); i++)
             for (int j=0; j < getMaxY(); j++)
             {

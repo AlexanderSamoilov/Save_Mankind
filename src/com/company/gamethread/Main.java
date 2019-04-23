@@ -134,6 +134,8 @@ public class Main {
     };
 
     private static long threadId = -1;
+    private static long EDT_ID = -1;
+
     private static MouseRect mouseRectangle = new MouseRect();
     private static MouseController mouseController;
 
@@ -158,6 +160,9 @@ public class Main {
         // This is in a JPanel extended class
         public void paintComponent(Graphics g) {
             LOG.trace("Painting from jpUnter.paint[" + Thread.currentThread().getId() + "].");
+            if (EDT_ID == -1) { // redefine it only one time!
+                EDT_ID = Thread.currentThread().getId();
+            }
             super.paintComponent(g);
             GameMap.getInstance().render(g);
         }
@@ -369,14 +374,18 @@ public class Main {
             // Установка фокуса для контроллеров игры
             //frame.requestFocus();
 
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-
-            }
+            timeout(1000);
 
             LOG.debug(" ------ EDT thread finished drawing ------ ");
-            //System.exit(0);
+            /* Obtain numerical ID of the event dispatcher thread (EDT)
+               EDT_ID = java.awt.EventDispatchThread.getId(); - does not work, because it is a private class.
+               Thus we use a workaround: wait until EDT draws something and "steal" its ID from paintComponent().
+               In the loop below we are waiting until paintComponent() is called and initialize the variable EDT_ID.
+             */
+             while (EDT_ID == -1) {
+                 timeout(1000);
+             }
+             LOG.info(" ------ EDT thread finished drawing. EDT thread ID detected: " + EDT_ID + " ------ ");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -385,6 +394,15 @@ public class Main {
                     1000,
                     "Failed to initialize game graphics. The game will be terminated now."
             );
+        }
+
+        if (
+               (EDT_ID == Main.threadId) ||
+               (EDT_ID == C_Thread.getInstance().getId()) ||
+               (EDT_ID == V_Thread.getInstance().getId()) ||
+               (EDT_ID == D_Thread.getInstance().getId())
+        ) {
+            terminateNoGiveUp(1000, "Failed to detect EDT thread ID. Perhaps, paintComponent() was called from another thread.");
         }
 
         LOG.info("The graphics are ready!");
@@ -480,6 +498,10 @@ public class Main {
         return threadId;
     }
 
+    public static long getEDTId() {
+        return EDT_ID;
+    }
+
     // FIXME Class-in-Class.
     // We must derive from a generic type to use a full power of getGenericSuperclass()
     // (avoiding type erasure)
@@ -504,6 +526,12 @@ public class Main {
         } catch (InterruptedException e) {
             e.printStackTrace();
             // This is not a big trouble that we were not able to do sleep, so it is not a reason to interrupt the method on this
+        }
+    }
+
+    public static void printStackTrace() {
+        for (StackTraceElement stackTraceElement : Thread.currentThread().getStackTrace()) {
+            LOG.info(stackTraceElement.toString());
         }
     }
 
@@ -688,6 +716,7 @@ public class Main {
         }
 
         LOG.info(" --- total terminate! ---");
+        printStackTrace();
 
         // ErrWindow ew = displayErrorWindow("The game was interrupted due to exception. Exiting...
         // (if this window does not disappear for a long time, kill the game process manually from OS.)");

@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ConcurrentModificationException;
+import java.util.HashSet;
 import java.util.concurrent.Semaphore;
 
 // Singleton
@@ -111,4 +112,45 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
         }
         LOG.debug("__________");
     }
+
+    // quasi-unique thread string name (unique for all except "U" that means "other" or "unknown")
+    public String getThreadType() {
+        long EDT_Thread_ID = Main.getEDTId();
+        // TODO: reactive this "if" after introduction of drawing routines which run before initMap() and initObjects()
+        // (for example, drawing of the main game menu)
+        // if (EDT_Thread_ID == -1) Main.terminateNoGiveUp(1000, "EDT thread ID must be defined first!");
+
+        Long threadId = Thread.currentThread().getId(); // calculate threadId of the calling thread
+
+        if      (threadId == Main.getThreadId())             { return "M"; }
+        else if (threadId == D_Thread.getInstance().getId()) { return "D"; }
+        else if (threadId == C_Thread.getInstance().getId()) { return "C"; }
+        else if (threadId == V_Thread.getInstance().getId()) { return "V"; }
+        else if (threadId == EDT_Thread_ID)                { return "EDT"; }
+        else { return "U"; } // unknown
+    }
+
+    /* Check if the function is called in the legal thread */
+    public void checkThreadPermission(HashSet<String> allowedThreadTypes) {
+        /* We are using Java Swing which draws automatically in EDT and handles mouse buttons in EDT
+           This is why we have a deviation from our math model which implies drawing in V-Thread and
+           handling controllers in D-Thread. Due to this we make here some adaptations. If a function
+           is supposed to be called in V-Thread/D-Thread we also allow EDT to call it.
+        */
+        if (allowedThreadTypes.contains("D") || allowedThreadTypes.contains("V")) {
+            allowedThreadTypes.add("EDT");
+        }
+
+        String currentThreadType = getThreadType();
+        boolean illegal = true;
+        for (String allowedThreadType : allowedThreadTypes) {
+            if (currentThreadType.equals(allowedThreadType)) {
+                illegal = false;
+                break;
+            }
+        }
+
+        if (illegal) Main.terminateNoGiveUp(1000, "Illegal thread: " + currentThreadType + " (id: " + Thread.currentThread().getId() + ")");
+    }
+
 }
