@@ -1,6 +1,7 @@
 package com.company.gamecontent;
 
 import com.company.gamethread.Main;
+import com.company.gamethread.ParameterizedMutexManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -43,7 +44,7 @@ public class Player {
 
 
     public Player(Race.RaceType race, String name, HashMap<Resource, Integer> res, ArrayList<Building> buildings, ArrayList<Unit> units) {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M")));
 
         // 1 - parent class specific parameters
         /* ...*/
@@ -135,7 +136,7 @@ public class Player {
 
     // Add exception handling etc.
     public void destroy(GameObject gameObj) {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         if (gameObj instanceof Building) {
             this.removeBuilding((Building) gameObj);
@@ -150,7 +151,7 @@ public class Player {
     }
 
     private void removeBuilding (Building building) {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         if (!buildings.contains(building)) {
             /* DEBUG */
@@ -166,7 +167,7 @@ public class Player {
     }
 
     private void removeUnit (Unit unit) {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         if (!units.contains(unit)) {
             /* DEBUG */

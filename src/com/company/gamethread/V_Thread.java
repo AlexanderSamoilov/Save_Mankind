@@ -18,7 +18,7 @@ public class V_Thread extends Main.ThreadPattern {
     @Override
     public void repeat() throws InterruptedException {
 
-        Semaphore sem = Main.ParameterizedMutexManager.getInstance().getMutex("C", "recalc");
+        Semaphore sem = ParameterizedMutexManager.getInstance().getMutex("C", "recalc");
         sem.acquire();
 //         LOG.trace("-> " + super.getName() + " is drawing. Permits: " + String.valueOf(sem.availablePermits()));
         //GameMap.getInstance().rerandom();

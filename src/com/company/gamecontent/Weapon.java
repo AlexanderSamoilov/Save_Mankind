@@ -1,6 +1,7 @@
 package com.company.gamecontent;
 
 import com.company.gamethread.Main;
+import com.company.gamethread.ParameterizedMutexManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,7 +23,7 @@ public class Weapon {
     private int reloadCounter = 0;
 
     public Weapon(int damage, int radius, int speed, int caliber, int reload) {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
 
         this.radius  = radius;
         this.damage  = damage;
@@ -36,7 +37,7 @@ public class Weapon {
 
     // FIXME Setter() to Class.attr = val
     public void setOwner(Unit u) {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
 
         owner = u;
     }
@@ -58,12 +59,12 @@ public class Weapon {
 
     // TODO: not implemented yet
     public void render(Graphics g) {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
 
     }
 
     public void shoot(Integer[] location, Integer[] target) {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         if (reloadCounter == 0) {
             LOG.debug("Player #(" + owner.getPlayerId() + ")" + Player.getPlayers()[owner.getPlayerId()] + ", unit #" + owner + " is shooting -> " + target);

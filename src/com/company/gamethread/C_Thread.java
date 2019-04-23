@@ -22,7 +22,7 @@ public class C_Thread extends Main.ThreadPattern {
     @Override
     public void repeat() throws InterruptedException {
 
-        Semaphore sem = Main.ParameterizedMutexManager.getInstance().getMutex("V", "recalc");
+        Semaphore sem = ParameterizedMutexManager.getInstance().getMutex("V", "recalc");
         sem.acquire();
 
         LOG.trace("-> " + super.getName() + " is calculating. Permits: " + String.valueOf(sem.availablePermits()));

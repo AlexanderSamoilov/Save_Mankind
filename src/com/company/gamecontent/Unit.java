@@ -7,6 +7,7 @@ import java.util.HashSet;
 
 import com.company.gamegraphics.Sprite;
 import com.company.gamethread.Main;
+import com.company.gamethread.ParameterizedMutexManager;
 import com.company.gametools.MathTools;
 
 import org.apache.logging.log4j.LogManager;
@@ -47,7 +48,7 @@ public class Unit extends GameObject implements Shootable {
 
     // Add the given Weapon to the Unit
     public boolean setWeapon(Weapon w) {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
 
         /* Special check for the weapon distance. In case of INTERSECTION_STRATEGY_SEVERITY = 2
            the shooting radius must be at least the object radius + 1 block*sqrt(2).
@@ -77,7 +78,7 @@ public class Unit extends GameObject implements Shootable {
     public Unit(Weapon weapon, int r, Sprite sprite, int x, int y, int z, int sX, int sY, int sZ, HashMap<Resource, Integer> res, int hp, int speed, int rot_speed, int preMoveAngle, int arm, int hard, int bch, int ech, int eco) {
         // 1 - parent class specific parameters
         super(sprite, x, y, z, sX, sY, sZ, res, hp, speed, rot_speed, preMoveAngle, arm, hard, bch, ech, eco);
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
 
         // 2 - child class specific parameters validation
         boolean valid = true;
@@ -116,7 +117,7 @@ public class Unit extends GameObject implements Shootable {
     }
 
     public boolean setTargetObject(GameObject targetObj) {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
 
         if (!hasWeapon()) return false;
 
@@ -137,7 +138,7 @@ public class Unit extends GameObject implements Shootable {
     }
 
     public void setTargetPoint(Integer [] point) {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
 
         if (!hasWeapon()) return;
 
@@ -156,13 +157,13 @@ public class Unit extends GameObject implements Shootable {
     }
 
     public void unsetTargetObject() {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
 
         targetObject = null;
     }
 
     public void unsetTargetPoint() {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
 
         targetPoint = null;
     }
@@ -201,7 +202,7 @@ public class Unit extends GameObject implements Shootable {
     }
 
     public boolean shoot(Integer[] point) {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         // We need to turn gun on the target first and then shoot.
         if (rotateTo(point)) {
@@ -215,7 +216,7 @@ public class Unit extends GameObject implements Shootable {
     // TODO: Take into account visibility of the target point as well
     // TODO: The target object can be "lost" if it is going much faster than the shooter
     public void processTargets() {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         validateTargetTypesNumber();
 
@@ -290,7 +291,7 @@ public class Unit extends GameObject implements Shootable {
 
     // TODO Move it in AI_Tools_Class
     public void searchTargetsInRadius() {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         // TODO: introduce some algorithm of the optimal search to consider the closes blocks first
         // For example, radial search (spiral)
@@ -344,7 +345,7 @@ public class Unit extends GameObject implements Shootable {
     }
 
     public void render(Graphics g) {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
 
         LOG.trace("Rendering UNIT: " + this.getPlayerId());
         super.render(g);

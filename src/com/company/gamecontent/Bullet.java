@@ -4,6 +4,7 @@ import com.company.gamegeom.Parallelepiped;
 
 import com.company.gamegraphics.GraphExtensions;
 import com.company.gamethread.Main;
+import com.company.gamethread.ParameterizedMutexManager;
 import com.company.gametools.MathTools;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,7 +37,7 @@ public class Bullet implements Moveable, Centerable, Renderable {
     private Integer[] destPoint = null;
 
     public Bullet(Unit shooter, Integer[] center_location, Integer[] target, int damage, int speed, int caliber) {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         this.shooter = shooter;
 
@@ -89,28 +90,28 @@ public class Bullet implements Moveable, Centerable, Renderable {
     public int getSpeed() { return speed; }
 
     public void setDestinationPoint(Integer [] dest) {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
 
         // The destination point of the bullet is defined one time at the shooting moment
         // It is unmodifiable
     }
 
     public void unsetDestinationPoint() {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
 
         // However, it is not needed, because the Bullet must be deleted after the bullet hit
         destPoint = null;
     }
 
     public boolean move() {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         // The bullet can fly only where it was shooted to. Its destination not possible to change
         return moveTo(destPoint);
     }
 
     public boolean moveTo(Integer [] next) {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         // Calculate future coordinates where we want to move hypothetically (if nothing prevents this)
         Integer new_center[] = MathTools.getNextPointOnRay(getAbsCenterInteger(), next, speed);
@@ -143,7 +144,7 @@ public class Bullet implements Moveable, Centerable, Renderable {
     }
 
     public void causeDamage() {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         int block_x = loc[0] / BLOCK_SIZE;
         int block_y = loc[1] / BLOCK_SIZE;
@@ -199,14 +200,14 @@ public class Bullet implements Moveable, Centerable, Renderable {
 
     // wrapper method
     public void render(Graphics g) {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
 
         render(g, null, 0);
     }
 
     // TODO Use Sprite rendering
     public void render(Graphics g, Parallelepiped parallelepiped, double rotation_angle) {
-        Main.ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
 
         g.setColor(Color.PINK);
         GraphExtensions.fillRect(g, new Rectangle(loc[0], loc[1], caliber, caliber), 0);
