@@ -62,7 +62,8 @@ public class LogConfFactory extends ConfigurationFactory {
         // Creating console output by appenderComponentBuilder
         AppenderComponentBuilder consoleBuilder = builder.newAppender(
                 "stdout", "CONSOLE"
-        ).addAttribute("target", ConsoleAppender.Target.SYSTEM_OUT);
+        ).addAttribute("target", ConsoleAppender.Target.SYSTEM_OUT)
+         .addAttribute("immediateFlush", true);
 
         // Log text layout. Instruction: https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/PatternLayout.html
         consoleBuilder.add(builder.newLayout("PatternLayout").
@@ -95,7 +96,8 @@ public class LogConfFactory extends ConfigurationFactory {
         if (debugging) {
             AppenderComponentBuilder consoleDebugBuilder = builder.newAppender(
                 "debug-stdout", "CONSOLE"
-            ).addAttribute("target", ConsoleAppender.Target.SYSTEM_OUT);
+            ).addAttribute("target", ConsoleAppender.Target.SYSTEM_OUT)
+             .addAttribute("immediateFlush", true);
 
             consoleDebugBuilder.add(builder.newLayout("PatternLayout").
                     addAttribute("pattern", DEBUG_LAYOUT)

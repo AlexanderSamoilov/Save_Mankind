@@ -23,7 +23,13 @@ public class C_Thread extends Main.ThreadPattern {
     public void repeat() throws InterruptedException {
 
         Semaphore sem = ParameterizedMutexManager.getInstance().getMutex("V", "recalc");
-        sem.acquire();
+        try {
+            sem.acquire();
+        } catch (InterruptedException e) {
+            // It is naturally to have this exception while the thread is dying
+            // Don't report about it in case of total termination
+            if (Main.SIGNAL_TERM_GENERAL != true) throw(e);
+        }
 
         LOG.trace("-> " + super.getName() + " is calculating. Permits: " + String.valueOf(sem.availablePermits()));
 
@@ -50,7 +56,13 @@ public class C_Thread extends Main.ThreadPattern {
         }
 
         LOG.trace("<- " + super.getName() + " is calculating. Permits: " + String.valueOf(sem.availablePermits()));
-        sem.release();
+        try {
+            sem.release();
+        } catch (Exception e) {
+            // It is naturally to have this exception while the thread is dying
+            // Don't report about it in case of total termination
+            if (Main.SIGNAL_TERM_GENERAL != true) throw(e);
+        }
     }
 
 }

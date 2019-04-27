@@ -140,7 +140,7 @@ public class Main {
     private static MouseController mouseController;
 
     // public Main();
-    private static boolean SIGNAL_TERM_GENERAL = false;
+    public static boolean SIGNAL_TERM_GENERAL = false;
 
     // Override basic method of EDT of JPanel
     private static JPanel jpOber = new JPanel();
@@ -508,7 +508,7 @@ public class Main {
         try {
             Thread.sleep(timeoutMSec);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             // This is not a big trouble that we were not able to do sleep, so it is not a reason to interrupt the method on this
         }
     }
@@ -522,7 +522,7 @@ public class Main {
     // "Pattern" class for creation of singletones
     // FIXME Class-in-Class.
     public static class ThreadPattern extends Thread {
-        protected final String name;
+
         protected long TIME_QUANT = 80;
         protected boolean SIGNAL_TERM;
         private static ThreadPattern instance = null;
@@ -532,7 +532,7 @@ public class Main {
         }
 
         protected ThreadPattern(String threadName) {
-            name = threadName;
+            super.setName(threadName);
             SIGNAL_TERM = false;
         }
 
@@ -635,7 +635,14 @@ public class Main {
 
     private static void destroy() {
         // Here we implement releasing of allocated memory for all objects.
-        frame.dispose();
+
+        // kill main windows properly
+        while (frame.isShowing() || frame.isValid()) {
+            frame.dispose();
+            LOG.debug("Dispose - retry:" + frame.isActive() + "," + frame.isValid() + "," + frame.isDisplayable()
+                    + "," + frame.isEnabled() + "," + frame.isShowing() + "," + frame.isVisible());
+            timeout(100);
+        }
     }
 
 //    private static boolean terminate(long timeoutMsec) {
@@ -657,6 +664,7 @@ public class Main {
 
     // TODO Check logic here!
     private static boolean terminate(long timeoutMsec) {
+        SIGNAL_TERM_GENERAL = true;
         try {
             C_Thread.getInstance().terminate(timeoutMsec);
         } catch (Exception e) {
@@ -687,10 +695,9 @@ public class Main {
             return false;
         }
 
-        // Delete all objects
+        // Delete all objects and destroy main window
         destroy();
 
-        SIGNAL_TERM_GENERAL = true;
         return true;
     }
 
@@ -712,7 +719,6 @@ public class Main {
         }
 
         ////ew.close();
-        destroy();
         System.exit(1);
     }
 
@@ -725,7 +731,7 @@ public class Main {
 
         C_Thread.getInstance().suspend();
         LOG.debug("C suspended");
-        LOG.info("--- suspended ---");
+        LOG.debug("--- suspended ---");
     }
 
     // TODO Move this to ThreadPool
@@ -733,7 +739,7 @@ public class Main {
         D_Thread.getInstance().resume();
         V_Thread.getInstance().resume();
         C_Thread.getInstance().resume();
-        LOG.info("--- resumed ---");
+        LOG.debug("--- resumed ---");
     }
     // This function handles ESC key press (it runs in a special unnamed thread automatically by Java mechanisms)
     // I think that this must be handled in the main thread, because it is the highest priority action - game state managing.
@@ -807,14 +813,24 @@ public class Main {
         }
 
         // Wait for D-Thread to get ready (at the same time D-Thread is waiting for V-Thread to get ready)
-        ((Semaphore) ParameterizedMutexManager.getInstance().getMutex(
-                "D", "getReady")
-        ).acquire();
+        try {
+            ((Semaphore) ParameterizedMutexManager.getInstance().getMutex(
+                    "D", "getReady")
+            ).acquire();
+        } catch (Exception e) {
+            e.printStackTrace();
+            terminateNoGiveUp(1000, "Failed to get mutex for D-Thread.");
+        }
 
         // Wait for V-Thread to get ready
-        ((Semaphore) ParameterizedMutexManager.getInstance().getMutex(
-                "V", "getReady")
-        ).acquire();
+        try {
+            ((Semaphore) ParameterizedMutexManager.getInstance().getMutex(
+                    "V", "getReady")
+            ).acquire();
+        } catch (Exception e) {
+            e.printStackTrace();
+            terminateNoGiveUp(1000, "Failed to get mutex for V-Thread.");
+        }
 
         // 4. Initialize and start C-Thread.
         if (C_Thread.getInstance().start(100, 10)) {

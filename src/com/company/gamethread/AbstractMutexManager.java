@@ -1,9 +1,12 @@
 package com.company.gamethread;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.lang.reflect.ParameterizedType;
 import java.util.ConcurrentModificationException;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.NoSuchElementException;
 import java.util.function.BiFunction;
 
@@ -12,7 +15,8 @@ import java.util.function.BiFunction;
 // 2. concurrent access (+ What happens if two threads try to CREATE the same mutex at the same time)
 // 3. check that we cannot do something bad with returned Semaphore object (for example, override its max counter to make non-binary)
 // if yes then replace Semaphore with an own class derived from Semaphore, but with restrictions
-public abstract class AbstractMutexManager <TypeKey, TypeValue> extends HashMap {
+public abstract class AbstractMutexManager <TypeKey, TypeValue> extends ConcurrentHashMap {
+    private static Logger LOG = LogManager.getLogger(AbstractMutexManager.class.getName());
 
     //Class clazz = HashMap<T2,HashMap<T3, V>>; - does not work! (http://javanotepad.blogspot.com/2007/09/instanceof-doesnt-work-with-generics.html)
     // Thanks! https://stackoverflow.com/questions/5734720/test-if-object-is-instanceof-a-parameter-type
@@ -76,8 +80,10 @@ public abstract class AbstractMutexManager <TypeKey, TypeValue> extends HashMap 
                 }
             } else {
                 try {
+                    LOG.trace("PUT: " + key.toString() + ":"+ value.toString());
                     super.put(key, value);
                 } catch (ConcurrentModificationException e) {
+                    // TODO: there is no sense anymore in this exception, because we already use ConcurrentHashMap
                     Main.terminateNoGiveUp(
                             1000,
                             "Error: ConcurrentModificationException on writing to hash[" + key + "]"

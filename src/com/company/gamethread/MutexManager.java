@@ -56,7 +56,15 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
 
             Semaphore s = new Semaphore(1);
             LOG.trace(insert((TypeKey)key, (TypeValue)(s)).toString());
-            LOG.trace(obtain((TypeKey)key).toString());
+            // This try-catch is for debugging thread-safety violations
+            try {
+                LOG.trace("GET: " + obtain((TypeKey) key).toString());
+            } catch (NullPointerException e) {
+                LOG.error("EXIST KEY: " + containsKey((TypeKey)key));
+                LOG.error("GET VALUE RETRY: " + obtain((TypeKey) key).toString());
+                throw(e);
+            }
+
             TypeValue insertionRes = null;
             boolean concurrentAccessOK = false;
             // I suspect that it is possible that one thread executes half of "insert" operation
@@ -150,7 +158,7 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
             }
         }
 
-        if (illegal) Main.terminateNoGiveUp(1000, "Illegal thread: " + currentThreadType + " (id: " + Thread.currentThread().getId() + ")");
+        if (illegal) throw new IllegalStateException("Illegal thread: " + currentThreadType + " (id: " + Thread.currentThread().getId() + ")");
     }
 
 }

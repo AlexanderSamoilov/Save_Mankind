@@ -19,14 +19,26 @@ public class V_Thread extends Main.ThreadPattern {
     public void repeat() throws InterruptedException {
 
         Semaphore sem = ParameterizedMutexManager.getInstance().getMutex("C", "recalc");
-        sem.acquire();
+        try {
+            sem.acquire();
+        } catch (InterruptedException e) {
+            // It is naturally to have this exception while the thread is dying
+            // Don't report about it in case of total termination
+            if (Main.SIGNAL_TERM_GENERAL != true) throw(e);
+        }
 //         LOG.trace("-> " + super.getName() + " is drawing. Permits: " + String.valueOf(sem.availablePermits()));
         //GameMap.getInstance().rerandom();
         //GameMap.getInstance().render(); - moved to EDT
         //GameMap.getInstance().print();
         Main.getFrame().repaint(0);
 //         LOG.trace("<- " + super.getName() + " is drawing. Permits: " + String.valueOf(sem.availablePermits()));
-        sem.release();
+        try {
+            sem.release();
+        } catch (Exception e) {
+            // It is naturally to have this exception while the thread is dying
+            // Don't report about it in case of total termination
+            if (Main.SIGNAL_TERM_GENERAL != true) throw(e);
+        }
     }
 
 }
