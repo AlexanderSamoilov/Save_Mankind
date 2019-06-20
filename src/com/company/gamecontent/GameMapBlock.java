@@ -1,8 +1,9 @@
 package com.company.gamecontent;
 
 import com.company.gamegeom.Parallelepiped;
+import com.company.gamegeom.vectormath.point.Point2D_Integer;
+import com.company.gamegeom.vectormath.vector.Vector3D_Integer;
 import com.company.gamegraphics.Sprite;
-import com.company.gamethread.Main;
 import com.company.gamethread.ParameterizedMutexManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,10 +52,10 @@ public class GameMapBlock implements Renderable {
         natSprite.put(Nature.PLATE,  "plate.png");
     }
 
-    public GameMapBlock(int x, int y, int natType) {
+    public GameMapBlock(Point2D_Integer loc, int natType) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M")));
 
-        parallelepiped = new Parallelepiped(x, y, 0, 1, 1, 1);
+        parallelepiped = new Parallelepiped(loc.to3D(), new Vector3D_Integer(1, 1, 1));
 
         Nature nat;
         try {
@@ -149,31 +150,6 @@ public class GameMapBlock implements Renderable {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V", "D")));
 
         this.sprite.render(g, parallelepiped, rotation_angle);
-    }
-
-    // TODO Remove getters. Use Class.attr
-    public Nature getNature() {
-        return nature;
-    }
-
-    // TODO Remove getters. Use Class.attr
-    public Sprite getSprite() {
-        return sprite;
-    }
-
-    // TODO Remove getters. Use Class.attr
-    public boolean isThroughWalkable() {
-        return throughWalkable;
-    }
-
-    // TODO Remove getters. Use Class.attr
-    public boolean isThroughShootable() {
-        return throughShootable;
-    }
-
-    // TODO Remove getters. Use Class.attr
-    public boolean isOnBuildable() {
-        return onBuildable;
     }
 
     /* TEST-01 */

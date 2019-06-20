@@ -1,5 +1,7 @@
 package com.company.gamecontent;
 
+import com.company.gamegeom.vectormath.vector.Vector3D_Integer;
+
 import java.lang.Math;
 
 public abstract class Restrictions {
@@ -57,12 +59,9 @@ public abstract class Restrictions {
 
     // FIXME Killall getters, use constants
     public static int getBlockSize() { return BLOCK_SIZE; }
-    public static int getMaxX() { return MAX_X; }
-    public static int getMaxY() { return MAX_Y; }
-    public static int getMaxZ() { return MAX_Z; }
-    public static int getMaxXAbs() { return MAX_X*BLOCK_SIZE; }
-    public static int getMaxYAbs() { return MAX_Y*BLOCK_SIZE; }
-    public static int getMaxZAbs() { return MAX_Z*BLOCK_SIZE; }
+    // TODO: Save this vector somewhere to avoid calling "new" each time - memory wasting
+    public static Vector3D_Integer getMaxDim() { return new Vector3D_Integer(MAX_X, MAX_Y, MAX_Z); }
+    public static Vector3D_Integer getMaxDimAbs() { return getMaxDim().mult(BLOCK_SIZE); }
     public static int getMaxObjectSizeBlocks() {
         return Math.min(MAX_OBJECT_SIZE_BLOCKS, Math.min(MAX_X, MAX_Y));
     }
@@ -78,7 +77,7 @@ public abstract class Restrictions {
     public static int getMaxBCH() { return MAX_BURN_CHANCE_ON_HIT; }
     public static int getMaxECH() { return MAX_EXPLOSION_CHANCE_ON_HIT; }
     public static int getMaxECO() { return MAX_EXPLOSION_CHANCE_ON_BURN; }
-    public static int getMaxDetectRadiusAbs() { return Math.max(getMaxXAbs(), getMaxYAbs()) / 2; }
+    public static int getMaxDetectRadiusAbs() { return Math.max(getMaxDimAbs().x(), getMaxDimAbs().y()) / 2; }
     public static int getMaxEnergyConsumption() { return MAX_ENERGY_CONSUMPTION; }
     public static int getMaxInitialUpgradeTime() { return MAX_INITIAL_UPGRADE_TIME;}
     public static int getIntersectionStrategySeverity() { return INTERSECTION_STRATEGY_SEVERITY; }

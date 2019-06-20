@@ -4,6 +4,9 @@ import com.company.gamegeom.Parallelepiped.GridRectangle;
 import com.company.gamegeom.Parallelepiped;
 
 import com.company.gamecontrollers.MouseController;
+import com.company.gamegeom.vectormath.point.Point2D_Integer;
+import com.company.gamegeom.vectormath.point.Point3D_Integer;
+import com.company.gamegeom.vectormath.vector.Vector3D_Integer;
 import com.company.gamethread.Main;
 import com.company.gamethread.ParameterizedMutexManager;
 import com.company.gamethread.V_Thread;
@@ -21,9 +24,13 @@ import static com.company.gamecontent.Restrictions.INTERSECTION_STRATEGY_SEVERIT
 
 
 public class GameMap {
+
     private static Logger LOG = LogManager.getLogger(GameMap.class.getName());
 
     private static final GameMap instance = new GameMap();
+    // TODO: make it public final. For that we have to get rid of init() and do everything in the constructor.
+    private Vector3D_Integer dim;
+    private Vector3D_Integer abs_dim;
 
     // TODO what about Units, Buildings? Why Bullets separate of them?
     // TODO Guava has Table<R, C, V> (table.get(x, y)). May be create Generic Class?
@@ -43,6 +50,7 @@ public class GameMap {
     private GameMap() {}
 
     public void init(int[][] map, int width, int height) throws EnumConstantNotPresentException {
+
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M")));
 
         if (initialized) {
@@ -63,6 +71,9 @@ public class GameMap {
         }
 
         this.landscapeBlocks = new GameMapBlock[width][height];
+        // MAX_Z because we don't support 3D so far
+        dim = new Vector3D_Integer(width, height, Restrictions.MAX_Z);
+        abs_dim = dim.mult1(BLOCK_SIZE);
 
         // TODO What about collections and Maps?
         this.objectsOnMap = new HashSet[width][height];
@@ -73,13 +84,22 @@ public class GameMap {
             for (int j = 0; j < height; j++) {
                 // Declaring landscape blocks
                 try {
-                    this.landscapeBlocks[i][j] = new GameMapBlock(i * BLOCK_SIZE, j * BLOCK_SIZE, map[i][j]);
+                    this.landscapeBlocks[i][j] = new GameMapBlock(new Point2D_Integer(i, j).mult(BLOCK_SIZE), map[i][j]);
                 } catch (EnumConstantNotPresentException e) {
                     LOG.debug("Block (" + i + ", " + j + ")");
                     LOG.debug("Map size: " + width + "x" + height);
+                    e.printStackTrace();
                     Main.terminateNoGiveUp(
                             1000,
                             getClass() + " init error. Blocks array out of bounds"
+                    );
+                } catch (Exception e) {
+                    LOG.debug("Block (" + i + ", " + j + ")");
+                    LOG.debug("Map size: " + width + "x" + height);
+                    e.printStackTrace();
+                    Main.terminateNoGiveUp(
+                            1000,
+                            getClass() + " unknown error."
                     );
                 }
 
@@ -107,8 +127,8 @@ public class GameMap {
         // Redraw map blocks and Objects on them
         // TODO What about collections and Maps?
         // FIXME Can't move render landscapeBlocks into function - bad realisation
-        for (int i = 0; i < getMaxX(); i++) {
-            for (int j = 0; j < getMaxY(); j++) {
+        for (int i = 0; i < getDim().x(); i++) {
+            for (int j = 0; j < getDim().y(); j++) {
 
                 /* For debug purpose: We draw only those blocks which are not occupied, otherwise
                 there will be white space there, because the whole picture is "erased" on each step.
@@ -121,8 +141,8 @@ public class GameMap {
         }
 
         // Rendering objects on a blocks
-        for (int i = 0; i < getMaxX(); i++) {
-            for (int j = 0; j < getMaxY(); j++) {
+        for (int i = 0; i < getDim().x(); i++) {
+            for (int j = 0; j < getDim().y(); j++) {
                 this.renderObjects(g, objectsOnMap[i][j]);
             }
         }
@@ -232,7 +252,7 @@ public class GameMap {
         }
     }
 
-    public void assign(Integer[] point) {
+    public void assign(Point3D_Integer point) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
 
         if (selectedObjects == null || selectedObjects.size() == 0) {
@@ -249,17 +269,16 @@ public class GameMap {
 
     // QUESTION What this do? May be rename?
     // QUESTION Is this super.method() for GameObject.Unit.setTargets()? Why?
-    private void assignUnit(GameObject selectedObj, Integer[] point){
+    private void assignUnit(GameObject selectedObj, Point3D_Integer point){
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
 
         // FIXME: We must take floor(), not just divide!
-        int block_x = point[0] / BLOCK_SIZE;
-        int block_y = point[1] / BLOCK_SIZE;
+        Point2D_Integer block = point.to2D().divInt1(BLOCK_SIZE);
 
         // TODO: currently we don't consider "visibility" of the point by the player/enemy.
-        HashSet<GameObject> objectsOnBlock = objectsOnMap[block_x][block_y];
+        HashSet<GameObject> objectsOnBlock = objectsOnMap[block.x()][block.y()];
 
-        boolean block_visible = isBlockVisibleForMe(block_x, block_y);
+        boolean block_visible = isBlockVisibleForMe(block);
         boolean is_me         = (objectsOnBlock.size() == 1) && objectsOnBlock.contains(selectedObj);
         boolean nobody        = objectsOnBlock.size() == 0;
 
@@ -270,7 +289,7 @@ public class GameMap {
             // In case of several object on the block we choose the first randomly
             // found from them to attack
             for (GameObject objOnBlock : objectsOnBlock) {
-                if (objOnBlock.contains(point) && objOnBlock != selectedObj) {
+                if (objOnBlock.contains(point.to2D()) && objOnBlock != selectedObj) {
                     if (((Unit) selectedObj).setTargetObject(objOnBlock)) {
                         return;
                     }
@@ -324,42 +343,23 @@ public class GameMap {
         }
     }
 
-    // FIXME lndScapeBlocks.width. Remove Getter
-    public int getMaxX() {
-        // Block = lndScapeBlocks.(x,y)
-        return this.landscapeBlocks.length;
+    // FIXME Remove Getter. See comment above dim, abs_dim declaration.
+    public Vector3D_Integer getDim() {
+        return this.dim;
     }
 
-    // FIXME lndScapeBlocks.height. Remove Getter
-    public int getMaxY() {
-        return this.landscapeBlocks[0].length;
-    }
-
-    // TODO: We don't support 3D so far
-    public int getMaxZ() {
-        return Restrictions.getMaxZ();
-    }
-
-    public int getAbsMaxX() {
-        return this.getMaxX() * BLOCK_SIZE;
-    }
-
-    public int getAbsMaxY() {
-        return this.getMaxY() * BLOCK_SIZE;
-    }
-
-    public int getAbsMaxZ() {
-        return this.getMaxZ() * BLOCK_SIZE;
+    public Vector3D_Integer getAbsDim() {
+        return this.abs_dim;
     }
 
     public void validateBlockCoordinates(int grid_x, int grid_y) {
         if (
-                (grid_x < 0) || (grid_x > getMaxX() - 1) ||
-                (grid_y < 0) || (grid_y > getMaxY() - 1)
+                (grid_x < 0) || (grid_x > getDim().x() - 1) ||
+                (grid_y < 0) || (grid_y > getDim().y() - 1)
         ) {
             Main.terminateNoGiveUp(
                     1000, "Block (" + grid_x + "," + grid_y +
-                    " is outside of map " + getMaxX() + " x " + getMaxY()
+                    " is outside of map " + getDim().x() + " x " + getDim().y()
             );
         }
     }
@@ -414,7 +414,7 @@ public class GameMap {
                     // DEBUG
                     LOG.trace("Check 1: (" + givenRect.x + "," + givenRect.y + "," + givenRect.width + "," + givenRect.height);
                     LOG.trace("Check 2: (" + objOnBlockRect.getX() + "," + objOnBlockRect.getY() + "," + objOnBlockRect.getWidth() + "," + objOnBlockRect.getHeight());
-                    LOG.trace("Check 3: (" + objOnBlock.getAbsLoc()[0] + "," + objOnBlock.getAbsLoc()[1] + "," + objOnBlock.getAbsSize()[0] + "," + objOnBlock.getAbsSize()[1]);
+                    LOG.trace("Check 3: " + objOnBlock.getAbsLoc() + "," + objOnBlock.getAbsSize());
 
                     if (givenRect.intersects(objOnBlockRect)) {
                         return true;
@@ -431,9 +431,9 @@ public class GameMap {
     public HashSet<Bullet> getBullets() { return bullets; }
 
     // TODO: check that i,j are within allowed boundaries
-    public boolean isBlockVisibleForMe(int i, int j) {
+    public boolean isBlockVisibleForMe(Point2D_Integer b) {
 //        LOG.debug("get: " + i + "." + j + "." + Player.getMyPlayerId());
-        return visibleMap[i][j].get(0);
+        return visibleMap[b.x()][b.y()].get(0);
     }
 
     public void registerBullet(Bullet b) {
@@ -456,8 +456,9 @@ public class GameMap {
     }
 
     // TODO Rename it to get()
+    // TODO: each time we call "new" and constructor of Parallelepiped also calls "new" - memory wasting
     Parallelepiped getParallelepiped() {
-        return new Parallelepiped(0, 0, 0, getMaxX(), getMaxY(), getMaxZ());
+        return new Parallelepiped(new Point3D_Integer(0, 0, 0), getDim());
     }
 
     Rectangle getRect() {
@@ -477,14 +478,14 @@ public class GameMap {
         return getParallelepiped().contains(ppd);
     }
 
-    boolean contains(Integer[] point) {
+    boolean contains(Point3D_Integer point) {
         return getParallelepiped().contains(point);
     }
 
     /* DEBUG */
     public void show() {
-        for (int i = 0; i < getMaxX(); i++) {
-            for (int j = 0; j < getMaxY(); j++) {
+        for (int i = 0; i < getDim().x(); i++) {
+            for (int j = 0; j < getDim().y(); j++) {
                 int plId = -1;
                 GameObject target = null;
                 if (objectsOnMap[i][j].size() != 0) {
@@ -502,8 +503,8 @@ public class GameMap {
     // Randomising landscapeBlocks
     public void rerandom() {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M")));
-        for(int i=0; i < getMaxX(); i++)
-            for (int j=0; j < getMaxY(); j++)
+        for(int i=0; i < getDim().x(); i++)
+            for (int j=0; j < getDim().y(); j++)
             {
                 landscapeBlocks[i][j].changeNature(); // pseudo-random
             }

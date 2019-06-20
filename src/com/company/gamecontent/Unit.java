@@ -5,23 +5,21 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import com.company.gamegraphics.Sprite;
-import com.company.gamethread.Main;
-import com.company.gamethread.ParameterizedMutexManager;
-import com.company.gametools.MathTools;
+import com.company.gamegeom.vectormath.point.Point3D_Integer;
+import com.company.gamegeom.vectormath.vector.Vector2D_Integer;
+import com.company.gamegeom.vectormath.vector.Vector3D_Integer;
+import com.company.gamegeom.Parallelepiped.GridRectangle;
 
+import com.company.gamegraphics.Sprite;
+import com.company.gamethread.ParameterizedMutexManager;
+
+import com.company.gametools.MathBugfixes;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.company.gamegeom.Parallelepiped.GridRectangle;
-
 import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 import static com.company.gamecontent.Restrictions.INTERSECTION_STRATEGY_SEVERITY;
-
-import static com.company.gametools.MathTools.sqrVal;
 import static com.company.gametools.MathTools.in_range;
-import static com.company.gametools.MathTools.withinRadius;
-
 import static com.company.gamethread.Main.terminateNoGiveUp;
 
 public class Unit extends GameObject implements Shootable {
@@ -44,7 +42,7 @@ public class Unit extends GameObject implements Shootable {
     private GameObject targetObject;
 
     // The map point to attack now, may be NULL
-    private Integer[] targetPoint;
+    private Point3D_Integer targetPoint;
 
     // Add the given Weapon to the Unit
     public boolean setWeapon(Weapon w) {
@@ -62,8 +60,9 @@ public class Unit extends GameObject implements Shootable {
             return true;
         }
 
-        double shootRadiusMinimal = (INTERSECTION_STRATEGY_SEVERITY - 1) * BLOCK_SIZE * Math.sqrt(2) +
-                0.5 * Math.sqrt(MathTools.sqrVal(getAbsSize()[0]) + MathTools.sqrVal(getAbsSize()[1]));
+        double shootRadiusMinimal = (INTERSECTION_STRATEGY_SEVERITY - 1) * BLOCK_SIZE * MathBugfixes.sqrt(2) +
+                0.5 * MathBugfixes.sqrt(getAbsSize().to2D().sumSqr());
+
         if (w.getShootRadius() < shootRadiusMinimal) {
             LOG.error("The given shooting radius " + w.getShootRadius()
                         + " is less than the minimal value " + shootRadiusMinimal);
@@ -75,9 +74,9 @@ public class Unit extends GameObject implements Shootable {
     }
 
     // TODO Initialization of vars to init(), constructor must be empty
-    public Unit(Weapon weapon, int r, Sprite sprite, int x, int y, int z, int sX, int sY, int sZ, HashMap<Resource, Integer> res, int hp, int speed, int rot_speed, int preMoveAngle, int arm, int hard, int bch, int ech, int eco) {
+    public Unit(Weapon weapon, int r, Sprite sprite, Point3D_Integer loc, Vector3D_Integer dim, HashMap<Resource, Integer> res, int hp, int speed, int rot_speed, int preMoveAngle, int arm, int hard, int bch, int ech, int eco) {
         // 1 - parent class specific parameters
-        super(sprite, x, y, z, sX, sY, sZ, res, hp, speed, rot_speed, preMoveAngle, arm, hard, bch, ech, eco);
+        super(sprite, loc, dim, res, hp, speed, rot_speed, preMoveAngle, arm, hard, bch, ech, eco);
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
 
         // 2 - child class specific parameters validation
@@ -137,18 +136,14 @@ public class Unit extends GameObject implements Shootable {
         return true;
     }
 
-    public void setTargetPoint(Integer [] point) {
+    public void setTargetPoint(Point3D_Integer point) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
 
         if (!hasWeapon()) return;
 
         // TODO: check if coordinates are within restrictions
-        if (targetPoint == null) {
-            this.targetPoint = new Integer[2];
-        }
-
-        this.targetPoint[0] = point[0];
-        this.targetPoint[1] = point[1];
+        if (this.targetPoint == null) targetPoint = new Point3D_Integer(0, 0, 0);
+        this.targetPoint.assign(point);
 
         unsetTargetObject();
 
@@ -174,7 +169,7 @@ public class Unit extends GameObject implements Shootable {
     }
 
     // FIXME Getter() to Class.attr
-    public Integer[] getTargetPoint() {
+    public Point3D_Integer getTargetPoint() {
         return targetPoint;
     }
 
@@ -201,11 +196,11 @@ public class Unit extends GameObject implements Shootable {
         }
     }
 
-    public boolean shoot(Integer[] point) {
+    public boolean shoot(Point3D_Integer point) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         // We need to turn gun on the target first and then shoot.
-        if (rotateTo(point)) {
+        if (rotateTo(point.to2D())) {
             return false;
         }
         LOG.trace("Player " + this.getPlayerId() + " shoots target");
@@ -238,13 +233,13 @@ public class Unit extends GameObject implements Shootable {
             return;
         }
 
-        Integer[] target = (targetPoint != null) ? targetPoint : targetObject.getAbsCenterInteger();
+        Point3D_Integer target = (targetPoint != null) ? targetPoint : targetObject.getAbsCenterInteger();
 
         // TODO Move it in AI_Tools_Class
         if (isOnLineOfFire(target)) {
             int shootRadius = weapon.getShootRadius();
 
-            if (withinRadius(target, getAbsCenterInteger(), shootRadius)) {
+            if (Point3D_Integer.withinRadius(target, getAbsCenterInteger(), shootRadius)) {
                 shoot(target);
                 return;
             }
@@ -259,19 +254,19 @@ public class Unit extends GameObject implements Shootable {
                 // belongs to the target rectangle then we still can hit the target
                 // (this works by the way even for such weird case when the target rectangle
                 // completely contains the center of the shooter (possible only with INTERSECTION_STRATEGY_SEVERITY=0)
-                Integer[] far = new Integer[3];
-                double dist = Math.sqrt(sqrVal(target[0] - getAbsCenterInteger()[0]) +
-                        sqrVal(target[1] - getAbsCenterInteger()[1]));
+                Point3D_Integer far;
+                double dist = MathBugfixes.sqrt(Point3D_Integer.distSqrVal(target, getAbsCenterInteger()));
 
                 if (dist < 1) {
-                    far[0] = target[0];
-                    far[1] = target[1];
+                    // This may be not economically, but safe that nobody modify "target" outside, so do clone()
+                    far = target.clone();
                 } else {
-                    far[0] = getAbsCenterInteger()[0] + (int) ((target[0] - getAbsCenterInteger()[0]) * shootRadius / dist);
-                    far[1] = getAbsCenterInteger()[1] + (int) ((target[1] - getAbsCenterInteger()[1]) * shootRadius / dist);
+                    far = getAbsCenterInteger().plus1(
+                          target.minus1(getAbsCenterInteger()).mult(shootRadius).divInt(dist)
+                    );
                 }
 
-                if (targetObject.getRect().contains(far[0], far[1])) {
+                if (targetObject.getRect().contains(far.x(), far.y())) {
                     LOG.trace("Player " + this.getPlayerId() + " shoots target border");
                     shoot(far);
                     return;
@@ -284,8 +279,8 @@ public class Unit extends GameObject implements Shootable {
         // or: something hinders (impediment on the line of fire) - need to relocate
         // TODO Here may be a Def target where unit can't pursuing
         // TODO Move it in AI_Tools_Class
-        LOG.debug("Player " + this.getPlayerId() + ", unit " + this + " at (" + getAbsCenterInteger()[0] + "," + getAbsCenterInteger()[1] +
-                    "): target " + targetObject + " at (" + target[0] + "," + target[1] + ") is too far - cannot shoot now.");
+        LOG.debug("Player " + this.getPlayerId() + ", unit " + this + " at " + getAbsCenterInteger() +
+                ": target " + targetObject + " at " + target + " is too far - cannot shoot now.");
         this.moveTo(getNextPointOnOptimalShootingPath(target));
     }
 
@@ -299,8 +294,8 @@ public class Unit extends GameObject implements Shootable {
         // not circle, but a rectangle with a brute-force iteration
 
         Rectangle detectionAreaRect = new Rectangle(
-                (int)Math.floor(getAbsCenterDouble()[0] - detectRadius), // left
-                (int)Math.floor(getAbsCenterDouble()[1] - detectRadius), // top
+                (int)Math.floor(getAbsCenterDouble().x() - detectRadius), // left
+                (int)Math.floor(getAbsCenterDouble().y() - detectRadius), // top
                 2 * detectRadius, // width
                 2 * detectRadius // height
                 );
@@ -335,12 +330,12 @@ public class Unit extends GameObject implements Shootable {
     }
 
     // TODO: not implemented yet, just return what was given
-    public boolean isOnLineOfFire(Integer [] dest) {
+    public boolean isOnLineOfFire(Point3D_Integer dest) {
         return true;
     }
 
     // TODO: not implemented yet, just return what was given
-    public Integer[] getNextPointOnOptimalShootingPath(Integer [] dest) {
+    public Point3D_Integer getNextPointOnOptimalShootingPath(Point3D_Integer dest) {
         return dest;
     }
 

@@ -2,7 +2,7 @@ package com.company.gamegraphics;
 
 import java.awt.*;
 
-public class GraphExtensions {
+public abstract class GraphExtensions {
 
         public static void putpixel(Graphics g, int x, int y, Color color) {
             Color origColor = g.getColor();

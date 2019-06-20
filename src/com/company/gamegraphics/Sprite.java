@@ -58,12 +58,12 @@ public class Sprite implements Renderable {
 
         if (rotation_angle != 0) {
             this.rotation.setToIdentity();
-            this.rotation.rotate(rotation_angle, parallelepiped.getAbsCenterDouble()[0], parallelepiped.getAbsCenterDouble()[1]);
+            this.rotation.rotate(rotation_angle, parallelepiped.getAbsCenterDouble().x(), parallelepiped.getAbsCenterDouble().y());
             ((Graphics2D) g).transform(rotation);
         }
 
         g.setColor(Color.GREEN);
-        g.drawImage(image, parallelepiped.getAbsLoc()[0], parallelepiped.getAbsLoc()[1], parallelepiped.getAbsSize()[0], parallelepiped.getAbsSize()[1], null);
+        g.drawImage(image, parallelepiped.getAbsLoc().x(), parallelepiped.getAbsLoc().y(), parallelepiped.getAbsSize().x(), parallelepiped.getAbsSize().y(), null);
         ((Graphics2D) g).setTransform(saveAT);
     }
 }

@@ -1,6 +1,6 @@
 package com.company.gamecontent;
 
-import com.company.gamethread.Main;
+import com.company.gamegeom.vectormath.point.Point3D_Integer;
 import com.company.gamethread.ParameterizedMutexManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -63,11 +63,12 @@ public class Weapon {
 
     }
 
-    public void shoot(Integer[] location, Integer[] target) {
+    public void shoot(Point3D_Integer location, Point3D_Integer target) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         if (reloadCounter == 0) {
-            LOG.debug("Player #(" + owner.getPlayerId() + ")" + Player.getPlayers()[owner.getPlayerId()] + ", unit #" + owner + " is shooting -> " + target);
+            Integer plId = owner.getPlayerId();
+            LOG.debug("Player #(" + plId + ")" + Player.getPlayers()[plId] + ", unit #" + owner + " is shooting -> " + target);
             Bullet b = new Bullet(owner, location, target, damage, speed, caliber);
             GameMap.getInstance().registerBullet(b);
         }

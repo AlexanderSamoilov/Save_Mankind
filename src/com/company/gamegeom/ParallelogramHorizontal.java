@@ -1,5 +1,6 @@
 package com.company.gamegeom;
 
+import com.company.gamegeom.vectormath.point.Point2D_Integer;
 import com.company.gamegraphics.GraphBugfixes;
 import com.company.gamethread.Main;
 import com.company.gametools.MathTools;
@@ -14,15 +15,14 @@ import static java.lang.Thread.sleep;
 public class ParallelogramHorizontal {
     private static Logger LOG = LogManager.getLogger(ParallelogramHorizontal.class.getName());
 
-    private int x, y; // Coordinates of the left-top-back point
+    private Point2D_Integer loc; // Coordinates of the left-top-back point
     private int width, height;
     private int shift; // shift of the second horizontal edge along Ox
 
     private final Color color = Color.BLUE;
 
-    public ParallelogramHorizontal(int x, int y, int width, int height, int shift) {
-        this.x = x;
-        this.y = y;
+    public ParallelogramHorizontal(Point2D_Integer loc, int width, int height, int shift) {
+        this.loc = loc.clone();
         this.width = width;
         this.height = height;
         this.shift = shift;
@@ -36,41 +36,41 @@ public class ParallelogramHorizontal {
      */
     // TODO: To avoid check of discrepancy in "intersects()" better to use some common way for both functions
     // and not check if two different ways give the same result
-    public int contains(Integer [] p) {
+    public int contains(Point2D_Integer p) {
 
-        int y_top = this.y;
-        int y_bottom = this.y + this.height - 1;
-        int x_left_top = this.x;
-        int x_right_top = this.x + this.width - 1;
+        int y_top = this.loc.y();
+        int y_bottom = this.loc.y() + this.height - 1;
+        int x_left_top = this.loc.x();
+        int x_right_top = this.loc.x() + this.width - 1;
         int x_left_bottom = x_left_top + this.shift;
         int x_right_bottom = x_right_top + this.shift;
 
         // 4 vertices on a line
         if (y_top == y_bottom) {
-            if (p[1] != y_top) return -1; // not on the line
+            if (p.y() != y_top) return -1; // not on the line
             int x_leftest = Math.min(x_left_top, x_left_bottom);
             int x_rightest = Math.max(x_right_top, x_right_bottom);
-            if ((x_leftest <= p[0]) && (p[0] <= x_rightest)) return 0; // within the section
+            if ((x_leftest <= p.x()) && (p.x() <= x_rightest)) return 0; // within the section
             return -1; // outside the section borders
         }
 
         // better to check the 4 vertices separately, because "double" type can give some difference
         // for example, 320.000000000001 and 320
         if (
-               (p[0] == x_left_top) && (p[1] == y_top) // top-left vertice
-            || (p[0] == x_right_top) && (p[1] == y_top) // top-right vertice
-            || (p[0] == x_left_bottom) && (p[1] == y_bottom) // bottom-left vertice
-            || (p[0] == x_right_bottom) && (p[1] == y_bottom) // bottom-right vertice
+               (p.x() == x_left_top) && (p.y() == y_top) // top-left vertice
+            || (p.x() == x_right_top) && (p.y() == y_top) // top-right vertice
+            || (p.x() == x_left_bottom) && (p.y() == y_bottom) // bottom-left vertice
+            || (p.x() == x_right_bottom) && (p.y() == y_bottom) // bottom-right vertice
         ) return 0;
 
-        double x_left = x_left_top + (p[1] - y_top) * (x_left_bottom - x_left_top) / (y_bottom - y_top);
-        double x_right = x_right_top + (p[1] - y_top) * (x_right_bottom - x_right_top) / (y_bottom - y_top);
+        double x_left = x_left_top + (p.y() - y_top) * (x_left_bottom - x_left_top) / (y_bottom - y_top);
+        double x_right = x_right_top + (p.y() - y_top) * (x_right_bottom - x_right_top) / (y_bottom - y_top);
 
-        LOG.trace("x_left=" + x_left + ", x=" + p[0] + ", x_right=" + x_right);
-        LOG.trace("y_top=" + y_top + ", y=" + p[1] + ", y_bottom=" + y_bottom);
+        LOG.trace("x_left=" + x_left + ", x=" + p.x() + ", x_right=" + x_right);
+        LOG.trace("y_top=" + y_top + ", y=" + p.y() + ", y_bottom=" + y_bottom);
 
-        if ((y_top > p[1]) || (p[1] > y_bottom) || (x_left > p[0]) || (p[0] > x_right)) return -1; // outside
-        if ((y_top < p[1]) && (p[1] < y_bottom) && (x_left < p[0]) && (p[0] < x_right)) return 1; // inside
+        if ((y_top > p.y()) || (p.y() > y_bottom) || (x_left > p.x()) || (p.x() > x_right)) return -1; // outside
+        if ((y_top < p.y()) && (p.y() < y_bottom) && (x_left < p.x()) && (p.x() < x_right)) return 1; // inside
         return 0; // otherwise only on the border
 
     }
@@ -81,12 +81,12 @@ public class ParallelogramHorizontal {
        0 - section [A; B] just touches some of parallelogram edges or vertices,
       -1 - section [A; B] lays completely in the exterior (does not even touch)
      */
-    public int intersects(Integer [] A, Integer [] B) {
+    public int intersects(Point2D_Integer A, Point2D_Integer B) {
 
         // Validation. We are not supposed that the section turns to a point.
         // We call this function to check intersection of a parallelogram interior with a section [A; B].
         // This section must never turn to a point. Thus we don't just return here smth, but exit the program with a fatal error.
-        if ((A[0] == B[0]) && (A[1] == B[1])) {
+        if ((A.x() == B.x()) && (A.y() == B.y())) {
             Main.terminateNoGiveUp(1000, "Wrong data: section [A; B] is a point!");
             return contains(A);
         }
@@ -100,10 +100,10 @@ public class ParallelogramHorizontal {
         // else: the points lay on the border or outside, let's investigate ...
 
         // If the section [A; B] intersects at least one edge of the parallelogram then it intersects its interior.
-        Integer [] top_left = new Integer[] {this.x, this.y};
-        Integer [] top_right = new Integer[] {this.x + this.width - 1, this.y};
-        Integer [] bottom_left = new Integer[] {this.x + this.shift, this.y + this.height - 1};
-        Integer [] bottom_right = new Integer[] {this.x + this.shift + this.width - 1, this.y + this.height - 1};
+        Point2D_Integer top_left = new Point2D_Integer (this.loc);
+        Point2D_Integer top_right = new Point2D_Integer (this.loc.x() + this.width - 1, this.loc.y());
+        Point2D_Integer bottom_left = new Point2D_Integer (this.loc.x() + this.shift, this.loc.y() + this.height - 1);
+        Point2D_Integer bottom_right = new Point2D_Integer (this.loc.x() + this.shift + this.width - 1, this.loc.y() + this.height - 1);
 
         if (
                (MathTools.twoSectionsIntersect(A, B, top_left, top_right) == 1) // intersects top edge
@@ -128,11 +128,11 @@ public class ParallelogramHorizontal {
                    (edgesContainingA[0] == false) && (edgesContainingA[1] == false)
                 && (edgesContainingA[2] == false) && (edgesContainingA[3] == false)
             ) {
-                LOG.debug("L=(" + top_left[0] + ", " + top_left[1] + ") , A=(" + A[0] + ", " + A[1] + "), R=(" + top_right[0] + ", " + top_right[1] + "), sectionContains=" + MathTools.sectionContains(top_left, A, top_right));
-                LOG.debug("L=(" + bottom_left[0] + ", " + bottom_left[1] + ") , A=(" + A[0] + ", " + A[1] + "), R=(" + bottom_right[0] + ", " + bottom_right[1] + "), sectionContains=" + MathTools.sectionContains(bottom_left, A, bottom_right));
-                LOG.debug("L=(" + top_left[0] + ", " + top_left[1] + ") , A=(" + A[0] + ", " + A[1] + "), R=(" + bottom_left[0] + ", " + bottom_left[1] + "), sectionContains=" + MathTools.sectionContains(top_left, A, bottom_left));
-                LOG.debug("L=(" + top_right[0] + ", " + top_right[1] + ") , A=(" + A[0] + ", " + A[1] + "), R=(" + bottom_right[0] + ", " + bottom_right[1] + "), sectionContains=" + MathTools.sectionContains(top_right, A, bottom_right));
-                Main.terminateNoGiveUp(1000, "Discrepancy! .contains(" + A[0] + "," + A[1] + ") is 0, but .sectionContains says that no one edges contains A.");
+                LOG.debug("L=" + top_left + ", A=" + A + ", R=" + top_right + ", sectionContains=" + MathTools.sectionContains(top_left, A, top_right));
+                LOG.debug("L=" + bottom_left + ", A=" + A + ", R=" + bottom_right + ", sectionContains=" + MathTools.sectionContains(bottom_left, A, bottom_right));
+                LOG.debug("L=" + top_left + ", A=" + A + ", R=" + bottom_left + ", sectionContains=" + MathTools.sectionContains(top_left, A, bottom_left));
+                LOG.debug("L=" + top_right + ", A=" + A + ", R=" + bottom_right + ", sectionContains=" + MathTools.sectionContains(top_right, A, bottom_right));
+                Main.terminateNoGiveUp(1000, "Discrepancy! .contains" + A + " is 0, but .sectionContains says that no one edges contains A.");
             }
 
             Boolean [] edgesContainingB = new Boolean[] {
@@ -146,11 +146,11 @@ public class ParallelogramHorizontal {
                    (edgesContainingB[0] == false) && (edgesContainingB[1] == false)
                 && (edgesContainingB[2] == false) && (edgesContainingB[3] == false)
             ) {
-                LOG.debug("L=(" + top_left[0] + ", " + top_left[1] + ") , B=(" + B[0] + ", " + B[1] + "), R=(" + top_right[0] + ", " + top_right[1] + "), sectionContains=" + MathTools.sectionContains(top_left, B, top_right));
-                LOG.debug("L=(" + bottom_left[0] + ", " + bottom_left[1] + ") , B=(" + B[0] + ", " + B[1] + "), R=(" + bottom_right[0] + ", " + bottom_right[1] + "), sectionContains=" + MathTools.sectionContains(bottom_left, B, bottom_right));
-                LOG.debug("L=(" + top_left[0] + ", " + top_left[1] + ") , B=(" + B[0] + ", " + B[1] + "), R=(" + bottom_left[0] + ", " + bottom_left[1] + "), sectionContains=" + MathTools.sectionContains(top_left, B, bottom_left));
-                LOG.debug("L=(" + top_right[0] + ", " + top_right[1] + ") , B=(" + B[0] + ", " + B[1] + "), R=(" + bottom_right[0] + ", " + bottom_right[1] + "), sectionContains=" + MathTools.sectionContains(top_right, B, bottom_right));
-                Main.terminateNoGiveUp(1000, "Discrepancy! .contains(" + B[0] + "," + B[1] + ") is 0, but .sectionContains says that no one edges contains B.");
+                LOG.debug("L=" + top_left + ", B=" + B + ", R=" + top_right + ", sectionContains=" + MathTools.sectionContains(top_left, B, top_right));
+                LOG.debug("L=" + bottom_left + ", B=(" + B + ", R=" + bottom_right + ", sectionContains=" + MathTools.sectionContains(bottom_left, B, bottom_right));
+                LOG.debug("L=" + top_left + ", B=" + B + ", R=" + bottom_left + ", sectionContains=" + MathTools.sectionContains(top_left, B, bottom_left));
+                LOG.debug("L=" + top_right + ", B=" + B + ", R=" + bottom_right + ", sectionContains=" + MathTools.sectionContains(top_right, B, bottom_right));
+                Main.terminateNoGiveUp(1000, "Discrepancy! .contains" + B + " is 0, but .sectionContains says that no one edges contains B.");
             }
 
             if (edgesContainingA[0] && edgesContainingB[0]) return 0; // A and B lay on the top edge
@@ -215,18 +215,18 @@ public class ParallelogramHorizontal {
             // edge case: height 0 or negative
             if (pgmHoriz.height < 1) Main.terminateNoGiveUp(1000,
                     "GridMatrix: horizontal parallelogram with height zero: (" +
-                            pgmHoriz.x + ", " + pgmHoriz.y + ", " + pgmHoriz.width + ", " + pgmHoriz.height + ", " + pgmHoriz.shift);
+                            pgmHoriz.loc.x() + ", " + pgmHoriz.loc.y() + ", " + pgmHoriz.width + ", " + pgmHoriz.height + ", " + pgmHoriz.shift);
 
             // top-left vertice of the parallelogram
-            top = pgmHoriz.y / BLOCK_SIZE; // top blocks of the grid-parallelogram
-            bottom = (pgmHoriz.y + pgmHoriz.height - 1) / BLOCK_SIZE; // bottom block of the grid-parallelogram
+            top = pgmHoriz.loc.y() / BLOCK_SIZE; // top blocks of the grid-parallelogram
+            bottom = (pgmHoriz.loc.y() + pgmHoriz.height - 1) / BLOCK_SIZE; // bottom block of the grid-parallelogram
             left = new Integer[bottom - top + 1];
             right = new Integer[bottom - top + 1];
 
             // edge case: 4 parallelogram vertices are on the same line
             if (pgmHoriz.height == 1) {
-                int left_x = Math.min(pgmHoriz.x, pgmHoriz.x + pgmHoriz.shift);
-                int right_x = Math.max(pgmHoriz.x + pgmHoriz.width - 1, pgmHoriz.x + pgmHoriz.width - 1 + pgmHoriz.shift);
+                int left_x = Math.min(pgmHoriz.loc.x(), pgmHoriz.loc.x() + pgmHoriz.shift);
+                int right_x = Math.max(pgmHoriz.loc.x() + pgmHoriz.width - 1, pgmHoriz.loc.x() + pgmHoriz.width - 1 + pgmHoriz.shift);
 
                 // TODO: make the types convertable (inherit GridRectangle from GridMatrixHorizontal?)
                 /*return Parallelepiped.GridRectangle(
@@ -245,8 +245,8 @@ public class ParallelogramHorizontal {
                         new Rectangle(pgmHoriz.x, pgmHoriz.y, pgmHoriz.width, pgmHoriz.height));
                  */
                 for (int i = top; i <= bottom; i++) {
-                    left[i - top] = pgmHoriz.x / BLOCK_SIZE;
-                    right[i - top] = (pgmHoriz.x + pgmHoriz.width - 1) / BLOCK_SIZE;
+                    left[i - top] = pgmHoriz.loc.x() / BLOCK_SIZE;
+                    right[i - top] = (pgmHoriz.loc.x() + pgmHoriz.width - 1) / BLOCK_SIZE;
                 }
                 LOG.warn("Using of more general GridMatrixHorizontal instead of GridRectangle.");
                 return;
@@ -258,13 +258,13 @@ public class ParallelogramHorizontal {
                 int y_curr = i * BLOCK_SIZE;
                 int y_next = (i + 1) * BLOCK_SIZE;
                 // special case: first and last cell
-                if (i == top) y_curr = pgmHoriz.y;
-                if (i == bottom) y_next = pgmHoriz.y + pgmHoriz.height - 1;
+                if (i == top) y_curr = pgmHoriz.loc.y();
+                if (i == bottom) y_next = pgmHoriz.loc.y() + pgmHoriz.height - 1;
 
                 // x_curr: intersection of the grid line "i" and the left edge of the parallelogram
-                int x_curr_left = pgmHoriz.x + pgmHoriz.shift * (y_curr - pgmHoriz.y) / (pgmHoriz.height - 1);
+                int x_curr_left = pgmHoriz.loc.x() + pgmHoriz.shift * (y_curr - pgmHoriz.loc.y()) / (pgmHoriz.height - 1);
                 // x_next: intersection of the grid line "i+1" and the left edge of the parallelogram
-                int x_next_left = pgmHoriz.x + pgmHoriz.shift * (y_next - pgmHoriz.y) / (pgmHoriz.height - 1);
+                int x_next_left = pgmHoriz.loc.x() + pgmHoriz.shift * (y_next - pgmHoriz.loc.y()) / (pgmHoriz.height - 1);
 
                 // x_curr_right: intersection of the grid line "i" and the right edge of the parallelogram
                 int x_curr_right = x_curr_left + pgmHoriz.width - 1;
@@ -302,10 +302,10 @@ public class ParallelogramHorizontal {
         Color origColor = g.getColor();
         g.setColor(color);
 
-        g.drawLine(pgmHoriz.x, pgmHoriz.y, pgmHoriz.x + pgmHoriz.width - 1, pgmHoriz.y);
-        g.drawLine(pgmHoriz.x + pgmHoriz.width - 1, pgmHoriz.y, pgmHoriz.x + pgmHoriz.shift + pgmHoriz.width - 1, pgmHoriz.y + pgmHoriz.height - 1);
-        g.drawLine(pgmHoriz.x + pgmHoriz.shift + pgmHoriz.width - 1, pgmHoriz.y + pgmHoriz.height - 1, pgmHoriz.x + pgmHoriz.shift, pgmHoriz.y + pgmHoriz.height - 1);
-        g.drawLine(pgmHoriz.x + pgmHoriz.shift, pgmHoriz.y + pgmHoriz.height - 1, pgmHoriz.x, pgmHoriz.y);
+        g.drawLine(pgmHoriz.loc.x(), pgmHoriz.loc.y(), pgmHoriz.loc.x() + pgmHoriz.width - 1, pgmHoriz.loc.y());
+        g.drawLine(pgmHoriz.loc.x() + pgmHoriz.width - 1, pgmHoriz.loc.y(), pgmHoriz.loc.x() + pgmHoriz.shift + pgmHoriz.width - 1, pgmHoriz.loc.y() + pgmHoriz.height - 1);
+        g.drawLine(pgmHoriz.loc.x() + pgmHoriz.shift + pgmHoriz.width - 1, pgmHoriz.loc.y() + pgmHoriz.height - 1, pgmHoriz.loc.x() + pgmHoriz.shift, pgmHoriz.loc.y() + pgmHoriz.height - 1);
+        g.drawLine(pgmHoriz.loc.x() + pgmHoriz.shift, pgmHoriz.loc.y() + pgmHoriz.height - 1, pgmHoriz.loc.x(), pgmHoriz.loc.y());
 
         g.setColor(origColor);
 

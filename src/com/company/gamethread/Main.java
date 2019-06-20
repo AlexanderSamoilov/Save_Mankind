@@ -1,5 +1,8 @@
 package com.company.gamethread;
 
+import com.company.gamegeom.vectormath.CortegeTest;
+import com.company.gamegeom.vectormath.point.Point3D_Integer;
+import com.company.gamegeom.vectormath.vector.Vector3D_Integer;
 import com.company.gamelogger.LogConfFactory;
 
 import com.company.gamecontent.*;
@@ -30,7 +33,6 @@ enum Choice {
     RESUME,
     CANCEL
 }
-
 
 public class Main {
     /* ATTENTION! */
@@ -212,7 +214,9 @@ public class Main {
                             new Weapon(
                                     10, 150, 15, 6, 7
                             ),
-                            2, testPlayerTankSprite, 4*i + 1, 1, 0, 3, 3, 3,
+                            2, testPlayerTankSprite,
+                            new Point3D_Integer(4*i + 1, 1, 0),
+                            new Vector3D_Integer(3, 3, 3),
                             testPlayerTankResources, 5000, 600, 10, 45,25, 15, 5, 5, 5
                     )
             );
@@ -239,8 +243,9 @@ public class Main {
                             new Weapon(
                                     30, 150, 10, 8, 5
                             ),
-                            3, testEnemyTankSprite, Restrictions.MAX_X - 2 - 2*i,
-                            Restrictions.getMaxY() - 2, 0, 1, 1, 1,
+                            3, testEnemyTankSprite,
+                            new Point3D_Integer(Restrictions.MAX_X - 2 - 2*i,Restrictions.getMaxDim().y() - 2, 0),
+                            new Vector3D_Integer(1, 1, 1),
                             testEnemyTankResources, 500, 7, 15, 45, 25, 15, 5, 5, 5
                     )
             );
@@ -301,13 +306,13 @@ public class Main {
         // FIXME do not use try for all of them.
         try {
             jpOber.setLayout(new BorderLayout());
-            jpOber.setBounds(0,0,GameMap.getInstance().getAbsMaxX(), GameMap.getInstance().getAbsMaxY());
+            jpOber.setBounds(0,0,GameMap.getInstance().getAbsDim().x(), GameMap.getInstance().getAbsDim().y());
             jpOber.setOpaque(false);
             mouseRectangle.setOpaque(false);
             jpOber.add(mouseRectangle);
 
             //jpUnter.setLayout(null);
-            jpUnter.setBounds(0,0,GameMap.getInstance().getAbsMaxX(), GameMap.getInstance().getAbsMaxY());
+            jpUnter.setBounds(0,0,GameMap.getInstance().getAbsDim().x(), GameMap.getInstance().getAbsDim().y());
             jpUnter.setOpaque(true);
 
             // Создаём окно, в котором будет запускаться игра
@@ -325,8 +330,8 @@ public class Main {
             // Empirically I found that calling of .setPreferredSize to the contained JRootPane solves it.
             // Both .getRootPane() and .getContentPane() give good result.
             frame.getRootPane().setPreferredSize(new Dimension(
-                    GameMap.getInstance().getAbsMaxX(),
-                    GameMap.getInstance().getAbsMaxY()
+                    GameMap.getInstance().getAbsDim().x(),
+                    GameMap.getInstance().getAbsDim().y()
                     )
             );
 
@@ -772,6 +777,8 @@ public class Main {
     public static void main(String[] args) throws InterruptedException {
         // ---->> Init logging
         initLoggers();
+
+        CortegeTest.testOperators();
 
         // ---->> Init Controllers
         initControllers();

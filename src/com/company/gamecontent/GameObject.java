@@ -5,14 +5,24 @@ import com.company.gamegeom.Parallelepiped.GridRectangle;
 import com.company.gamegeom.ParallelogramHorizontal;
 import com.company.gamegeom.ParallelogramHorizontal.GridMatrixHorizontal;
 import com.company.gamegeom.ParallelogramVertical;
-import com.company.gamegeom.ParallelogramVertical.GridMatrixVectical;
+import com.company.gamegeom.ParallelogramVertical.GridMatrixVertical;
+
+import com.company.gamegeom.vectormath.point.Point2D_Integer;
+import com.company.gamegeom.vectormath.point.Point3D_Double;
+import com.company.gamegeom.vectormath.point.Point3D_Integer;
+import com.company.gamegeom.vectormath.vector.Vector2D_Integer;
+import com.company.gamegeom.vectormath.vector.Vector3D_Integer;
 
 import com.company.gamegraphics.GraphBugfixes;
 import com.company.gamegraphics.GraphExtensions;
 import com.company.gamegraphics.Sprite;
+
 import com.company.gamethread.Main;
 import com.company.gamethread.ParameterizedMutexManager;
+
+import com.company.gametools.MathBugfixes;
 import com.company.gametools.MathTools;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -25,7 +35,6 @@ import static com.company.gamecontent.Restrictions.*;
 import static com.company.gametools.MathTools.in_range;
 import static com.company.gametools.MathTools.randomSign;
 import static com.company.gametools.MathTools.sqrVal;
-
 import static com.company.gamethread.Main.terminateNoGiveUp;
 
 // For details read the DOC "Data Structure"
@@ -34,8 +43,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
     private Parallelepiped parallelepiped;
 
-    // TODO Use Point2D class
-    protected Integer[] destPoint;   // The map point to move to (has x, y)
+    protected Point3D_Integer destPoint; // The map point (x, y, z) where the object is going to move to
 
     // Current orientation angle of the objects' sprite, measured in radians.
     // Since we do all calculation in the Cartesian coordinate system
@@ -83,28 +91,24 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
 
     // Here x,y,z - coordinates on grid (not absolute)
-    public GameObject(Sprite sprite, int x, int y, int z, int sX, int sY, int sZ, HashMap<Resource,Integer> res, int hp, int speed, int rot_speed, int preMoveAngle, int arm, int hard, int bch, int ech, int eco) {
-        // Creation of new game objects should be allowed from the main thread (game initializazion)
+    public GameObject(Sprite sprite, Point3D_Integer loc, Vector3D_Integer dim, HashMap<Resource,Integer> res, int hp, int speed, int rot_speed, int preMoveAngle, int arm, int hard, int bch, int ech, int eco) {
+        // Creation of new game objects should be allowed from the main thread (game initialisation)
         // or from the calculation thread (on each game stage factories produce new units for example)
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
 
         // 1 - parent class specific parameters
         // 2 - validation
         if (sprite == null) {
-            throw new IllegalArgumentException("Failed to initialize GameObject with spr=null.");
+            throw new IllegalArgumentException("Failed to initialize GameObject with sprite=null.");
         }
 
         // TODO: check if the object borders are within map area!
         boolean valid;
 
-        int maxX = GameMap.getInstance().getMaxX();
-        int maxY = GameMap.getInstance().getMaxY();
-        int maxZ = GameMap.getInstance().getMaxZ();
-
         // Check object coordinates
-        valid = in_range(0, x, MAX_X, false);
-        valid = valid && in_range(0, y, MAX_Y, false);
-        valid = valid && in_range(0, z, MAX_Z, false);
+        valid =          in_range(0, loc.x(), MAX_X, false);
+        valid = valid && in_range(0, loc.y(), MAX_Y, false);
+        valid = valid && in_range(0, loc.z(), MAX_Z, false);
 
         // Check object stats
         valid = valid && in_range(0, hp, MAX_HP, false);
@@ -112,14 +116,14 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         valid = valid && (preMoveAngle <= MAX_PRE_MOVE_ANGLE);
 
         // Check object dimensions
-        valid = valid && in_range(0, sX, getMaxObjectSizeBlocks() + 1, true);
-        valid = valid && in_range(0, sY, getMaxObjectSizeBlocks() + 1, true);
-        valid = valid && in_range(0, sZ, getMaxObjectSizeBlocks() + 1, true);
+        valid = valid && in_range(0, dim.x(), getMaxObjectSizeBlocks() + 1, true);
+        valid = valid && in_range(0, dim.y(), getMaxObjectSizeBlocks() + 1, true);
+        valid = valid && in_range(0, dim.z(), getMaxObjectSizeBlocks() + 1, true);
 
         // Check that we don't create the object overlapped with another object
         // In order to use the function occupiedByAnotherObject for still not completely created class instance
         // we have to define the objec dimensions first:
-        this.parallelepiped = new Parallelepiped(x * BLOCK_SIZE, y * BLOCK_SIZE, z * BLOCK_SIZE, sX, sY, sZ);
+        this.parallelepiped = new Parallelepiped(loc.mult1(BLOCK_SIZE), dim);
         if (GameMap.getInstance().occupied(getRect(), this)) {
             valid = false;
         }
@@ -228,59 +232,54 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
         // "healthy" HP
         g.setColor(hpColor);
-        GraphExtensions.fillRect(g, new Rectangle(getAbsLoc()[0], getAbsLoc()[1] + getAbsSize()[1], getAbsSize()[0] * percentageHP / 100, 5), 0);
+        GraphExtensions.fillRect(g, new Rectangle(getAbsLoc().x(), getAbsLoc().y() + getAbsSize().y(), getAbsSize().x() * percentageHP / 100, 5), 0);
 
         // "loosed" HP
         g.setColor(Color.BLACK);
         GraphExtensions.fillRect(g, new Rectangle(
-                getAbsLoc()[0] + getAbsSize()[0] * percentageHP / 100,
-                getAbsLoc()[1] + getAbsSize()[1],
-                getAbsSize()[1] * (100 - percentageHP) / 100,
+                getAbsLoc().x() + getAbsSize().x() * percentageHP / 100,
+                getAbsLoc().y() + getAbsSize().y(),
+                getAbsSize().y() * (100 - percentageHP) / 100,
                 5),
                 0
         );
 
-        GraphBugfixes.drawRect(g, new Rectangle(getAbsLoc()[0], getAbsLoc()[1] + getAbsSize()[1], getAbsSize()[0], 5));
+        GraphBugfixes.drawRect(g, new Rectangle(getAbsLoc().x(), getAbsLoc().y() + getAbsSize().y(), getAbsSize().x(), 5));
 
         // Mark the center of the object
         g.setColor(Color.YELLOW);
-        GraphBugfixes.drawRect(g, new Rectangle(getAbsCenterInteger()[0], getAbsCenterInteger()[1],
+        GraphBugfixes.drawRect(g, new Rectangle(getAbsCenterInteger().x(), getAbsCenterInteger().y(),
                 2 - BLOCK_SIZE % 2, 2 - BLOCK_SIZE % 2));
     }
 
     public Parallelepiped getParallelepiped() {
         return parallelepiped;
     }
-
-    public int[] getAbsLoc() { return parallelepiped.getAbsLoc(); }
-    public int[] getLoc() { return parallelepiped.getLoc(); }
-    public int[] getSize() { return parallelepiped.getSize(); }
-    public int[] getAbsSize() { return parallelepiped.getAbsSize(); }
-    public double[] getAbsCenterDouble() { return parallelepiped.getAbsCenterDouble(); }
-    public Integer[] getAbsCenterInteger() { return parallelepiped.getAbsCenterInteger(); }
+    public Point3D_Integer getAbsLoc() { return parallelepiped.getAbsLoc(); }
+    public Point3D_Integer getLoc() { return parallelepiped.getLoc(); }
+    public Vector3D_Integer getSize() { return parallelepiped.getSize(); }
+    public Vector3D_Integer getAbsSize() { return parallelepiped.getAbsSize(); }
+    public Point3D_Double getAbsCenterDouble() { return parallelepiped.getAbsCenterDouble(); }
+    public Point3D_Integer getAbsCenterInteger() { return parallelepiped.getAbsCenterInteger(); }
     public int getAbsRight() { return parallelepiped.getAbsRight(); }
     public int getAbsBottom() { return parallelepiped.getAbsBottom(); }
 
-    public void setDestinationPoint(Integer [] dest) {
+    public void setDestinationPoint(Point3D_Integer dest) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
 
         // TODO: check if coordinates are within restrictions
-        if (destPoint == null) {
-            this.destPoint = new Integer[2];
-        }
-
-        this.destPoint[0] = dest[0];
-        this.destPoint[1] = dest[1];
+        if (this.destPoint == null) destPoint = new Point3D_Integer(0, 0, 0);
+        this.destPoint.assign(dest);
 
         if (this instanceof Shootable) {
             ((Shootable)this).unsetTargetObject();
             ((Shootable)this).unsetTargetPoint();
         }
 
-        LOG.debug("Destination OBJ_" + this.playerId + ": x=" + dest[0] + ", y=" + dest[1]);
+        LOG.debug("Destination OBJ_" + this.playerId + ": " + this.destPoint);
     }
 
-    public boolean rotateTo(Integer [] point) {
+    public boolean rotateTo(Point2D_Integer point) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         if (ROTATE_MOD > 0) rotateToPointOnRay(point);
@@ -299,7 +298,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
     }
 
 /*
-    public void rotateToAngle(Integer [] point) {
+    public void rotateToAngle(Point2D_Integer point) {
     ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         double destAngle =...;
@@ -325,14 +324,14 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 */
 
 /*
-    public Integer[] getTargetOrDestinationPoint() {
-        Integer v[] = null;
+    public Point3D_Integer getTargetOrDestinationPoint() {
+        Point3D_Integer v = null;
         if (destPoint != null) {
-            v = new Integer[] {destPoint[0], destPoint[1]};
+            v = destPoint.clone();
         } else if (this instanceof Shootable) {
             GameObject target = ((Shootable)this).getTargetObject();
             if (target != null) {
-                v = new Integer[] {target.loc[0], target.loc[1]};
+                v = target.loc.clone();
             }
         }
 
@@ -340,7 +339,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
     }
 */
 
-    public void rotateToPointOnRay(Integer[] point) {
+    public void rotateToPointOnRay(Point2D_Integer point) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         if (point == null || angleBetweenRayAndPointSmallEnough(point)) {
@@ -363,42 +362,37 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         LOG.trace("New Sprite Ang: " + currAngle);
      }
 
-    // TODO next_x, next_y
     // FIXME boolean ?
-    public boolean moveTo(Integer [] next) {
+    public boolean moveTo(Point3D_Integer next) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         // FIXME Not good calculate angle every time. Need optimize in future
-        if (this instanceof Rotatable && rotateTo(next)) {
+        if (this instanceof Rotatable && rotateTo(next.to2D())) {
             return true;
         }
 
         // Calculate future coordinates where we want to move hypothetically (if nothing prevents this)
-        int new_x, new_y, new_z;
-        Integer new_center[] = MathTools.getNextPointOnRay(getAbsCenterInteger(), next, speed);
-        LOG.trace("new_center_x=" + new_center[0] + ", new_center_y=" + new_center[1]);
-        LOG.trace("old_center_x=" + getAbsCenterInteger()[0] + ", old_center_y=" + getAbsCenterInteger()[1]);
+        Point3D_Integer new_loc;
+        Point3D_Integer new_center = MathTools.getNextPointOnRay(getAbsCenterInteger(), next, speed);
+        LOG.trace("new_center=" + new_center);
+        LOG.trace("old_center=" + getAbsCenterInteger());
         
         // translation vector
-        int dx = new_center[0] - getAbsCenterInteger()[0];
-        int dy = new_center[1] - getAbsCenterInteger()[1];
-        LOG.trace("dx=" + dx + ", dy=" + dy);
-        if ((dx == 0) && (dy == 0)) {
+        Vector3D_Integer dv = new_center.minus1(getAbsCenterInteger());
+        LOG.trace("dv=" + dv);
+        if (dv.isZeroCortege()) {
             // Destination point reached already
             unsetDestinationPoint();
             return false;
         }
 
         // move left-top object angle to the same vector which the center was moved to
-        new_x = getAbsLoc()[0] + dx;
-        new_y = getAbsLoc()[1] + dy;
-        new_z = getAbsLoc()[2]; // so far we don't support 3D
-
-        LOG.trace("move?: (" + getAbsLoc()[0] + "," + getAbsLoc()[1] + ")->(" + new_x + ", " + new_y + "), speed=" + speed);
+        new_loc = getAbsLoc().plus1(dv);
+        LOG.debug("move?: " + getAbsLoc() + " -> " + new_loc + ", speed=" + speed);
 
         if (! GameMap.getInstance().contains(
-                // new_x, new_y, new_z - absolute coordinates, not aliquote to the grid vertices
-                new Parallelepiped(new_x, new_y, new_z, getSize()[0], getSize()[1], getSize()[2]))
+                // new_x, new_y, new_z - absolute coordinates, not aliquot to the grid vertices
+                new Parallelepiped(new_loc, getSize()))
         ) {
             // prevent movement outside the map
             LOG.debug("prevent movement outside the map");
@@ -406,7 +400,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         }
 
         Rectangle new_rect = getRect();
-        new_rect.translate(dx, dy); // translocated rectangle
+        new_rect.translate(dv.x(), dv.y()); // translocated rectangle
 
         //if (GameMap.getInstance().occupied(new_rect, this)) {
         if (INTERSECTION_STRATEGY_SEVERITY > 0) {
@@ -426,19 +420,19 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
             ParallelogramHorizontal pgmHoriz = null;
             ParallelogramVertical pgmVert = null;
             GridMatrixHorizontal pgmHorizOccupiedBlocks = null;
-            GridMatrixVectical pgmVertOccupiedBlocks = null;
+            GridMatrixVertical pgmVertOccupiedBlocks = null;
 
-            if (dy != 0) { // a)
-                if (dy < 0) pgmHoriz = new ParallelogramHorizontal(new_rect.x, new_rect.y, new_rect.width, getAbsLoc()[1] - new_rect.y + 1, -dx);
-                if (dy > 0) pgmHoriz = new ParallelogramHorizontal(getAbsLoc()[0], getAbsLoc()[1] + getAbsSize()[1] - 1, new_rect.width, new_rect.y - getAbsLoc()[1] + 1, dx);
+            if (dv.y() != 0) { // a)
+                if (dv.y() < 0) pgmHoriz = new ParallelogramHorizontal(new Point2D_Integer(new_rect.x, new_rect.y), new_rect.width, getAbsLoc().y() - new_rect.y + 1, -dv.x());
+                if (dv.y() > 0) pgmHoriz = new ParallelogramHorizontal(new Point2D_Integer(getAbsLoc().x(), getAbsLoc().y() + getAbsSize().y() - 1), new_rect.width, new_rect.y - getAbsLoc().y() + 1, dv.x());
                 pgmHorizOccupiedBlocks = new GridMatrixHorizontal(pgmHoriz);
                 pgmHoriz.render(currentGraphics); // DEBUG (draw parallelogram)
                 pgmHorizOccupiedBlocks.render(currentGraphics); // DEBUG (draw occupied blocks)
             }
-            if (dx != 0) { // b)
-                if (dx < 0) pgmVert = new ParallelogramVertical(new_rect.x, new_rect.y, getAbsLoc()[0] - new_rect.x + 1, new_rect.height, -dy);
-                if (dx > 0) pgmVert = new ParallelogramVertical(getAbsLoc()[0] + getAbsSize()[0] - 1, getAbsLoc()[1], new_rect.x - getAbsLoc()[0] + 1, new_rect.height, dy);
-                pgmVertOccupiedBlocks = new GridMatrixVectical(pgmVert);
+            if (dv.x() != 0) { // b)
+                if (dv.x() < 0) pgmVert = new ParallelogramVertical(new Point2D_Integer(new_rect.x, new_rect.y), getAbsLoc().x() - new_rect.x + 1, new_rect.height, -dv.y());
+                if (dv.x() > 0) pgmVert = new ParallelogramVertical(new Point2D_Integer(getAbsLoc().x() + getAbsSize().x() - 1, getAbsLoc().y()), new_rect.x - getAbsLoc().x() + 1, new_rect.height, dv.y());
+                pgmVertOccupiedBlocks = new GridMatrixVertical(pgmVert);
                 pgmVert.render(currentGraphics); // DEBUG (draw parallelogram)
                 pgmVertOccupiedBlocks.render(currentGraphics); // DEBUG (draw occupied blocks)
             }
@@ -449,7 +443,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
             HashSet<Rectangle> affectedObjects = new HashSet<Rectangle>();
 
             // Checking blocks occupied by the horizontal parallelogram:
-            if (dy != 0) { // a)
+            if (dv.y() != 0) { // a)
                 for (int i = 0; i <= pgmHorizOccupiedBlocks.bottom - pgmHorizOccupiedBlocks.top; i++) {
                     for (int j = pgmHorizOccupiedBlocks.left[i]; j <= pgmHorizOccupiedBlocks.right[i]; j++) {
                         HashSet<GameObject> objectsOnBlock = GameMap.getInstance().objectsOnMap[j][i + pgmHorizOccupiedBlocks.top];
@@ -470,7 +464,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
                 }
             }
             // Checking blocks occupied by the vertical parallelogram:
-            if (dx != 0) { // b)
+            if (dv.x() != 0) { // b)
                 for (int i = 0; i <= pgmVertOccupiedBlocks.right - pgmVertOccupiedBlocks.left; i++) {
                     for (int j = pgmVertOccupiedBlocks.top[i]; j <= pgmVertOccupiedBlocks.bottom[i]; j++) {
                         HashSet<GameObject> objectsOnBlock = GameMap.getInstance().objectsOnMap[i + pgmVertOccupiedBlocks.left][j];
@@ -507,43 +501,45 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
                Depending on the direction we choose the corresponding edge or vertice.
                For example:
                a) The object is moving to the right and down => Cs is a right-bottom vertice.
-               Cs[0] = x_right_bottom, Cs[1] = y_right_bottom
+               Cs.x = x_right_bottom, Cs.y = y_right_bottom
                b) If the object is moving just left (dy=0) => Cs is an abscisse of the left edge.
-               Cs[0] = x_left, Cs[1] = null (impossible to choose a point, the whole edge is moving if dy=0)
+               Cs.x = x_left, Cs.y = null (impossible to choose a point, the whole edge is moving if dy=0)
                c) If the object is moving just down (dx=0) => Cs is an ordinate of the bottom edge.
-               Cs[1] = y_bottom, Cs[0] = null (impossible to choose a point, the whole edge is moving if dx=0)
-               d) dx=dx=0 => Cs[0]=Cs[1]=null (should be impossible, because we check above that dx!=0 or dy!=0)
+               Cs.y = y_bottom, Cs.x = null (impossible to choose a point, the whole edge is moving if dx=0)
+               d) dx=dx=0 => Cs.x=Cs.y=null (should be impossible, because we check above that dx!=0 or dy!=0)
              */
-            Integer [] Cs = new Integer [] {null, null};
 
-            if (dx < 0) Cs[0] = getAbsLoc()[0]; // left of the current object
-            if (dx > 0) Cs[0] = getAbsRight(); // right of the current object
-            if (dy < 0) Cs[1] = getAbsLoc()[1]; // top of the current object
-            if (dy > 0) Cs[1] = getAbsBottom(); // bottom of the current object
+            Integer Cs_x = null, Cs_y = null;
+            if (dv.x() < 0) Cs_x = getAbsLoc().x(); // left of the current object
+            if (dv.x() > 0) Cs_x = getAbsRight(); // right of the current object
+            if (dv.y() < 0) Cs_y = getAbsLoc().y(); // top of the current object
+            if (dv.y() > 0) Cs_y = getAbsBottom(); // bottom of the current object
+            Point2D_Integer Cs = new Point2D_Integer(Cs_x, Cs_y);
 
             // Ct is where Cs should be moved to hypothetically
-            Integer [] Ct = new Integer []{null, null};
-            if (Cs[0] != null) Ct[0] = Cs[0] + dx;
-            if (Cs[1] != null) Ct[1] = Cs[1] + dy;
+            Integer Ct_x = null, Ct_y = null;
+            if (Cs.x() != null) Ct_x = Cs.x() + dv.x();
+            if (Cs.y() != null) Ct_y = Cs.y() + dv.y();
+            Point2D_Integer Ct = new Point2D_Integer(Ct_x, Ct_y);
 
             for (Rectangle rect : affectedObjects) {
 
                 GraphExtensions.fillRect(currentGraphics, rect, 1); // DEBUG
-                Integer [] go_top_left = new Integer[] {rect.x, rect.y};
-                Integer [] go_top_right = new Integer[] {rect.x + rect.width - 1, rect.y};
-                Integer [] go_bottom_left = new Integer[] {rect.x, rect.y + rect.height - 1};
-                Integer [] go_bottom_right = new Integer[] {rect.x + rect.width - 1, rect.y + rect.height - 1};
+                Point2D_Integer go_top_left = new Point2D_Integer(rect.x, rect.y);
+                Point2D_Integer go_top_right = new Point2D_Integer(rect.x + rect.width - 1, rect.y);
+                Point2D_Integer go_bottom_left = new Point2D_Integer(rect.x, rect.y + rect.height - 1);
+                Point2D_Integer go_bottom_right = new Point2D_Integer(rect.x + rect.width - 1, rect.y + rect.height - 1);
 
                 // a
-                if (dy != 0) {
+                if (dv.y() != 0) {
                     // NOTE: Here "dy < 0" means movement UP since Y_ORIENT=-1 (we are not in Cartesian system in the game).
-                    if (dy < 0) { // UP
+                    if (dv.y() < 0) { // UP
                         // check intersection/touching of the object rectangle by the bottom edge of the impediment
                         if (pgmHoriz.intersects(go_bottom_left, go_bottom_right) > -1) {
                             suspectedObjectsA.add(rect);
                         }
                     }
-                    if (dy > 0) { // DOWN
+                    if (dv.y() > 0) { // DOWN
                         // check intersection/touching of the object rectangle by the top edge of the impediment
                         if (pgmHoriz.intersects(go_top_left, go_top_right) > -1) {
                             suspectedObjectsA.add(rect);
@@ -552,14 +548,14 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
                 }
 
                 // b
-                if (dx != 0) {
-                    if (dx > 0) { // RIGHT
+                if (dv.x() != 0) {
+                    if (dv.x() > 0) { // RIGHT
                         // check intersection/touching of the object rectangle by the left edge of the impediment
                         if (pgmVert.intersects(go_top_left, go_bottom_left) > -1) {
                             suspectedObjectsB.add(rect);
                         }
                     }
-                    if (dx < 0) { // LEFT
+                    if (dv.x() < 0) { // LEFT
                         // check intersection/touching of the object rectangle by the right edge of the impediment
                         if (pgmVert.intersects(go_top_right, go_bottom_right) > -1) {
                             suspectedObjectsB.add(rect);
@@ -568,29 +564,29 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
                 }
 
                 // c
-                if ((dx != 0) && (dy != 0)) {
-                    if ((dx > 0) && (dy < 0)) { // UP-RIGHT
+                if (!dv.isZeroCortege()) {
+                    if ((dv.x() > 0) && (dv.y() < 0)) { // UP-RIGHT
                         // check if the bottom-left vertice of the impediment belongs to the common section CsCt
                         // connecting pgmHoriz and pgmVert
                         if (MathTools.sectionContains(Cs, go_bottom_left, Ct) > -1) {
                             suspectedObjectsC.add(rect);
                         }
                     }
-                    if ((dx < 0) && (dy < 0)) { // UP-LEFT
+                    if ((dv.x() < 0) && (dv.y() < 0)) { // UP-LEFT
                         // check if the bottom-left vertice of the impediment belongs to the common section CsCt
                         // connecting pgmHoriz and pgmVert
                         if (MathTools.sectionContains(Cs, go_bottom_right, Ct) > -1) {
                             suspectedObjectsC.add(rect);
                         }
                     }
-                    if ((dx > 0) && (dy > 0)) { // DOWN-RIGHT
+                    if ((dv.x() > 0) && (dv.y() > 0)) { // DOWN-RIGHT
                         // check if the top-left vertice of the impediment belongs to the common section CsCt
                         // connecting pgmHoriz and pgmVert
                         if (MathTools.sectionContains(Cs, go_top_left, Ct) > -1) {
                             suspectedObjectsC.add(rect);
                         }
                     }
-                    if ((dx < 0) && (dy > 0)) { // DOWN-LEFT
+                    if ((dv.x() < 0) && (dv.y() > 0)) { // DOWN-LEFT
                         // check if the top-right vertice of the impediment belongs to the common section CsCt
                         // connecting pgmHoriz and pgmVert
                         if (MathTools.sectionContains(Cs, go_top_right, Ct) > -1) {
@@ -622,7 +618,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
                 GraphExtensions.fillRect(currentGraphics, rect, 2); // DEBUG
 
-                if (dy < 0) { // UP
+                if (dv.y() < 0) { // UP
                     int Y_bottom = GraphBugfixes.getMaxY(rect);
                     if (Ya == null) {
                         Ya = Y_bottom; // first time only
@@ -631,7 +627,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
                     // the lowest bottom
                     if (Y_bottom > Ya) Ya = Y_bottom;
                 }
-                if (dy > 0) { // DOWN
+                if (dv.y() > 0) { // DOWN
                     int Y_top = rect.y;
                     if (Ya == null) {
                         Ya = Y_top; // first time only
@@ -649,7 +645,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
                 GraphExtensions.fillRect(currentGraphics, rect, 2); // DEBUG
 
-                if (dx > 0) { // RIGHT
+                if (dv.x() > 0) { // RIGHT
                     int X_left = rect.x;
                     if (Xb == null) {
                         Xb = X_left; // first time only
@@ -658,7 +654,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
                     // the leftest left
                     if (X_left < Xb) Xb = X_left;
                 }
-                if (dx < 0) { // LEFT
+                if (dv.x() < 0) { // LEFT
                     int X_right = GraphBugfixes.getMaxX(rect);
                     if (Xb == null) {
                         Xb = X_right; // first time only
@@ -670,44 +666,45 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
             }
 
             // c
-            Integer [] Pc = null;
-            Integer [] Pc_opt = null;
+            Point2D_Integer Pc = null;
+            Point2D_Integer Pc_opt = null;
             Long distSqrValMin = null;
             Long distSqrValCurr = -1L;
             if (suspectedObjectsC.size() > 0) opt_point_C_found = 1;
 
+            // TODO: "new" on each loop iteration - wasting of memory
             for (Rectangle rect : suspectedObjectsC) {
 
                 GraphExtensions.fillRect(currentGraphics, rect, 2); // DEBUG
-                Integer [] go_top_left = new Integer[] {rect.x, rect.y};
-                Integer [] go_top_right = new Integer[] {rect.x + rect.width - 1, rect.y};
-                Integer [] go_bottom_left = new Integer[] {rect.x, rect.y + rect.height - 1};
-                Integer [] go_bottom_right = new Integer[] {rect.x + rect.width - 1, rect.y + rect.height - 1};
+                Point2D_Integer go_top_left = new Point2D_Integer(rect.x, rect.y);
+                Point2D_Integer go_top_right = new Point2D_Integer(rect.x + rect.width - 1, rect.y);
+                Point2D_Integer go_bottom_left = new Point2D_Integer(rect.x, rect.y + rect.height - 1);
+                Point2D_Integer go_bottom_right = new Point2D_Integer(rect.x + rect.width - 1, rect.y + rect.height - 1);
 
                 // TODO: it is known outside of the looop about signs of dx, dy
                 // It is possible to avoid these 4 if-else here?
                 // UP-RIGHT
-                if ((dx > 0) && (dy < 0)) Pc_opt = go_bottom_left;
+                if ((dv.x() > 0) && (dv.y() < 0)) Pc_opt = go_bottom_left;
                 // UP-LEFT
-                if ((dx < 0) && (dy < 0)) Pc_opt = go_bottom_right;
+                if ((dv.x() < 0) && (dv.y() < 0)) Pc_opt = go_bottom_right;
                 // DOWN-RIGHT
-                if ((dx > 0) && (dy > 0)) Pc_opt = go_top_left;
+                if ((dv.x() > 0) && (dv.y() > 0)) Pc_opt = go_top_left;
                 // DOWN-LEFT
-                if ((dx < 0) && (dy > 0)) Pc_opt = go_top_right;
+                if ((dv.x() < 0) && (dv.y() > 0)) Pc_opt = go_top_right;
 
                 // validation
-                if ((dx == 0) || (dy == 0)) terminateNoGiveUp(1000, "Impossible: dx or dy = 0 on thep 4c.");
+                if ((dv.x() == 0) || (dv.y() == 0)) terminateNoGiveUp(1000, "Impossible: dx or dy = 0 on step 4c.");
 
                 if (Pc == null) { // first time only
-                    Pc = new Integer[] {Pc_opt[0], Pc_opt[1]};
-                    distSqrValMin = MathTools.distSqrVal(Cs, Pc);
+                    Pc = Pc_opt.clone();
+                    distSqrValMin = Point2D_Integer.distSqrVal(Cs, Pc).longValue();
                     continue;
                 }
 
-                distSqrValCurr = MathTools.distSqrVal(Cs, Pc);
+                distSqrValCurr = Point2D_Integer.distSqrVal(Cs, Pc).longValue();
                 if (distSqrValCurr < distSqrValMin) {
                     distSqrValMin = distSqrValCurr;
-                    Pc = new Integer[] {Pc_opt[0], Pc_opt[1]};
+                    Pc.assign(Pc_opt);
                 }
             }
 
@@ -722,65 +719,68 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
             LOG.debug("a_num=" + suspectedObjectsA.size() + ", b_num=" + suspectedObjectsB.size() + ", c_num=" + suspectedObjectsC.size());
             LOG.debug("a=" + opt_line_A_found + ", b=" + opt_line_B_found + ", c=" + opt_point_C_found);
 
-            HashMap<Integer, Integer[]> opt_points = new HashMap<Integer, Integer[]>();
+            HashMap<Integer, Vector2D_Integer> opt_points = new HashMap<Integer, Vector2D_Integer>();
 
             // a (dy != 0)
             if (opt_line_A_found != 0) {
                 LOG.debug("Ya=" + Ya);
-                Ya -= (int)Math.signum(dy); // we should not overlap even 1 pixel of the border of the impediment
-                opt_points.put(num_opt_points, new Integer[] {(Ya - Cs[1]) * dx / dy, Ya - Cs[1]});
+                Ya -= (int)Math.signum(dv.y()); // we should not overlap even 1 pixel of the border of the impediment
+                opt_points.put(num_opt_points, new Vector2D_Integer((Ya - Cs.y()) * dv.x() / dv.y(), Ya - Cs.y()));
                 num_opt_points++;
             }
             // b (dx != 0)
             if (opt_line_B_found != 0) {
                 LOG.debug("Xb=" + Xb);
-                Xb -= (int)Math.signum(dx); // we should not overlap even 1 pixel of the border of the impediment
-                opt_points.put(num_opt_points, new Integer[] {Xb - Cs[0], (Xb - Cs[0]) * dy / dx});
+                Xb -= (int)Math.signum(dv.x()); // we should not overlap even 1 pixel of the border of the impediment
+                opt_points.put(num_opt_points, new Vector2D_Integer(Xb - Cs.x(), (Xb - Cs.x()) * dv.y() / dv.x()));
                 num_opt_points++;
             }
             // c ( dx != 0 and dy != 0)
             if (opt_point_C_found != 0) {
-                LOG.debug("Pc=(" + Pc[0] + ", " + Pc[1] + ")");
+                LOG.debug("Pc=" + Pc);
 
-                Pc[0] -= (int)Math.signum(dx); // we should not overlap even 1 pixel of the border of the impediment
-                Pc[1] -= (int)Math.signum(dy); // we should not overlap even 1 pixel of the border of the impediment
-                opt_points.put(num_opt_points, new Integer[] {Pc[0] - Cs[0], Pc[1] - Cs[1]});
+                Pc.minus(new Point2D_Integer(Math.signum(dv.x()), Math.signum(dv.y()))); // we should not overlap even 1 pixel of the border of the impediment
+                opt_points.put(num_opt_points, Pc.minus1(Cs));
                 num_opt_points++;
             }
 
             int i_opt = 0;
             if (num_opt_points > 0) {
                 distSqrValCurr = -1L;
-                distSqrValMin = MathTools.sqrVal(opt_points.get(0)[0]) + MathTools.sqrVal(opt_points.get(0)[1]);
+                // TODO: Strange...if I don't use type cast then it complains that class Cortege is not public
+                // It seems that it tries to call sumSqr on class Cortege, because it does not see that
+                // opt_points must contain only elements of type Point2D_Integer.
+                // I have a slight assumption that without explicit cast of the map element to Point2D_Integer Java
+                // considers HashMap<Integer, Cortege> as HashMap<Integer, ? extends Cortege> and that might be the problem.
+                // Probably Java is not "sure" that get() returns indeed the subclass element,
+                // but one of its upper classes, because child is always castable to any upper.
+                // https://stackoverflow.com/questions/56308571/cannot-call-static-method-of-the-upper-class-located-in-another-package-without
+                //distSqrValMin = Point2D_Integer.sumSqr((Vector2D_Integer)opt_points.get(0)).longValue();
+                distSqrValMin = opt_points.get(0).sumSqr().longValue();
                 for (int i = 0; i < num_opt_points; i++) {
-                    distSqrValCurr = MathTools.sqrVal(opt_points.get(i)[0]) + MathTools.sqrVal(opt_points.get(i)[1]);
+                    //distSqrValCurr = Point2D_Integer.sumSqr((Vector2D_Integer)opt_points.get(i)).longValue();
+                    distSqrValCurr = opt_points.get(i).sumSqr().longValue();
                     if (distSqrValCurr < distSqrValMin) {
                         distSqrValMin = distSqrValCurr;
                         i_opt = i;
                     }
                 }
 
-                int dx_opt = opt_points.get(i_opt)[0];
-                int dy_opt = opt_points.get(i_opt)[1];
-                LOG.debug("dx_opt=" + dx_opt + ", dy_opt=" + dy_opt);
-                //return false;
-                //}
+                Vector3D_Integer dv_opt = opt_points.get(i_opt).to3D();
+                LOG.debug("dv_opt=" + dv_opt);
 
-                if ((dx_opt == 0) && (dy_opt == 0)) {
-                    LOG.warn("Cannot move even to 1 pixel, everything occupied!");
+                if (dv_opt.isZeroCortege()) {
+                    LOG.trace("Cannot move even to 1 pixel, everything occupied!");
                 }
-                if ((dx_opt == dx) && (dy_opt == dy)) {
+                if (Point3D_Integer.eq(dv_opt, dv)) {
                     LOG.warn("The performance-consuming calculation started in vain: dx=dx_opt, dy_dy_opt.");
                 }
 
-                new_center[0] = getAbsCenterInteger()[0] + dx_opt;
-                new_center[1] = getAbsCenterInteger()[1] + dy_opt;
-                new_x = getAbsLoc()[0] + dx_opt;
-                new_y = getAbsLoc()[1] + dy_opt;
-                new_z = getAbsLoc()[2]; // so far we don't support 3D
+                new_center = getAbsCenterInteger().plus1(dv_opt);
+                new_loc = getAbsLoc().plus1(dv_opt);
 
                 new_rect = getRect();
-                new_rect.translate(dx_opt, dy_opt); // translocated rectangle
+                new_rect.translate(dv_opt.x(), dv_opt.y()); // translocated rectangle
             }
 
             if (GameMap.getInstance().occupied(new_rect, this)) {
@@ -789,20 +789,18 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         }
 
         // All checks passed - do movement finally:
-        if (new_center[0] == next[0] && new_center[1] == next[1]) {
+        if (Point3D_Integer.eq(new_center, next)) {
             // Destination point reached
             unsetDestinationPoint();
         }
 
         GameMap.getInstance().eraseObject(this);
 
-        this.parallelepiped.loc[0] = new_x;
-        this.parallelepiped.loc[1] = new_y;
-        this.parallelepiped.loc[2] = new_z;
+        this.parallelepiped.loc = new_loc;
 
         GameMap.getInstance().registerObject(this);
 
-//        LOG.debug("move: x=" + loc[0] + ", y=" + loc[1] + ", obj=" + this);
+//        LOG.debug("move: point=" + loc + ", obj=" + this);
 
         return true;
     }
@@ -822,8 +820,8 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
     }
 
     // TODO Use Patterns here for: Point, point_x, point_y, GameObject, Building
-    public boolean contains (Integer[] point) {
-        return this.getRect().contains(point[0], point[1]);
+    public boolean contains (Point2D_Integer point) {
+        return this.getRect().contains(point.x(), point.y());
     }
 
     // TODO Remove setters. Use Class.attr = newVal
@@ -875,7 +873,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
     }
 */
 
-    public int getRotationDirectionRay (Integer [] point) {
+    public int getRotationDirectionRay (Point2D_Integer point) {
 
         if (point == null) throw new NullPointerException("getRotationDirectionRay: destPoint is NULL!");
 
@@ -902,17 +900,17 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         */
 
         // Point "O" - center of the object
-        double x0 =             getAbsCenterDouble()[0];
-        double y0 = Y_ORIENT  * getAbsCenterDouble()[1];
+        double x0 =             getAbsCenterDouble().x();
+        double y0 = Y_ORIENT  * getAbsCenterDouble().y();
 
         // Point "P"
-        int xp = point[0];
-        int yp = Y_ORIENT  * point[1];
+        int xp = point.x();
+        int yp = Y_ORIENT  * point.y();
 
         // The direction-vector of the ray has coordinates (cos fi, sin fi) where fi = this.currAngle, so ...
         double invariant = (yp - y0) * Math.cos(this.currAngle) - (xp - x0) * Math.sin(this.currAngle);
         //double angleLeft = Math.acos(((xp - x0) * Math.cos(this.currAngle) + (yp - y0) * Math.sin(this.currAngle))
-        //        / Math.sqrt(sqrVal(xp - x0) + sqrVal(yp - y0)));
+        //        / MathBugfixes.sqrt(sqrVal(xp - x0) + sqrVal(yp - y0)));
 
 	    // counter clockwise (1), clockwise (-1) or just backwards (0)
         // NOTE: In the Cartesian coordinate system the angle is growing counter clockwise!
@@ -920,17 +918,17 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
     }
 
-    public boolean angleBetweenRayAndPointLessThan(Integer [] point, double dAngle) {
+    public boolean angleBetweenRayAndPointLessThan(Point2D_Integer point, double dAngle) {
 
         if (point == null) throw new NullPointerException("angleBetweenRayAndPointLessThan: destination and target points are both NULL!");
 
         // Point "O" - center of the object
-        double x0 =             getAbsCenterDouble()[0];
-        double y0 = Y_ORIENT  * getAbsCenterDouble()[1];
+        double x0 =             getAbsCenterDouble().x();
+        double y0 = Y_ORIENT  * getAbsCenterDouble().y();
 
         // Point "P" - destination point of rotation
-        int xp = point[0];
-        int yp = Y_ORIENT  * point[1];
+        int xp = point.x();
+        int yp = Y_ORIENT  * point.y();
 
         // Distance to dest point less than 1 pixel
         // We don't check exactly == 0 because we use type double that can give small deviation
@@ -964,7 +962,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         */
 
         // len(a2,b2)
-        double len = Math.sqrt(sqrVal(xp - x0) + sqrVal(yp - y0));
+        double len = MathBugfixes.sqrt(sqrVal(xp - x0) + sqrVal(yp - y0));
 /*
         LOG.debug("Len = " + len);
         LOG.debug(
@@ -981,7 +979,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
                 (yp - y0) * Math.sin(this.currAngle) > len * Math.cos(dAngle);
     }
 
-    public boolean angleBetweenRayAndPointSmallEnough(Integer [] point) {
+    public boolean angleBetweenRayAndPointSmallEnough(Point2D_Integer point) {
         // Sometimes it is better to turn one more time (even if the angle different is already less than given delta)
         // For example if delta is 45°, we turned and now the angle between the target and our object is 40°.
         // In such case it is better to do one more turn step and the angle will 40° - 45° = -5° which is more precise.

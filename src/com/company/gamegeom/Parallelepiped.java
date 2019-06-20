@@ -2,6 +2,10 @@ package com.company.gamegeom;
 
 import com.company.gamecontent.Centerable;
 import com.company.gamecontent.Renderable;
+import com.company.gamegeom.vectormath.point.Point3D_Double;
+import com.company.gamegeom.vectormath.point.Point3D_Integer;
+import com.company.gamegeom.vectormath.vector.Vector2D_Integer;
+import com.company.gamegeom.vectormath.vector.Vector3D_Integer;
 import com.company.gamegraphics.GraphBugfixes;
 
 import java.awt.*;
@@ -10,50 +14,49 @@ import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 
 public class Parallelepiped implements Renderable, Centerable {
 
-    public int loc[]; // Coordinates of the left-top-back point
-    private int size[]; // Object dimensions in GameMap cells (sX, sY, sZ)
+    public Point3D_Integer loc; // Coordinates of the left-top-back point
+    private Vector3D_Integer size; // Object dimensions in GameMap cells (sX, sY, sZ)
 
     private final Color color = Color.GREEN;
 
-    public int[] getAbsLoc() { return loc; }
+    public Point3D_Integer getAbsLoc() { return loc.clone(); }
 
-    public int[] getLoc() {
-        return new int[] {
-                loc[0] / BLOCK_SIZE,
-                loc[1] / BLOCK_SIZE,
-                loc[2] / BLOCK_SIZE
-        };
+    public Point3D_Integer getLoc() {
+        return loc.divInt1(BLOCK_SIZE).to2D().to3D();
     }
 
-    public int[] getAbsSize() {
-        return new int[] {
-                size[0] * BLOCK_SIZE,
-                size[1] * BLOCK_SIZE,
-                size[2] * BLOCK_SIZE
-        };
+    public Vector3D_Integer getAbsSize() {
+        return size.mult1(BLOCK_SIZE);
+        //return Vector3D_Integer.mult2(size, BLOCK_SIZE);
     }
 
-    public int[] getSize() { return size; }
+    public Vector3D_Integer getSize() { return size.clone(); }
 
-    public int getAbsRight() { return loc[0] + size[0] * BLOCK_SIZE - 1; }
-    public int getAbsBottom() { return loc[1] + size[1] * BLOCK_SIZE - 1; }
+    public int getAbsRight() { return loc.x() + size.x() * BLOCK_SIZE - 1; }
+    public int getAbsBottom() { return loc.y() + size.y() * BLOCK_SIZE - 1; }
 
     // ATTENTION: If the object width or length has uneven size in pixels then this function returns not integer!
     // We support rotation of such objects around floating coordinate which does not exist on the screen
-    public double[] getAbsCenterDouble() {
-        return new double[] {
-                loc[0] + (size[0] * BLOCK_SIZE - 1) / 2.0,
-                loc[1] + (size[1] * BLOCK_SIZE - 1) / 2.0,
-                loc[2] + (size[2] * BLOCK_SIZE - 1) / 2.0
-        };
+    public Point3D_Double getAbsCenterDouble() {
+        return loc.plus1(size.mult1(BLOCK_SIZE).minus(new Vector3D_Integer(1,1,1)).div1(2).to2D().to3D());
+
+        /*
+        return new Point3D_Double (
+                loc.x() + (size.x() * BLOCK_SIZE - 1) / 2.0,
+                loc.y() + (size.y() * BLOCK_SIZE - 1) / 2.0,
+                0.0
+        );*/
     }
 
-    public Integer[] getAbsCenterInteger() {
-        return new Integer[] {
-                loc[0] + (size[0] * BLOCK_SIZE - 1) / 2,
-                loc[1] + (size[1] * BLOCK_SIZE - 1) / 2,
-                loc[2] + (size[2] * BLOCK_SIZE - 1) / 2
-        };
+    public Point3D_Integer getAbsCenterInteger() {
+        return loc.plus1(size.mult1(BLOCK_SIZE).minus(new Vector3D_Integer(1,1,1)).divInt(2)).to2D().to3D();
+        /*
+        return new Point3D_Integer (
+                loc.x() + (size.x() * BLOCK_SIZE - 1) / 2,
+                loc.y() + (size.y() * BLOCK_SIZE - 1) / 2,
+                0
+        );
+        */
     }
 
     public static class GridRectangle {
@@ -83,28 +86,28 @@ public class Parallelepiped implements Renderable, Centerable {
 
     // TODO: is this "new" not memory leak prone?
     public Rectangle getAbsBottomRect() {
-        return new Rectangle(getAbsLoc()[0], getAbsLoc()[1], getAbsSize()[0], getAbsSize()[1]);
+        return new Rectangle(getAbsLoc().x(), getAbsLoc().y(), getAbsSize().x(), getAbsSize().y());
     }
 
-    public Parallelepiped(int x, int y, int z, int sX, int sY, int sZ) {
-        this.loc = new int[] { x, y, z };
-        this.size = new int[] {sX, sY, sZ};
+    public Parallelepiped(Point3D_Integer loc, Vector3D_Integer dim) {
+        this.loc = loc.clone();
+        this.size = dim.clone();
     }
 
     public boolean contains(Parallelepiped otherPpd) {
         if (
-           (loc[0] <= otherPpd.loc[0]) && (otherPpd.loc[0] + otherPpd.getAbsSize()[0] <= loc[0] + getAbsSize()[0]) &&
-           (loc[1] <= otherPpd.loc[1]) && (otherPpd.loc[1] + otherPpd.getAbsSize()[1] <= loc[1] + getAbsSize()[1]) &&
-           (loc[2] <= otherPpd.loc[2]) && (otherPpd.loc[2] + otherPpd.getAbsSize()[2] <= loc[2] + getAbsSize()[2])
+           (loc.x() <= otherPpd.loc.x()) && (otherPpd.loc.x() + otherPpd.getAbsSize().x() <= loc.x() + getAbsSize().x()) &&
+           (loc.y() <= otherPpd.loc.y()) && (otherPpd.loc.y() + otherPpd.getAbsSize().y() <= loc.y() + getAbsSize().y()) &&
+           (loc.z() <= otherPpd.loc.z()) && (otherPpd.loc.z() + otherPpd.getAbsSize().z() <= loc.z() + getAbsSize().z())
         ) return true;
         return false;
     }
 
-    public boolean contains(Integer[] point) {
+    public boolean contains(Point3D_Integer point) {
         if (
-           (loc[0] <= point[0]) && (point[0] <= loc[0] + getAbsSize()[0] - 1) &&
-           (loc[1] <= point[1]) && (point[1] <= loc[1] + getAbsSize()[1] - 1) &&
-           (loc[2] <= point[2]) && (point[2] <= loc[2] + getAbsSize()[2] - 1)
+           (loc.x() <= point.x()) && (point.x() <= loc.x() + getAbsSize().x() - 1) &&
+           (loc.y() <= point.y()) && (point.y() <= loc.y() + getAbsSize().y() - 1) &&
+           (loc.z() <= point.z()) && (point.z() <= loc.z() + getAbsSize().z() - 1)
         ) return true;
         return false;
     }

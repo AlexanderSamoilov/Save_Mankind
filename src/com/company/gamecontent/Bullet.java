@@ -1,10 +1,14 @@
 package com.company.gamecontent;
 
 import com.company.gamegeom.Parallelepiped;
-
+import com.company.gamegeom.vectormath.point.Point2D_Integer;
+import com.company.gamegeom.vectormath.point.Point3D_Double;
+import com.company.gamegeom.vectormath.point.Point3D_Integer;
+import com.company.gamegeom.vectormath.vector.Vector3D_Double;
+import com.company.gamegeom.vectormath.vector.Vector3D_Integer;
 import com.company.gamegraphics.GraphExtensions;
-import com.company.gamethread.Main;
 import com.company.gamethread.ParameterizedMutexManager;
+import com.company.gametools.MathBugfixes;
 import com.company.gametools.MathTools;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,7 +17,6 @@ import java.awt.*;
 import java.util.Arrays;
 import java.util.HashSet;
 
-import static com.company.gametools.MathTools.sqrVal;
 import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 
 public class Bullet implements Moveable, Centerable, Renderable {
@@ -31,65 +34,37 @@ public class Bullet implements Moveable, Centerable, Renderable {
     private int speed    = 0;
 
     // TODO loc_x, loc_y
-    private Integer [] loc = null;
+    private Point3D_Integer loc = null;
 
     // TODO dest_x, dest_y
-    private Integer[] destPoint = null;
+    private Point3D_Integer destPoint = null;
 
-    public Bullet(Unit shooter, Integer[] center_location, Integer[] target, int damage, int speed, int caliber) {
+    public Bullet(Unit shooter, Point3D_Integer center_location, Point3D_Integer target, int damage, int speed, int caliber) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         this.shooter = shooter;
-
         // TODO: check max caliber and whether the location is valid
-        // TODO: so fat we don't consider Z-coordinate
-        this.loc       = new Integer[] {
-                center_location[0] - (caliber - 1) / 2,
-                center_location[1] - (caliber - 1) / 2,
-                0
-        };
-        this.destPoint = new Integer[] {target[0], target[1]};
+        // TODO: so far we don't consider Z-coordinate
 
+        // NOTE: yes, we modify the existing "center_location" here, but it is not used anywhere else afterwards
+        this.loc = center_location.minus(new Vector3D_Integer(1,1,1).mult(caliber - 1).divInt(2));
+        this.destPoint = target.clone();
         this.damage    = damage;
         this.speed     = speed;
         this.caliber   = caliber;
     }
 
-    // TODO remove Getters, use Class.attr
-    public int getX() {
-        return loc[0];
-    }
-
-    // TODO remove Getters, use Class.attr
-    public int getY() {
-        return loc[1];
-    }
-
     // ATTENTION: If the object width or length has uneven size in pixels then this function returns not integer!
     // We support rotation of such objects around floating coordinate which does not exist on the screen
-    public double[] getAbsCenterDouble() {
-        return new double[] {
-                loc[0] + (caliber - 1) / 2.0,
-                loc[1] + (caliber - 1) / 2.0,
-                loc[2] + (caliber - 1) / 2.0
-        };
+    public Point3D_Double getAbsCenterDouble() {
+        return loc.minus1(new Vector3D_Double(1,1,1).mult(caliber - 1).div(2));
     }
 
-    public Integer[] getAbsCenterInteger() {
-        return new Integer[] {
-                loc[0] + (caliber - 1) / 2,
-                loc[1] + (caliber - 1) / 2,
-                loc[2] + (caliber - 1) / 2
-        };
+    public Point3D_Integer getAbsCenterInteger() {
+        return loc.plus1(new Vector3D_Integer(1,1,1).mult(caliber - 1).divInt(2));
     }
 
-    // TODO remove Getters, use Class.attr
-    public int getCaliber() { return caliber; }
-
-    // TODO remove Getters, use Class.attr
-    public int getSpeed() { return speed; }
-
-    public void setDestinationPoint(Integer [] dest) {
+    public void setDestinationPoint(Point3D_Integer dest) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
 
         // The destination point of the bullet is defined one time at the shooting moment
@@ -99,33 +74,30 @@ public class Bullet implements Moveable, Centerable, Renderable {
     public void unsetDestinationPoint() {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
 
-        // However, it is not needed, because the Bullet must be deleted after the bullet hit
+        // It is maybe not needed, because the Bullet must be deleted after the bullet hit
         destPoint = null;
     }
 
     public boolean move() {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
-        // The bullet can fly only where it was shooted to. Its destination not possible to change
+        // The bullet can fly only where it was shot to. Its destination is not possible to change
         return moveTo(destPoint);
     }
 
-    public boolean moveTo(Integer [] next) {
+    public boolean moveTo(Point3D_Integer next) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         // Calculate future coordinates where we want to move hypothetically (if nothing prevents this)
-        Integer new_center[] = MathTools.getNextPointOnRay(getAbsCenterInteger(), next, speed);
+        LOG.trace("bullet_center: " + getAbsCenterInteger() + ", next: " + next);
+        Point3D_Integer new_center = MathTools.getNextPointOnRay(getAbsCenterInteger(), next, speed);
 
         // translation vector
-        int dx = new_center[0] - getAbsCenterInteger()[0];
-        int dy = new_center[1] - getAbsCenterInteger()[1];
+        Vector3D_Integer dv = new_center.minus1(getAbsCenterInteger());
 
         // move left-top object angle to the same vector which the center was moved to
-        loc[0] += dx; // new "x"
-        loc[1] += dy; // new "y"
-        //loc[2] += dz; // so far we don't support 3D
-
-//        LOG.debug("move?: x=" + loc[0] + ", y=" + loc[1] + ", norm=" + norm);
+        loc.plus(dv);
+        LOG.trace("move?: new_loc=" + loc + ", dist=" + MathBugfixes.sqrt(dv.sumSqr()) + ", obj=" + this);
 
         if (! GameMap.getInstance().contains(new_center)) {
             // the bullet left the map - forget it!
@@ -135,24 +107,22 @@ public class Bullet implements Moveable, Centerable, Renderable {
         }
 
         // Destination point reached, bullet do damage
-        if (new_center[0] == next[0] && new_center[1] == next[1]) {
+        if (Point3D_Integer.eq(new_center, next)) {
             this.causeDamage();
         }
 
-        LOG.trace("move: x=" + loc[0] + ", y=" + loc[1] + ", obj=" + this);
         return true;
     }
 
     public void causeDamage() {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
-        int block_x = loc[0] / BLOCK_SIZE;
-        int block_y = loc[1] / BLOCK_SIZE;
+        Point2D_Integer block = loc.to2D().divInt1(BLOCK_SIZE);
 
-        HashSet<GameObject> objectsOnBlock = (HashSet<GameObject>)GameMap.getInstance().objectsOnMap[block_x][block_y].clone();
+        HashSet<GameObject> objectsOnBlock = (HashSet<GameObject>)GameMap.getInstance().objectsOnMap[block.x()][block.y()].clone();
 
         for (GameObject objOnBlock : objectsOnBlock) {
-            LOG.debug("--- hit [" + damage + " dmg] -> (" + block_x + "," + block_y + ") -> " + objOnBlock);
+            LOG.debug("--- hit [" + damage + " dmg] -> " + block + " -> " + objOnBlock);
             if (objOnBlock.hitPoints > damage) {
                 objOnBlock.hitPoints -= damage;
                 continue;
@@ -210,6 +180,6 @@ public class Bullet implements Moveable, Centerable, Renderable {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
 
         g.setColor(Color.PINK);
-        GraphExtensions.fillRect(g, new Rectangle(loc[0], loc[1], caliber, caliber), 0);
+        GraphExtensions.fillRect(g, new Rectangle(loc.x(), loc.y(), caliber, caliber), 0);
     }
 }

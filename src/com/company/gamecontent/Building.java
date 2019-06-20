@@ -1,8 +1,8 @@
 package com.company.gamecontent;
 
+import com.company.gamegeom.vectormath.point.Point3D_Integer;
+import com.company.gamegeom.vectormath.vector.Vector3D_Integer;
 import com.company.gamegraphics.Sprite;
-import com.company.gamethread.Main;
-import com.company.gamethread.MutexManager;
 import com.company.gamethread.ParameterizedMutexManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,9 +23,9 @@ public class Building extends GameObject {
 
     boolean isOutOfEnergy;
 
-    public Building(int energyConsumption, int upgradeTime, Sprite sprite, int x, int y, int z, int sX, int sY, int sZ, HashMap<Resource, Integer> res, int hp, int arm, int hard, int bch, int ech, int eco) {
+    public Building(int energyConsumption, int upgradeTime, Sprite sprite, Point3D_Integer loc, Vector3D_Integer dim, HashMap<Resource, Integer> res, int hp, int arm, int hard, int bch, int ech, int eco) {
         // 1 - parent class specific parameters
-        super(sprite, x, y, z, sX, sY, sZ, res, hp, 0, 0, 0, arm, hard, bch, ech, eco);
+        super(sprite, loc, dim, res, hp, 0, 0, 0, arm, hard, bch, ech, eco);
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
 
         // 2 - child class specific parameters validation

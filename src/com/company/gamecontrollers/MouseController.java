@@ -1,6 +1,7 @@
 package com.company.gamecontrollers;
 
 import com.company.gamecontent.GameMap;
+import com.company.gamegeom.vectormath.point.Point3D_Integer;
 import com.company.gamethread.C_Thread;
 import com.company.gamethread.Main;
 
@@ -48,7 +49,7 @@ public class MouseController extends MouseAdapter {
             // and this (D) thread (actually EDT in Java) assigns also a dest point or vice versa
             C_Thread.getInstance().suspend();
 
-            GameMap.getInstance().assign(new Integer[]{e.getX(), e.getY()});
+            GameMap.getInstance().assign(new Point3D_Integer(e.getX(), e.getY(), 0));
             C_Thread.getInstance().resume();
             // TODO: probably V thread should be also suspended
             // currently it works, but from the next round

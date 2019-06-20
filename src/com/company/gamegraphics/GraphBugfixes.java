@@ -1,10 +1,8 @@
 package com.company.gamegraphics;
 
-import com.company.gamethread.Main;
-
 import java.awt.*;
 
-public class GraphBugfixes {
+public abstract class GraphBugfixes {
 
     // drawRect() adds +1 pixel to width and height!
     // See https://stackoverflow.com/questions/55445079/java-awt-drawrect-wrongly-interprets-width-and-height-produces-1-pixel-r.
