@@ -1,11 +1,11 @@
 package com.company.gamecontent;
 
 import com.company.gamegeom.Parallelepiped;
-import com.company.gamegeom.vectormath.point.Point2D_Integer;
-import com.company.gamegeom.vectormath.point.Point3D_Double;
-import com.company.gamegeom.vectormath.point.Point3D_Integer;
-import com.company.gamegeom.vectormath.vector.Vector3D_Double;
-import com.company.gamegeom.vectormath.vector.Vector3D_Integer;
+import com.company.gamegeom.cortegemath.point.Point2D_Integer;
+import com.company.gamegeom.cortegemath.point.Point3D_Double;
+import com.company.gamegeom.cortegemath.point.Point3D_Integer;
+import com.company.gamegeom.cortegemath.vector.Vector3D_Double;
+import com.company.gamegeom.cortegemath.vector.Vector3D_Integer;
 import com.company.gamegraphics.GraphExtensions;
 import com.company.gamethread.ParameterizedMutexManager;
 import com.company.gametools.MathBugfixes;
@@ -48,7 +48,7 @@ public class Bullet implements Moveable, Centerable, Renderable {
 
         // NOTE: yes, we modify the existing "center_location" here, but it is not used anywhere else afterwards
         this.loc = center_location.minus(new Vector3D_Integer(1,1,1).mult(caliber - 1).divInt(2));
-        this.destPoint = target.clone();
+        this.destPoint = target; // use reference safely, because it was cloned in the calling function
         this.damage    = damage;
         this.speed     = speed;
         this.caliber   = caliber;
@@ -57,11 +57,11 @@ public class Bullet implements Moveable, Centerable, Renderable {
     // ATTENTION: If the object width or length has uneven size in pixels then this function returns not integer!
     // We support rotation of such objects around floating coordinate which does not exist on the screen
     public Point3D_Double getAbsCenterDouble() {
-        return loc.minus1(new Vector3D_Double(1,1,1).mult(caliber - 1).div(2));
+        return loc.plusClone(new Vector3D_Double(1,1,1).mult(caliber - 1).div(2));
     }
 
     public Point3D_Integer getAbsCenterInteger() {
-        return loc.plus1(new Vector3D_Integer(1,1,1).mult(caliber - 1).divInt(2));
+        return loc.plusClone(new Vector3D_Integer(1,1,1).mult(caliber - 1).divInt(2));
     }
 
     public void setDestinationPoint(Point3D_Integer dest) {
@@ -93,7 +93,7 @@ public class Bullet implements Moveable, Centerable, Renderable {
         Point3D_Integer new_center = MathTools.getNextPointOnRay(getAbsCenterInteger(), next, speed);
 
         // translation vector
-        Vector3D_Integer dv = new_center.minus1(getAbsCenterInteger());
+        Vector3D_Integer dv = new_center.minusClone(getAbsCenterInteger());
 
         // move left-top object angle to the same vector which the center was moved to
         loc.plus(dv);
@@ -107,7 +107,7 @@ public class Bullet implements Moveable, Centerable, Renderable {
         }
 
         // Destination point reached, bullet do damage
-        if (Point3D_Integer.eq(new_center, next)) {
+        if (new_center.eq(next)) {
             this.causeDamage();
         }
 
@@ -117,7 +117,7 @@ public class Bullet implements Moveable, Centerable, Renderable {
     public void causeDamage() {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
-        Point2D_Integer block = loc.to2D().divInt1(BLOCK_SIZE);
+        Point2D_Integer block = loc.to2D().divInt(BLOCK_SIZE);
 
         HashSet<GameObject> objectsOnBlock = (HashSet<GameObject>)GameMap.getInstance().objectsOnMap[block.x()][block.y()].clone();
 

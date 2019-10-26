@@ -1,8 +1,10 @@
 package com.company.gametools;
 
-import com.company.gamegeom.vectormath.point.Point2D_Integer;
-import com.company.gamegeom.vectormath.point.Point3D_Integer;
+import com.company.gamegeom.cortegemath.cortege.Cortege3D_Integer;
+import com.company.gamegeom.cortegemath.point.Point2D_Integer;
+import com.company.gamegeom.cortegemath.point.Point3D_Integer;
 import com.company.gamethread.Main;
+import com.sun.org.apache.xpath.internal.functions.FuncCeiling;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -11,6 +13,17 @@ import java.util.Random;
 public abstract class MathTools {
 
     private static Logger LOG = LogManager.getLogger(MathTools.class.getName());
+
+    public static enum RoundingMode {
+        TRUNC, // simply removes any fractional part from the number (round-toward-zero)
+        CEIL,  // chooses the smallest (closest to negative infinity) integer that is not smaller than the original number
+        FLOOR, // chooses the largest (closest to positive infinity) integer that is not greater than the original number
+        ROUND  // chooses the integer closest to the original number (implementation dependent)
+    };
+    // Let use "round" mode
+    public static RoundingMode getRoundingMode() {
+        return RoundingMode.ROUND;
+    }
 
     public static int randomSign() {
         Random random = new Random();
@@ -26,6 +39,23 @@ public abstract class MathTools {
         return new Double(value * value);
     }
 
+    public static Integer round(Double x) {
+        RoundingMode rm = getRoundingMode();
+        switch (rm) {
+            case TRUNC: // https://stackoverflow.com/questions/58220779/java-trunc-method-equivalent/58221383
+                return x.intValue();
+            case CEIL:
+                return (int)Math.ceil(x);
+            case FLOOR:
+                return (int)Math.floor(x);
+            case ROUND:
+                return (int)Math.round(x);
+            default: // https://stackoverflow.com/questions/58220779/java-trunc-method-equivalent/58221383
+                return x.intValue();
+        }
+
+    }
+
     public static boolean in_range(int left, int val, int right, boolean strict) {
         if (strict) {
             return (left < val && val < right);
@@ -39,7 +69,7 @@ public abstract class MathTools {
         Point3D_Integer nextPoint;
 
         // Count the distance between current point and next point
-        double norm = MathBugfixes.sqrt(Point3D_Integer.distSqrVal(srcPoint, destPoint));
+        double norm = MathBugfixes.sqrt(Cortege3D_Integer.distSqrVal(srcPoint, destPoint));
         LOG.trace("srcPoint=" + srcPoint + ", dstPoint=" + destPoint + ", norm=" + norm);
 
         // Avoid division by zero and endless wandering around the destination point
@@ -49,7 +79,7 @@ public abstract class MathTools {
             nextPoint = destPoint.clone();
         } else {
             // Many steps to target
-            nextPoint = srcPoint.plus1(destPoint.minus1(srcPoint).mult(step).divInt(norm));
+            nextPoint = srcPoint.plusClone(destPoint.minusClone(srcPoint).mult(step).divInt(norm));
             /*
                 srcPoint.x() + (int)((destPoint.x() - srcPoint.x()) * step / norm),
                 srcPoint.y() + (int)((destPoint.y() - srcPoint.y()) * step / norm),
@@ -71,7 +101,7 @@ public abstract class MathTools {
         // Validation. We are not supposed that the section turns to a point.
         // Thus we don't just return here smth, but exit the program with a fatal error.
         if ((A.x() == B.x()) && (A.y() == B.y())) {
-            Main.terminateNoGiveUp(1000, "Wrong data: section [A; B] is a point.");
+            Main.terminateNoGiveUp(null,1000, "Wrong data: section [A; B] is a point.");
         }
 
         if ((A.x() == p.x()) && (A.y() == p.y())) return 0; // belongs to the end A
@@ -103,11 +133,11 @@ public abstract class MathTools {
         // We call this function to check intersection of a line with the edge of another shape.
         // This edge must never turn to a point. Thus we don't just return here smth, but exit the program with a fatal error.
         if ((p1.x() == p2.x()) && (p1.y() == p2.y())) {
-            Main.terminateNoGiveUp(1000, "Wrong data: section [1; 2] is a point!");
+            Main.terminateNoGiveUp(null,1000, "Wrong data: section [1; 2] is a point!");
             // TODO: return anyway the result if the point belongs to another section
         }
         if ((p3.x() == p4.x()) && (p3.y() == p4.y())) {
-            Main.terminateNoGiveUp(1000, "Wrong data: section [3; 4] is a point!");
+            Main.terminateNoGiveUp(null,1000, "Wrong data: section [3; 4] is a point!");
             // TODO: return anyway the result if the point belongs to another section
         }
 

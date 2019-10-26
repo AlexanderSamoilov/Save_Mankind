@@ -32,14 +32,14 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
                 threadIdB = C_Thread.getInstance().getId();
                 break;
             default:
-                Main.terminateNoGiveUp(
+                Main.terminateNoGiveUp(null,
                         1000,
                         "Error: threads of type " + threadType + " are not supported."
                 );
         }
 
         if (threadIdA == threadIdB) {
-            Main.terminateNoGiveUp(1000, "An attempt to block the own thread was detected!");
+            Main.terminateNoGiveUp(null,1000, "An attempt to block the own thread was detected!");
         }
 
         Long threadIdLess = Math.min(threadIdA, threadIdB);
@@ -82,7 +82,7 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
                 } catch (Exception e) {
                     errCounter ++;
                     if (errCounter > 100) {
-                        Main.terminateNoGiveUp(1000, "Got exception too much times!");
+                        Main.terminateNoGiveUp(e,1000, "Got exception too much times!");
                         // TODO: move to a func
                         for (StackTraceElement stackTraceElement : e.getStackTrace()) {
                             LOG.error(stackTraceElement.toString());
@@ -104,7 +104,7 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
 
             if (insertionRes instanceof  Semaphore) {
                 if (((Semaphore) insertionRes).availablePermits() > 1) {
-                    Main.terminateNoGiveUp(1000, "Semaphores permits number more than 1!");
+                    Main.terminateNoGiveUp(null,1000, "Semaphores permits number more than 1!");
                 }
             }
             return insertionRes;

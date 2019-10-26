@@ -1,5 +1,8 @@
 package com.company.gametools;
 
+// TODO: Add test to the beginning of the game ot test if all standard functions
+// which are not "fixed" here behave as expected and display an error if not
+// something like "ERROR: 3rd party API <func_name> was changed, the program will work wrongly!"
 public abstract class MathBugfixes {
     /* Stupid Java bug. It thinks that Math.sqrt accepts double and expects that the computation result
            returned by the function which we pass into sqrt is also Double. If we clearly define an intermediate variable,

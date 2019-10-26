@@ -5,9 +5,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import com.company.gamegeom.vectormath.point.Point3D_Integer;
-import com.company.gamegeom.vectormath.vector.Vector2D_Integer;
-import com.company.gamegeom.vectormath.vector.Vector3D_Integer;
+import com.company.gamegeom.cortegemath.cortege.Cortege3D_Integer;
+import com.company.gamegeom.cortegemath.point.Point3D_Integer;
+import com.company.gamegeom.cortegemath.vector.Vector3D_Integer;
 import com.company.gamegeom.Parallelepiped.GridRectangle;
 
 import com.company.gamegraphics.Sprite;
@@ -91,7 +91,7 @@ public class Unit extends GameObject implements Shootable {
         valid = valid && setWeapon(weapon);
 
         if (!valid) {
-            terminateNoGiveUp(
+            terminateNoGiveUp(null,
                     1000,
                     "Failed to initialize " + getClass() +
                             ". Some of parameters are beyond the restricted boundaries."
@@ -188,7 +188,7 @@ public class Unit extends GameObject implements Shootable {
         }
 
         if (targetCheck > 1) {
-            terminateNoGiveUp(
+            terminateNoGiveUp(null,
                     1000,
                     "Error: " + targetCheck + " targets were set for the player " + getPlayerId()
             );
@@ -239,7 +239,7 @@ public class Unit extends GameObject implements Shootable {
         if (isOnLineOfFire(target)) {
             int shootRadius = weapon.getShootRadius();
 
-            if (Point3D_Integer.withinRadius(target, getAbsCenterInteger(), shootRadius)) {
+            if (Cortege3D_Integer.withinRadius(target, getAbsCenterInteger(), shootRadius)) {
                 shoot(target);
                 return;
             }
@@ -255,14 +255,14 @@ public class Unit extends GameObject implements Shootable {
                 // (this works by the way even for such weird case when the target rectangle
                 // completely contains the center of the shooter (possible only with INTERSECTION_STRATEGY_SEVERITY=0)
                 Point3D_Integer far;
-                double dist = MathBugfixes.sqrt(Point3D_Integer.distSqrVal(target, getAbsCenterInteger()));
+                double dist = MathBugfixes.sqrt(Cortege3D_Integer.distSqrVal(target, getAbsCenterInteger()));
 
                 if (dist < 1) {
                     // This may be not economically, but safe that nobody modify "target" outside, so do clone()
                     far = target.clone();
                 } else {
-                    far = getAbsCenterInteger().plus1(
-                          target.minus1(getAbsCenterInteger()).mult(shootRadius).divInt(dist)
+                    far = getAbsCenterInteger().plusClone(
+                          target.minusClone(getAbsCenterInteger()).mult(shootRadius).divInt(dist)
                     );
                 }
 

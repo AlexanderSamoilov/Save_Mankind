@@ -1,8 +1,8 @@
 package com.company.gamethread;
 
-import com.company.gamegeom.vectormath.CortegeTest;
-import com.company.gamegeom.vectormath.point.Point3D_Integer;
-import com.company.gamegeom.vectormath.vector.Vector3D_Integer;
+import com.company.gamegeom.cortegemath.CortegeTest;
+import com.company.gamegeom.cortegemath.point.Point3D_Integer;
+import com.company.gamegeom.cortegemath.vector.Vector3D_Integer;
 import com.company.gamelogger.LogConfFactory;
 
 import com.company.gamecontent.*;
@@ -181,12 +181,7 @@ public class Main {
         try {
             GameMap.getInstance().init(terrain_map, width, height);
         } catch (Exception e) {
-            // This can print messages to file
-            for (StackTraceElement steElement : e.getStackTrace()) {
-                LOG.error(steElement.toString());
-            }
-
-            terminateNoGiveUp(1000, null);
+            terminateNoGiveUp(e,1000, null);
         }
 
         LOG.info("Initialized map " + width + "x" + height);
@@ -244,7 +239,7 @@ public class Main {
                                     30, 150, 10, 8, 5
                             ),
                             3, testEnemyTankSprite,
-                            new Point3D_Integer(Restrictions.MAX_X - 2 - 2*i,Restrictions.getMaxDim().y() - 2, 0),
+                            new Point3D_Integer(Restrictions.MAX_X - 2 - 2*i,Restrictions.MAX_DIM.y() - 2, 0),
                             new Vector3D_Integer(1, 1, 1),
                             testEnemyTankResources, 500, 7, 15, 45, 25, 15, 5, 5, 5
                     )
@@ -357,7 +352,7 @@ public class Main {
                 public void windowClosing(WindowEvent e) {
                     /* Для закрытия окна будем использовать наши методы класса */
                     destroy();
-                    terminateNoGiveUp(
+                    terminateNoGiveUp(null,
                             1000,
                             "Exiting game, because the main windows was closed on user's demand."
                     );
@@ -393,9 +388,8 @@ public class Main {
              LOG.info(" ------ EDT thread finished drawing. EDT thread ID detected: " + EDT_ID + " ------ ");
 
         } catch (Exception e) {
-            e.printStackTrace();
             destroy();
-            terminateNoGiveUp(
+            terminateNoGiveUp(e,
                     1000,
                     "Failed to initialize game graphics. The game will be terminated now."
             );
@@ -407,7 +401,7 @@ public class Main {
                (EDT_ID == V_Thread.getInstance().getId()) ||
                (EDT_ID == D_Thread.getInstance().getId())
         ) {
-            terminateNoGiveUp(1000, "Failed to detect EDT thread ID. Perhaps, paintComponent() was called from another thread.");
+            terminateNoGiveUp(null,1000, "Failed to detect EDT thread ID. Perhaps, paintComponent() was called from another thread.");
         }
 
         LOG.info("The graphics are ready!");
@@ -513,14 +507,26 @@ public class Main {
         try {
             Thread.sleep(timeoutMSec);
         } catch (InterruptedException e) {
-            //e.printStackTrace();
             // This is not a big trouble that we were not able to do sleep, so it is not a reason to interrupt the method on this
         }
     }
 
-    public static void printStackTrace() {
-        for (StackTraceElement stackTraceElement : Thread.currentThread().getStackTrace()) {
-            LOG.info(stackTraceElement.toString());
+    public static void printStackTrace(Exception e) {
+        StackTraceElement [] stackTrace = null;
+        if (e != null) {
+            stackTrace = e.getStackTrace();
+        } else { // if the Exception parameter is null then we print the current stack trace
+            stackTrace = Thread.currentThread().getStackTrace();
+        }
+
+        if (LOG != null) {
+            for (StackTraceElement stackTraceElement : stackTrace) {
+                LOG.info(stackTraceElement.toString());
+            }
+        } else { // If the logger is not working for some reason, at least print to console
+            for (StackTraceElement stackTraceElement : stackTrace) {
+                System.out.println(stackTraceElement.toString());
+            }
         }
     }
 
@@ -592,7 +598,7 @@ public class Main {
             catch (InterruptedException e)
             {
                 LOG.error("Thread " + super.getId() + " died!");
-                e.printStackTrace();
+                printStackTrace(e);
             }
 
             //super.run(); // Thread.run() is empty, so we don't need it.
@@ -619,7 +625,7 @@ public class Main {
                 try {
                     interrupt();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    printStackTrace(e);
                 }
 
                 // TODO: check of we need this
@@ -706,13 +712,14 @@ public class Main {
         return true;
     }
 
-    public static void terminateNoGiveUp(long timeoutMsec, String terminateMsg) {
+    public static void terminateNoGiveUp(Exception exception, long timeoutMsec, String terminateMsg) {
+
+        LOG.info(" --- total terminate! ---");
+        printStackTrace(exception);
+
         if (terminateMsg != null && !terminateMsg.equals("")){
             LOG.fatal(terminateMsg);
         }
-
-        LOG.info(" --- total terminate! ---");
-        printStackTrace();
 
         // ErrWindow ew = displayErrorWindow("The game was interrupted due to exception. Exiting...
         // (if this window does not disappear for a long time, kill the game process manually from OS.)");
@@ -768,7 +775,7 @@ public class Main {
 //        } else {
 //            // TODO: Display a new window
 //            //ErrWindow ew = displayErrorWindow("No such choice: " + choice.toString() + ". Exiting...(if this window does not disappear for a long time, kill the game process manually from OS.)");
-//            terminateNoGiveUp(1000, null);
+//            terminateNoGiveUp(null, 1000, null);
 //            //ew.close();
 //        }
     }
@@ -812,11 +819,11 @@ public class Main {
         LOG.debug("players:" + Player.getPlayers().length);
 
         if (D_Thread.getInstance().start(100, 10)) {
-            terminateNoGiveUp(1000, null);
+            terminateNoGiveUp(null,1000, null);
         }
 
         if (V_Thread.getInstance().start(100, 10)) {
-            terminateNoGiveUp(1000, null);
+            terminateNoGiveUp(null,1000, null);
         }
 
         // Wait for D-Thread to get ready (at the same time D-Thread is waiting for V-Thread to get ready)
@@ -825,8 +832,7 @@ public class Main {
                     "D", "getReady")
             ).acquire();
         } catch (Exception e) {
-            e.printStackTrace();
-            terminateNoGiveUp(1000, "Failed to get mutex for D-Thread.");
+            terminateNoGiveUp(e,1000, "Failed to get mutex for D-Thread.");
         }
 
         // Wait for V-Thread to get ready
@@ -835,13 +841,12 @@ public class Main {
                     "V", "getReady")
             ).acquire();
         } catch (Exception e) {
-            e.printStackTrace();
-            terminateNoGiveUp(1000, "Failed to get mutex for V-Thread.");
+            terminateNoGiveUp(e,1000, "Failed to get mutex for V-Thread.");
         }
 
         // 4. Initialize and start C-Thread.
         if (C_Thread.getInstance().start(100, 10)) {
-            terminateNoGiveUp(1000, null);
+            terminateNoGiveUp(null,1000, null);
         }
 
         // FIXME Move dis to class ThreadPool
@@ -893,28 +898,28 @@ public class Main {
             try {
                 C_Thread.getInstance().join(); // wait the C-thread to finish
             } catch (Exception eOuter) {
-                eOuter.printStackTrace();
+                printStackTrace(eOuter);
                 C_Thread.getInstance().terminate(1000);
             }
 
             try {
                 V_Thread.getInstance().join(); // wait the V-thread to finish
             } catch (Exception eOuter) {
-                eOuter.printStackTrace();
+                printStackTrace(eOuter);
                 V_Thread.getInstance().terminate(1000);
             }
 
             try {
                 D_Thread.getInstance().join(); // wait the D-thread to finish
             } catch (Exception eOuter) {
-                eOuter.printStackTrace();
+                printStackTrace(eOuter);
                 D_Thread.getInstance().terminate(1000);
             }
         }
 
         // For sure
         // TODO Do check this sure
-        terminateNoGiveUp(1000, null);
+        terminateNoGiveUp(null,1000, null);
         LOG.warn("The game exited.");
         System.exit(deadStatus);
     }

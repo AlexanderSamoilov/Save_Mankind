@@ -1,7 +1,7 @@
 package com.company.gamecontent;
 
-import com.company.gamegeom.vectormath.point.Point3D_Integer;
-import com.company.gamegeom.vectormath.vector.Vector3D_Integer;
+import com.company.gamegeom.cortegemath.point.Point3D_Integer;
+import com.company.gamegeom.cortegemath.vector.Vector3D_Integer;
 import com.company.gamegraphics.Sprite;
 import com.company.gamethread.ParameterizedMutexManager;
 import org.apache.logging.log4j.LogManager;
@@ -31,15 +31,15 @@ public class Building extends GameObject {
         // 2 - child class specific parameters validation
         boolean valid = true;
         valid = valid && in_range(
-                0, energyConsumption, Restrictions.getMaxEnergyConsumption(), false
+                0, energyConsumption, Restrictions.MAX_ENERGY_CONSUMPTION, false
         );
 
         valid = valid && in_range(
-                0, upgradeTime, Restrictions.getMaxInitialUpgradeTime(), false
+                0, upgradeTime, Restrictions.MAX_INITIAL_UPGRADE_TIME, false
         );
 
         if (!valid) {
-            terminateNoGiveUp(
+            terminateNoGiveUp(null,
                     1000,
                     "Failed to initialize " + getClass() +
                                ". Some of parameters are beyond the restricted boundaries."
@@ -57,7 +57,7 @@ public class Building extends GameObject {
     public int upgrade() {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
-        if (level >= Restrictions.getMaxUpgradeLevel()) {
+        if (level >= Restrictions.MAX_UPGRADE_LEVEL) {
             return level; // return current level - impossible to upgrade more
         }
 

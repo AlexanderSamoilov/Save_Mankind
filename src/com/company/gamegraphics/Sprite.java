@@ -42,8 +42,7 @@ public class Sprite implements Renderable {
             this.image = ImageIO.read(new File("./res/drawable/" + filename));
         } catch (IOException e) {
             // FIXME -> Main.terminateNoGiveUp()
-            e.printStackTrace();
-            Main.terminateNoGiveUp(
+            Main.terminateNoGiveUp(e,
                     1000,
                     "Could not set Sprite: ./res/drawable/" + filename + " could not be read/found."
             );

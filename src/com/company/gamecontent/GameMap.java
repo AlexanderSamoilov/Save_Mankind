@@ -4,9 +4,9 @@ import com.company.gamegeom.Parallelepiped.GridRectangle;
 import com.company.gamegeom.Parallelepiped;
 
 import com.company.gamecontrollers.MouseController;
-import com.company.gamegeom.vectormath.point.Point2D_Integer;
-import com.company.gamegeom.vectormath.point.Point3D_Integer;
-import com.company.gamegeom.vectormath.vector.Vector3D_Integer;
+import com.company.gamegeom.cortegemath.point.Point2D_Integer;
+import com.company.gamegeom.cortegemath.point.Point3D_Integer;
+import com.company.gamegeom.cortegemath.vector.Vector3D_Integer;
 import com.company.gamethread.Main;
 import com.company.gamethread.ParameterizedMutexManager;
 import com.company.gamethread.V_Thread;
@@ -31,6 +31,7 @@ public class GameMap {
     // TODO: make it public final. For that we have to get rid of init() and do everything in the constructor.
     private Vector3D_Integer dim;
     private Vector3D_Integer abs_dim;
+    private Parallelepiped parallelepiped;
 
     // TODO what about Units, Buildings? Why Bullets separate of them?
     // TODO Guava has Table<R, C, V> (table.get(x, y)). May be create Generic Class?
@@ -54,7 +55,7 @@ public class GameMap {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M")));
 
         if (initialized) {
-            Main.terminateNoGiveUp(
+            Main.terminateNoGiveUp(null,
                     1000,
                     getClass() + " init error. Not allowed to initialize the map twice!"
             );
@@ -64,7 +65,7 @@ public class GameMap {
         boolean width_validation = (width <= 0) || (width > Restrictions.MAX_X);
         boolean height_validation = (height <= 0) || (height > Restrictions.MAX_Y);
         if (width_validation || height_validation) {
-            Main.terminateNoGiveUp(
+            Main.terminateNoGiveUp(null,
                     1000,
                     getClass() + " init error. Width and Height are beyond the restricted boundaries."
             );
@@ -73,7 +74,8 @@ public class GameMap {
         this.landscapeBlocks = new GameMapBlock[width][height];
         // MAX_Z because we don't support 3D so far
         dim = new Vector3D_Integer(width, height, Restrictions.MAX_Z);
-        abs_dim = dim.mult1(BLOCK_SIZE);
+        abs_dim = dim.multClone(BLOCK_SIZE);
+        parallelepiped = new Parallelepiped(new Point3D_Integer(0, 0, 0), dim);
 
         // TODO What about collections and Maps?
         this.objectsOnMap = new HashSet[width][height];
@@ -84,22 +86,13 @@ public class GameMap {
             for (int j = 0; j < height; j++) {
                 // Declaring landscape blocks
                 try {
-                    this.landscapeBlocks[i][j] = new GameMapBlock(new Point2D_Integer(i, j).mult(BLOCK_SIZE), map[i][j]);
-                } catch (EnumConstantNotPresentException e) {
-                    LOG.debug("Block (" + i + ", " + j + ")");
-                    LOG.debug("Map size: " + width + "x" + height);
-                    e.printStackTrace();
-                    Main.terminateNoGiveUp(
-                            1000,
-                            getClass() + " init error. Blocks array out of bounds"
-                    );
+                    this.landscapeBlocks[i][j] = new GameMapBlock(i, j, map[i][j]);
                 } catch (Exception e) {
-                    LOG.debug("Block (" + i + ", " + j + ")");
-                    LOG.debug("Map size: " + width + "x" + height);
-                    e.printStackTrace();
-                    Main.terminateNoGiveUp(
+                    LOG.error("Block (" + i + ", " + j + ")");
+                    LOG.error("Map size: " + width + "x" + height);
+                    Main.terminateNoGiveUp(e,
                             1000,
-                            getClass() + " unknown error."
+                            getClass() + ": Map initialization failed with " + e.getClass().getSimpleName()
                     );
                 }
 
@@ -109,7 +102,7 @@ public class GameMap {
                 // Declaring visibility map for blocks
                 // TODO: currently everything is visible for everybody - the logic is to be designed
                 this.visibleMap[i][j] = new HashMap<Integer, Boolean>();
-                for (int k = 0; k <= Restrictions.getMaxPlayers() - 1; k++) {
+                for (int k = 0; k <= Restrictions.MAX_PLAYERS - 1; k++) {
                     this.visibleMap[i][j].put(k, true);
                 }
             }
@@ -273,7 +266,7 @@ public class GameMap {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
 
         // FIXME: We must take floor(), not just divide!
-        Point2D_Integer block = point.to2D().divInt1(BLOCK_SIZE);
+        Point2D_Integer block = point.to2D().divInt(BLOCK_SIZE);
 
         // TODO: currently we don't consider "visibility" of the point by the player/enemy.
         HashSet<GameObject> objectsOnBlock = objectsOnMap[block.x()][block.y()];
@@ -353,11 +346,8 @@ public class GameMap {
     }
 
     public void validateBlockCoordinates(int grid_x, int grid_y) {
-        if (
-                (grid_x < 0) || (grid_x > getDim().x() - 1) ||
-                (grid_y < 0) || (grid_y > getDim().y() - 1)
-        ) {
-            Main.terminateNoGiveUp(
+        if (! getRect().contains(grid_x, grid_y)) {
+            Main.terminateNoGiveUp(null,
                     1000, "Block (" + grid_x + "," + grid_y +
                     " is outside of map " + getDim().x() + " x " + getDim().y()
             );
@@ -455,14 +445,8 @@ public class GameMap {
 //        b = null;
     }
 
-    // TODO Rename it to get()
-    // TODO: each time we call "new" and constructor of Parallelepiped also calls "new" - memory wasting
-    Parallelepiped getParallelepiped() {
-        return new Parallelepiped(new Point3D_Integer(0, 0, 0), getDim());
-    }
-
     Rectangle getRect() {
-        return getParallelepiped().getAbsBottomRect();
+        return parallelepiped.getAbsBottomRect();
     }
 
     // Crops the given rectangle with the map rectangle (is used to avoid going outside the map)
@@ -475,11 +459,11 @@ public class GameMap {
     }
 
     boolean contains(Parallelepiped ppd) {
-        return getParallelepiped().contains(ppd);
+        return parallelepiped.contains(ppd);
     }
 
     boolean contains(Point3D_Integer point) {
-        return getParallelepiped().contains(point);
+        return parallelepiped.contains(point);
     }
 
     /* DEBUG */

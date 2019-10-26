@@ -7,11 +7,12 @@ import com.company.gamegeom.ParallelogramHorizontal.GridMatrixHorizontal;
 import com.company.gamegeom.ParallelogramVertical;
 import com.company.gamegeom.ParallelogramVertical.GridMatrixVertical;
 
-import com.company.gamegeom.vectormath.point.Point2D_Integer;
-import com.company.gamegeom.vectormath.point.Point3D_Double;
-import com.company.gamegeom.vectormath.point.Point3D_Integer;
-import com.company.gamegeom.vectormath.vector.Vector2D_Integer;
-import com.company.gamegeom.vectormath.vector.Vector3D_Integer;
+import com.company.gamegeom.cortegemath.cortege.Cortege2D_Integer;
+import com.company.gamegeom.cortegemath.point.Point2D_Integer;
+import com.company.gamegeom.cortegemath.point.Point3D_Double;
+import com.company.gamegeom.cortegemath.point.Point3D_Integer;
+import com.company.gamegeom.cortegemath.vector.Vector2D_Integer;
+import com.company.gamegeom.cortegemath.vector.Vector3D_Integer;
 
 import com.company.gamegraphics.GraphBugfixes;
 import com.company.gamegraphics.GraphExtensions;
@@ -123,7 +124,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         // Check that we don't create the object overlapped with another object
         // In order to use the function occupiedByAnotherObject for still not completely created class instance
         // we have to define the objec dimensions first:
-        this.parallelepiped = new Parallelepiped(loc.mult1(BLOCK_SIZE), dim);
+        this.parallelepiped = new Parallelepiped(loc.multClone(BLOCK_SIZE), dim);
         if (GameMap.getInstance().occupied(getRect(), this)) {
             valid = false;
         }
@@ -137,7 +138,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         );
 
         if (!valid) {
-            terminateNoGiveUp(
+            terminateNoGiveUp(null,
                     1000,
                     "Failed to initialize " + getClass() + ". Some of parameters are beyond the restricted boundaries."
             );
@@ -252,9 +253,6 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
                 2 - BLOCK_SIZE % 2, 2 - BLOCK_SIZE % 2));
     }
 
-    public Parallelepiped getParallelepiped() {
-        return parallelepiped;
-    }
     public Point3D_Integer getAbsLoc() { return parallelepiped.getAbsLoc(); }
     public Point3D_Integer getLoc() { return parallelepiped.getLoc(); }
     public Vector3D_Integer getSize() { return parallelepiped.getSize(); }
@@ -268,7 +266,9 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
 
         // TODO: check if coordinates are within restrictions
-        if (this.destPoint == null) destPoint = new Point3D_Integer(0, 0, 0);
+        if (this.destPoint == null) {
+            destPoint = new Point3D_Integer(0, 0, 0);
+        }
         this.destPoint.assign(dest);
 
         if (this instanceof Shootable) {
@@ -378,7 +378,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         LOG.trace("old_center=" + getAbsCenterInteger());
         
         // translation vector
-        Vector3D_Integer dv = new_center.minus1(getAbsCenterInteger());
+        Vector3D_Integer dv = new_center.minusClone(getAbsCenterInteger());
         LOG.trace("dv=" + dv);
         if (dv.isZeroCortege()) {
             // Destination point reached already
@@ -387,7 +387,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         }
 
         // move left-top object angle to the same vector which the center was moved to
-        new_loc = getAbsLoc().plus1(dv);
+        new_loc = getAbsLoc().plusClone(dv);
         LOG.debug("move?: " + getAbsLoc() + " -> " + new_loc + ", speed=" + speed);
 
         if (! GameMap.getInstance().contains(
@@ -491,36 +491,36 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
                b) All of them whose left(if dx > 0)/right(if dx < 0) edge has a common section with that parallelogram,
                whose edges are parallel Oy, that is pgmVert.
                c) All of them whose left-bottom(if dx > 0, dy > 0)/right-bottom(if dx < 0, dy > 0)/
-               right-top(if dx < 0, dy < 0)/left-top(if dx > 0, dy < 0) vertice belongs to the terminating section between parallelograms.
+               right-top(if dx < 0, dy < 0)/left-top(if dx > 0, dy < 0) vertex belongs to the terminating section between parallelograms.
              */
             HashSet<Rectangle> suspectedObjectsA = new HashSet<Rectangle>();
             HashSet<Rectangle> suspectedObjectsB = new HashSet<Rectangle>();
             HashSet<Rectangle> suspectedObjectsC = new HashSet<Rectangle>();
 
-            /* Cs corresponds to the direction where the current object is going to move
-               Depending on the direction we choose the corresponding edge or vertice.
+            /* frontPointStartPos corresponds to the direction where the current object is going to move
+               Depending on the direction we choose the corresponding edge or vertex.
                For example:
-               a) The object is moving to the right and down => Cs is a right-bottom vertice.
-               Cs.x = x_right_bottom, Cs.y = y_right_bottom
-               b) If the object is moving just left (dy=0) => Cs is an abscisse of the left edge.
-               Cs.x = x_left, Cs.y = null (impossible to choose a point, the whole edge is moving if dy=0)
-               c) If the object is moving just down (dx=0) => Cs is an ordinate of the bottom edge.
-               Cs.y = y_bottom, Cs.x = null (impossible to choose a point, the whole edge is moving if dx=0)
-               d) dx=dx=0 => Cs.x=Cs.y=null (should be impossible, because we check above that dx!=0 or dy!=0)
+               a) The object is moving to the right and down => frontPointStartPos is a right-bottom vertex.
+               frontPointStartPos.x = x_right_bottom, frontPointStartPos.y = y_right_bottom
+               b) If the object is moving just left (dy=0) => frontPointStartPos is an abscissa of the left edge.
+               frontPointStartPos.x = x_left, frontPointStartPos.y = null (impossible to choose a point, the whole edge is moving if dy=0)
+               c) If the object is moving just down (dx=0) => frontPointStartPos is an ordinate of the bottom edge.
+               frontPointStartPos.y = y_bottom, frontPointStartPos.x = null (impossible to choose a point, the whole edge is moving if dx=0)
+               d) dx=dx=0 => frontPointStartPos.x=frontPointStartPos.y=null (should be impossible, because we check above that dx!=0 or dy!=0)
              */
 
-            Integer Cs_x = null, Cs_y = null;
-            if (dv.x() < 0) Cs_x = getAbsLoc().x(); // left of the current object
-            if (dv.x() > 0) Cs_x = getAbsRight(); // right of the current object
-            if (dv.y() < 0) Cs_y = getAbsLoc().y(); // top of the current object
-            if (dv.y() > 0) Cs_y = getAbsBottom(); // bottom of the current object
-            Point2D_Integer Cs = new Point2D_Integer(Cs_x, Cs_y);
+            Integer frontPointStartPos_x = null, frontPointStartPos_y = null;
+            if (dv.x() < 0) frontPointStartPos_x = getAbsLoc().x(); // left of the current object
+            if (dv.x() > 0) frontPointStartPos_x = getAbsRight(); // right of the current object
+            if (dv.y() < 0) frontPointStartPos_y = getAbsLoc().y(); // top of the current object
+            if (dv.y() > 0) frontPointStartPos_y = getAbsBottom(); // bottom of the current object
+            Point2D_Integer frontPointStartPos = new Point2D_Integer(frontPointStartPos_x, frontPointStartPos_y);
 
-            // Ct is where Cs should be moved to hypothetically
-            Integer Ct_x = null, Ct_y = null;
-            if (Cs.x() != null) Ct_x = Cs.x() + dv.x();
-            if (Cs.y() != null) Ct_y = Cs.y() + dv.y();
-            Point2D_Integer Ct = new Point2D_Integer(Ct_x, Ct_y);
+            // frontPointEndPos is where frontPointStartPos should be moved to hypothetically
+            Integer frontPointEndPos_x = null, frontPointEndPos_y = null;
+            if (frontPointStartPos.x() != null) frontPointEndPos_x = frontPointStartPos.x() + dv.x();
+            if (frontPointStartPos.y() != null) frontPointEndPos_y = frontPointStartPos.y() + dv.y();
+            Point2D_Integer frontPointEndPos = new Point2D_Integer(frontPointEndPos_x, frontPointEndPos_y);
 
             for (Rectangle rect : affectedObjects) {
 
@@ -566,30 +566,30 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
                 // c
                 if (!dv.isZeroCortege()) {
                     if ((dv.x() > 0) && (dv.y() < 0)) { // UP-RIGHT
-                        // check if the bottom-left vertice of the impediment belongs to the common section CsCt
+                        // check if the bottom-left vertex of the impediment belongs to the common section [frontPointStartPos; frontPointEndPos]
                         // connecting pgmHoriz and pgmVert
-                        if (MathTools.sectionContains(Cs, go_bottom_left, Ct) > -1) {
+                        if (MathTools.sectionContains(frontPointStartPos, go_bottom_left, frontPointEndPos) > -1) {
                             suspectedObjectsC.add(rect);
                         }
                     }
                     if ((dv.x() < 0) && (dv.y() < 0)) { // UP-LEFT
-                        // check if the bottom-left vertice of the impediment belongs to the common section CsCt
+                        // check if the bottom-left vertex of the impediment belongs to the common section [frontPointStartPos; frontPointEndPos]
                         // connecting pgmHoriz and pgmVert
-                        if (MathTools.sectionContains(Cs, go_bottom_right, Ct) > -1) {
+                        if (MathTools.sectionContains(frontPointStartPos, go_bottom_right, frontPointEndPos) > -1) {
                             suspectedObjectsC.add(rect);
                         }
                     }
                     if ((dv.x() > 0) && (dv.y() > 0)) { // DOWN-RIGHT
-                        // check if the top-left vertice of the impediment belongs to the common section CsCt
+                        // check if the top-left vertex of the impediment belongs to the common section [frontPointStartPos; frontPointEndPos]
                         // connecting pgmHoriz and pgmVert
-                        if (MathTools.sectionContains(Cs, go_top_left, Ct) > -1) {
+                        if (MathTools.sectionContains(frontPointStartPos, go_top_left, frontPointEndPos) > -1) {
                             suspectedObjectsC.add(rect);
                         }
                     }
                     if ((dv.x() < 0) && (dv.y() > 0)) { // DOWN-LEFT
-                        // check if the top-right vertice of the impediment belongs to the common section CsCt
+                        // check if the top-right vertex of the impediment belongs to the common section [frontPointStartPos; frontPointEndPos]
                         // connecting pgmHoriz and pgmVert
-                        if (MathTools.sectionContains(Cs, go_top_right, Ct) > -1) {
+                        if (MathTools.sectionContains(frontPointStartPos, go_top_right, frontPointEndPos) > -1) {
                             suspectedObjectsC.add(rect);
                         }
                     }
@@ -603,8 +603,8 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
                b) From the game objects obtained on the step 3b choose only one whose left(if dx > 0)/right(if dx < 0) edge
                is leftest(if dx > 0)/rightest(if dx < 0) and remember its abscissa Xb.
                c) From the game objects obtained on the step 3c choose only one whose left-bottom(if dx 0, dy > 0)/
-               right-bottom(if dx < 0, dy > 0)/right-top(if dx < 0, dy < 0)/left-top(if dx > 0, dy > 0) vertice
-               is closest to Cs and remember its coordinates Xc, Yc.
+               right-bottom(if dx < 0, dy > 0)/right-top(if dx < 0, dy < 0)/left-top(if dx > 0, dy > 0) vertex
+               is closest to frontPointStartPos and remember its coordinates Xc, Yc.
              */
 
             int opt_line_A_found = 0;
@@ -666,8 +666,8 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
             }
 
             // c
-            Point2D_Integer Pc = null;
-            Point2D_Integer Pc_opt = null;
+            Point2D_Integer frontPointMiddlePos = null;
+            Point2D_Integer frontPointMiddlePosOpt = null;
             Long distSqrValMin = null;
             Long distSqrValCurr = -1L;
             if (suspectedObjectsC.size() > 0) opt_point_C_found = 1;
@@ -684,27 +684,27 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
                 // TODO: it is known outside of the looop about signs of dx, dy
                 // It is possible to avoid these 4 if-else here?
                 // UP-RIGHT
-                if ((dv.x() > 0) && (dv.y() < 0)) Pc_opt = go_bottom_left;
+                if ((dv.x() > 0) && (dv.y() < 0)) frontPointMiddlePosOpt = go_bottom_left;
                 // UP-LEFT
-                if ((dv.x() < 0) && (dv.y() < 0)) Pc_opt = go_bottom_right;
+                if ((dv.x() < 0) && (dv.y() < 0)) frontPointMiddlePosOpt = go_bottom_right;
                 // DOWN-RIGHT
-                if ((dv.x() > 0) && (dv.y() > 0)) Pc_opt = go_top_left;
+                if ((dv.x() > 0) && (dv.y() > 0)) frontPointMiddlePosOpt = go_top_left;
                 // DOWN-LEFT
-                if ((dv.x() < 0) && (dv.y() > 0)) Pc_opt = go_top_right;
+                if ((dv.x() < 0) && (dv.y() > 0)) frontPointMiddlePosOpt = go_top_right;
 
                 // validation
-                if ((dv.x() == 0) || (dv.y() == 0)) terminateNoGiveUp(1000, "Impossible: dx or dy = 0 on step 4c.");
+                if ((dv.x() == 0) || (dv.y() == 0)) terminateNoGiveUp(null,1000, "Impossible: dx or dy = 0 on step 4c.");
 
-                if (Pc == null) { // first time only
-                    Pc = Pc_opt.clone();
-                    distSqrValMin = Point2D_Integer.distSqrVal(Cs, Pc).longValue();
+                if (frontPointMiddlePos == null) { // first time only
+                    frontPointMiddlePos = frontPointMiddlePosOpt.clone();
+                    distSqrValMin = Cortege2D_Integer.distSqrVal(frontPointStartPos, frontPointMiddlePos).longValue();
                     continue;
                 }
 
-                distSqrValCurr = Point2D_Integer.distSqrVal(Cs, Pc).longValue();
+                distSqrValCurr = Cortege2D_Integer.distSqrVal(frontPointStartPos, frontPointMiddlePos).longValue();
                 if (distSqrValCurr < distSqrValMin) {
                     distSqrValMin = distSqrValCurr;
-                    Pc.assign(Pc_opt);
+                    frontPointMiddlePos.assign(frontPointMiddlePosOpt);
                 }
             }
 
@@ -725,22 +725,28 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
             if (opt_line_A_found != 0) {
                 LOG.debug("Ya=" + Ya);
                 Ya -= (int)Math.signum(dv.y()); // we should not overlap even 1 pixel of the border of the impediment
-                opt_points.put(num_opt_points, new Vector2D_Integer((Ya - Cs.y()) * dv.x() / dv.y(), Ya - Cs.y()));
+                opt_points.put(num_opt_points, new Vector2D_Integer(
+                        (Ya - frontPointStartPos.y()) * dv.x() / dv.y(),
+                        Ya - frontPointStartPos.y()
+                ));
                 num_opt_points++;
             }
             // b (dx != 0)
             if (opt_line_B_found != 0) {
                 LOG.debug("Xb=" + Xb);
                 Xb -= (int)Math.signum(dv.x()); // we should not overlap even 1 pixel of the border of the impediment
-                opt_points.put(num_opt_points, new Vector2D_Integer(Xb - Cs.x(), (Xb - Cs.x()) * dv.y() / dv.x()));
+                opt_points.put(num_opt_points, new Vector2D_Integer(
+                        Xb - frontPointStartPos.x(),
+                        (Xb - frontPointStartPos.x()) * dv.y() / dv.x()
+                ));
                 num_opt_points++;
             }
             // c ( dx != 0 and dy != 0)
             if (opt_point_C_found != 0) {
-                LOG.debug("Pc=" + Pc);
+                LOG.debug("frontPointMiddlePos=" + frontPointMiddlePosOpt);
 
-                Pc.minus(new Point2D_Integer(Math.signum(dv.x()), Math.signum(dv.y()))); // we should not overlap even 1 pixel of the border of the impediment
-                opt_points.put(num_opt_points, Pc.minus1(Cs));
+                frontPointMiddlePos.minus(new Point2D_Integer(Math.signum(dv.x()), Math.signum(dv.y()))); // we should not overlap even 1 pixel of the border of the impediment
+                opt_points.put(num_opt_points, frontPointMiddlePos.minusClone(frontPointStartPos));
                 num_opt_points++;
             }
 
@@ -772,24 +778,24 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
                 if (dv_opt.isZeroCortege()) {
                     LOG.trace("Cannot move even to 1 pixel, everything occupied!");
                 }
-                if (Point3D_Integer.eq(dv_opt, dv)) {
+                if (dv_opt.eq(dv)) {
                     LOG.warn("The performance-consuming calculation started in vain: dx=dx_opt, dy_dy_opt.");
                 }
 
-                new_center = getAbsCenterInteger().plus1(dv_opt);
-                new_loc = getAbsLoc().plus1(dv_opt);
+                new_center = getAbsCenterInteger().plusClone(dv_opt);
+                new_loc = getAbsLoc().plusClone(dv_opt);
 
                 new_rect = getRect();
                 new_rect.translate(dv_opt.x(), dv_opt.y()); // translocated rectangle
             }
 
             if (GameMap.getInstance().occupied(new_rect, this)) {
-                Main.terminateNoGiveUp(1000, "Objects overlapping has been detected! The algorithm has a bug!");
+                Main.terminateNoGiveUp(null,1000, "Objects overlapping has been detected! The algorithm has a bug!");
             }
         }
 
         // All checks passed - do movement finally:
-        if (Point3D_Integer.eq(new_center, next)) {
+        if (new_center.eq(next)) {
             // Destination point reached
             unsetDestinationPoint();
         }

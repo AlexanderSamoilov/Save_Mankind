@@ -8,9 +8,9 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-public abstract class GenericHelpers {
+public abstract class GenericTools {
 
-    private static Logger LOG = LogManager.getLogger(GenericHelpers.class.getName());
+    private static Logger LOG = LogManager.getLogger(GenericTools.class.getName());
 
     // Java does not allow to say this.data[i] = (T) (new T(this.data[i].intValue() + v.data[i].intValue())):
     // https://stackoverflow.com/questions/299998/instantiating-object-of-type-parameter. But there is a way:
@@ -41,8 +41,7 @@ public abstract class GenericHelpers {
             Object[] args = {data};
             cloned = ctor.newInstance(args);
         } catch (NoSuchMethodException | SecurityException | IllegalArgumentException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
-            e.printStackTrace();
-            Main.terminateNoGiveUp(1000, "Generic constructor of type " + superType + " failed with " + e);
+            Main.terminateNoGiveUp(e,1000, "Generic constructor of type " + superType + " failed with " + e);
             return null;
         }
 
@@ -70,7 +69,7 @@ public abstract class GenericHelpers {
 
     // TODO: look also https://stackoverflow.com/questions/529085/how-to-create-a-generic-array-in-java.
     // TODO: Theoretically it is possible to refuse at all of arrays and use "data" as ArrayList.
-    public static <T extends Number> T[] createGenericArray2(Class<T> type, T x, T y) {
+    public static <T extends Number> T[] createGenericArray2D(Class<T> type, T x, T y) {
         //Number[] tmp = new Number[] {x, y};
         //return (T[]) Arrays.copyOf(tmp, 2, (Class)type);
         Object arr = Array.newInstance(type, 2);
@@ -79,7 +78,7 @@ public abstract class GenericHelpers {
         return (T[])arr;
     }
 
-    public static <T extends Number> T[] createGenericArray3(Class<T> type, T x, T y, T z) {
+    public static <T extends Number> T[] createGenericArray3D(Class<T> type, T x, T y, T z) {
         //Number[] tmp = new Number[] {x, y, z};
         //return (T[]) Arrays.copyOf(tmp, 3, (Class)type);
         Object arr = Array.newInstance(type, 3);
@@ -87,5 +86,35 @@ public abstract class GenericHelpers {
         Array.set(arr, 1, y);
         Array.set(arr, 2, z);
         return (T[])arr;
+    }
+
+    /*
+      One more idiotic Java feature - @Override for static methods is forbidden.
+      But I need exactly this behavior in order to force call of the corresponding child class method
+      because it contains type check, that is (point + vector) = allowed, (point + point) = not allowed (exception).
+      As a workaround I analyze the stack trace and check if the method was called from a child class of the current class.
+      https://stackoverflow.com/questions/11306811/how-to-get-the-caller-class-in-java
+     */
+    public static void checkCallerClass(Class currentClazz, Integer nestedCalls) {
+        StackTraceElement[] stElements = Thread.currentThread().getStackTrace();
+        StackTraceElement steOfCallerClazz = stElements[3 + nestedCalls];
+        Class callerClazz = null;
+        try {
+            callerClazz = Class.forName(steOfCallerClazz.getClassName());
+        } catch (ClassNotFoundException e) {
+            // leave null, but this should never happen
+        }
+
+        // Check if the caller class is some child class of the current class
+        LOG.trace("Class1 = " + currentClazz + ", Class2=" + callerClazz);
+        if (! currentClazz.isAssignableFrom(callerClazz)) {
+            String calledMethodName = stElements[2 + nestedCalls].getMethodName();
+            String currentClazzSimpleName = currentClazz.getSimpleName();
+            throw new IllegalArgumentException(
+                "It is allowed to call the static method " + currentClazzSimpleName + "." + calledMethodName +
+                " only from child classes of " + currentClazzSimpleName + " or from " + currentClazzSimpleName +
+                " itself, but you try to call it from " + callerClazz.getSimpleName()
+            );
+        }
     }
 }

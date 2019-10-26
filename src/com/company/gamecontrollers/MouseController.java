@@ -1,7 +1,7 @@
 package com.company.gamecontrollers;
 
 import com.company.gamecontent.GameMap;
-import com.company.gamegeom.vectormath.point.Point3D_Integer;
+import com.company.gamegeom.cortegemath.point.Point3D_Integer;
 import com.company.gamethread.C_Thread;
 import com.company.gamethread.Main;
 

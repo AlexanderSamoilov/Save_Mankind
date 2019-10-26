@@ -1,14 +1,14 @@
-package com.company.gamegeom.vectormath.cortege;
+package com.company.gamegeom.cortegemath.cortege;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.company.gametools.GenericHelpers;
-import static com.company.gametools.GenericHelpers.createGenericArray2;
-import static com.company.gametools.GenericHelpers.createGenericArray3;
+import com.company.gametools.GenericTools;
+import static com.company.gametools.GenericTools.createGenericArray2D;
+import static com.company.gametools.GenericTools.createGenericArray3D;
 
 //public class Cortege3D <T extends Number> extends Cortege<Cortege3D<T>,T> {
-abstract class Cortege3D <E extends Cortege3D<E,T>, T extends Number> extends Cortege<E,T> {
+public abstract class Cortege3D <E extends Cortege3D<E,T>, T extends Number> extends Cortege<E,T> {
 
     private static Logger LOG = LogManager.getLogger(Cortege3D.class.getName());
 
@@ -29,27 +29,27 @@ abstract class Cortege3D <E extends Cortege3D<E,T>, T extends Number> extends Co
     /*public Cortege3D(Class<T> type, ArrayList<T> arrList) {
         super(type, createGenericArray(type, arrList));
     }*/
-    public Cortege3D(Class<T> type, T x, T y, T z) { super(type, createGenericArray3(type, x, y, z)); }
-    public Cortege3D(Class<T> type, T[] p) { super(type, p); }
+    public Cortege3D(Class<T> type, T x, T y, T z) { super(type, createGenericArray3D(type, x, y, z)); }
+    public Cortege3D(Class<T> type, T[] arr) { super(type, arr); }
 
     // NOTE: make the default constructor private to forbid its usage, but make the compiler to shut up about "final".
     private Cortege3D() { super(null, null); }
 
     // Copying constructor
-    public Cortege3D(Cortege3D<E,T> p) {
+    public Cortege3D(Cortege3D<E,T> c) {
         this(
-                p == null ? null : p.type,
-                p == null ? null : p.x(),
-                p == null ? null : p.y(),
-                p == null ? null : p.z()
+                c == null ? null : c.type,
+                c == null ? null : c.x(),
+                c == null ? null : c.y(),
+                c == null ? null : c.z()
         );
-        if (p == null) LOG.warn("Initialized Cortege3D: " + toString());
+        if (c == null) LOG.warn("Initialized Cortege3D: " + toString());
     }
 
     public Cortege2D<?,T> _to2D() {
         // return new Cortege2D<T>(type, this.data); - for non-abstract implementation
-        return (Cortege2D<?,T>) GenericHelpers.constructGeneric(this.getClass(),
-                createGenericArray2(type, this.x(), this.y()));
+        return (Cortege2D<?,T>) GenericTools.constructGeneric(this.getClass(),
+                createGenericArray2D(type, this.x(), this.y()));
     }
 
     /*public Point toJPoint () {

@@ -2,6 +2,9 @@ package com.company.gamegraphics;
 
 import java.awt.*;
 
+// TODO: Add test to the beginning of the game ot test if all standard functions
+// which are not "fixed" here behave as expected and display an error if not
+// something like "ERROR: 3rd party API <func_name> was changed, the program will work wrongly!"
 public abstract class GraphBugfixes {
 
     // drawRect() adds +1 pixel to width and height!

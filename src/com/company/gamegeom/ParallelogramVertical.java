@@ -1,6 +1,6 @@
 package com.company.gamegeom;
 
-import com.company.gamegeom.vectormath.point.Point2D_Integer;
+import com.company.gamegeom.cortegemath.point.Point2D_Integer;
 import com.company.gamegraphics.GraphBugfixes;
 import com.company.gamethread.Main;
 import com.company.gametools.MathTools;
@@ -57,10 +57,10 @@ public class ParallelogramVertical {
         // better to check the 4 vertices separately, because "double" type can give some difference
         // for example, 320.000000000001 and 320
         if (
-                (p.x() == x_left) && (p.y() == y_left_top) // top-left vertice
-             || (p.x() == x_right) && (p.y() == y_right_top) // top-right vertice
-             || (p.x() == x_left) && (p.y() == y_left_bottom) // bottom-left vertice
-             || (p.x() == x_right) && (p.y() == y_right_bottom) // bottom-right vertice
+                (p.x() == x_left) && (p.y() == y_left_top) // top-left vertex
+             || (p.x() == x_right) && (p.y() == y_right_top) // top-right vertex
+             || (p.x() == x_left) && (p.y() == y_left_bottom) // bottom-left vertex
+             || (p.x() == x_right) && (p.y() == y_right_bottom) // bottom-right vertex
         ) return 0;
 
         double y_top = y_left_top + (p.x() - x_left) * (y_right_top - y_left_top) / (x_right - x_left);
@@ -87,7 +87,7 @@ public class ParallelogramVertical {
         // We call this function to check intersection of a parallelogram interior with a section [A; B].
         // This section must never turn to a point. Thus we don't just return here smth, but exit the program with a fatal error.
         if ((A.x() == B.x()) && (A.y() == B.y())) {
-            Main.terminateNoGiveUp(1000, "Wrong data: section [A; B] is a point!");
+            Main.terminateNoGiveUp(null,1000, "Wrong data: section [A; B] is a point!");
             return contains(A);
         }
 
@@ -132,7 +132,7 @@ public class ParallelogramVertical {
                 LOG.debug("L=" + bottom_left + ", A=" + A + ", R=" + bottom_right + ", sectionContains=" + MathTools.sectionContains(bottom_left, A, bottom_right));
                 LOG.debug("L=" + top_left + ", A=" + A + ", R=" + bottom_left + ", sectionContains=" + MathTools.sectionContains(top_left, A, bottom_left));
                 LOG.debug("L=" + top_right + ", A=" + A + ", R=" + bottom_right + ", sectionContains=" + MathTools.sectionContains(top_right, A, bottom_right));
-                Main.terminateNoGiveUp(1000, "Discrepancy!! .contains" + A + " is 0, but .sectionContains says that no one edges contains A.");
+                Main.terminateNoGiveUp(null,1000, "Discrepancy!! .contains" + A + " is 0, but .sectionContains says that no one edges contains A.");
             }
 
             Boolean [] edgesContainingB = new Boolean[] {
@@ -150,7 +150,7 @@ public class ParallelogramVertical {
                 LOG.debug("L=" + bottom_left + ", B=" + B + ", R=" + bottom_right + ", sectionContains=" + MathTools.sectionContains(bottom_left, B, bottom_right));
                 LOG.debug("L=" + top_left+ ", B=" + B + ", R=" + bottom_left + ", sectionContains=" + MathTools.sectionContains(top_left, B, bottom_left));
                 LOG.debug("L=" + top_right + ", B=" + B + ", R=" + bottom_right + ", sectionContains=" + MathTools.sectionContains(top_right, B, bottom_right));
-                Main.terminateNoGiveUp(1000, "Discrepancy!! .contains" + B + " is 0, but .sectionContains says that no one edges contains B.");
+                Main.terminateNoGiveUp(null,1000, "Discrepancy!! .contains" + B + " is 0, but .sectionContains says that no one edges contains B.");
             }
 
             if (edgesContainingA[0] && edgesContainingB[0]) return 0; // A and B lay on the top edge
@@ -166,7 +166,7 @@ public class ParallelogramVertical {
            a) Only one point lays on the parallelogram border and the section [A; B] touches the parallelogram
            with this point or partly overlap the section [A; B] with one of its edges.
            b) Both A and B lay outside the parallelogram and the whole section [A; B] is outside the parallelogram
-           c) Both A and B lay outside the parallelogram and the section [A; B] touches one vertice of the parallelogram
+           c) Both A and B lay outside the parallelogram and the section [A; B] touches one vertex of the parallelogram
         */
 
         if ((containsA == 0) || (containsB == 0)) return 0; // Case "a"
@@ -213,11 +213,11 @@ public class ParallelogramVertical {
         public GridMatrixVertical(ParallelogramVertical pgmVect) {
 
             // edge case: width 0 or negative
-            if (pgmVect.width < 1) Main.terminateNoGiveUp(1000,
+            if (pgmVect.width < 1) Main.terminateNoGiveUp(null,1000,
                     "GridMatrix: horizontal parallelogram with width zero: (" +
                             pgmVect.loc.x() + ", " + pgmVect.loc.y() + ", " + pgmVect.width + ", " + pgmVect.height + ", " + pgmVect.shift);
 
-            // top-left vertice of the parallelogram
+            // top-left vertex of the parallelogram
             left = pgmVect.loc.x() / BLOCK_SIZE; // left blocks of the grid-parallelogram
             right = (pgmVect.loc.x() + pgmVect.width - 1) / BLOCK_SIZE; // right blocks of the grid-parallelogram
             top = new Integer[right - left + 1];
@@ -313,7 +313,7 @@ public class ParallelogramVertical {
         try {
             sleep(1000);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            Main.printStackTrace(e);
         }*/
     }
 }

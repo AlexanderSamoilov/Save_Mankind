@@ -2,10 +2,10 @@ package com.company.gamegeom;
 
 import com.company.gamecontent.Centerable;
 import com.company.gamecontent.Renderable;
-import com.company.gamegeom.vectormath.point.Point3D_Double;
-import com.company.gamegeom.vectormath.point.Point3D_Integer;
-import com.company.gamegeom.vectormath.vector.Vector2D_Integer;
-import com.company.gamegeom.vectormath.vector.Vector3D_Integer;
+import com.company.gamegeom.cortegemath.point.Point3D_Double;
+import com.company.gamegeom.cortegemath.point.Point3D_Integer;
+import com.company.gamegeom.cortegemath.vector.Vector3D_Double;
+import com.company.gamegeom.cortegemath.vector.Vector3D_Integer;
 import com.company.gamegraphics.GraphBugfixes;
 
 import java.awt.*;
@@ -22,11 +22,11 @@ public class Parallelepiped implements Renderable, Centerable {
     public Point3D_Integer getAbsLoc() { return loc.clone(); }
 
     public Point3D_Integer getLoc() {
-        return loc.divInt1(BLOCK_SIZE).to2D().to3D();
+        return loc.divIntClone(BLOCK_SIZE).to2D().to3D();
     }
 
     public Vector3D_Integer getAbsSize() {
-        return size.mult1(BLOCK_SIZE);
+        return size.multClone(BLOCK_SIZE);
         //return Vector3D_Integer.mult2(size, BLOCK_SIZE);
     }
 
@@ -38,7 +38,10 @@ public class Parallelepiped implements Renderable, Centerable {
     // ATTENTION: If the object width or length has uneven size in pixels then this function returns not integer!
     // We support rotation of such objects around floating coordinate which does not exist on the screen
     public Point3D_Double getAbsCenterDouble() {
-        return loc.plus1(size.mult1(BLOCK_SIZE).minus(new Vector3D_Integer(1,1,1)).div1(2).to2D().to3D());
+        //return loc.plusClone(size.multClone(BLOCK_SIZE).minus(new Vector3D_Integer(1,1,1)).divClone(2).to2D().to3D());
+        return loc.plusClone(
+                new Vector3D_Double(-1,-1,-1).plus(size.multClone(BLOCK_SIZE)).div(2)
+        ).to2D().to3D();
 
         /*
         return new Point3D_Double (
@@ -49,7 +52,11 @@ public class Parallelepiped implements Renderable, Centerable {
     }
 
     public Point3D_Integer getAbsCenterInteger() {
-        return loc.plus1(size.mult1(BLOCK_SIZE).minus(new Vector3D_Integer(1,1,1)).divInt(2)).to2D().to3D();
+        //return loc.plusClone(size.multClone(BLOCK_SIZE).minus(new Vector3D_Integer(1,1,1)).divInt(2)).to2D().to3D();
+        return loc.plusClone(
+                new Vector3D_Integer(-1,-1,-1).plus(size.multClone(BLOCK_SIZE)).divInt(2)
+        ).to2D().to3D();
+
         /*
         return new Point3D_Integer (
                 loc.x() + (size.x() * BLOCK_SIZE - 1) / 2,
