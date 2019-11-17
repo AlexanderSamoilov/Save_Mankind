@@ -84,7 +84,7 @@ public class Unit extends GameObject implements Shootable {
         valid = valid && in_range(
                 0,
                 r * BLOCK_SIZE,
-                Restrictions.getMaxDetectRadiusAbs(),
+                Restrictions.MAX_DETECT_RADIUS_ABS,
                 false
         );
 

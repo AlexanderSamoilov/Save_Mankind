@@ -123,9 +123,10 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
         }
     }
 
-    // TODO: In 4 next operators (+ - * /) we round up to an integer value with "intValue()"
-    // Maybe it would better to write a centralized function round() with a possibility to choose
-    // between intValue(), floor(), ceil() etc. that is different rounding strategies using one place.
+    /* TODO: In 4 next operators (+ - * /) we round up to an integer value with "intValue()"
+       Maybe it would better to write a centralized function round() with a possibility to choose
+       between intValue(), floor(), ceil() etc. that is different rounding strategies using one place.
+     */
 
     // +=
     protected void _plus(Cortege<?,?> c) {

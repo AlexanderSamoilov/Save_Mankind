@@ -6,13 +6,13 @@ import java.lang.Math;
 
 public abstract class Restrictions {
 
-    static final int ROTATE_MOD = 1; // 0 - angle mode, not 0 - ray mode
+    public static final int ROTATE_MOD = 1; // 0 - angle mode, not 0 - ray mode
 
     // Sprites of all object are oriented to north by default at the beginning of the game.
     // But since we perform all calculations in Cartesian coordinate system
     // we have to take into account that north is 90° (PI / 2) in Cartesian coordinates
     // and use this angle in the sprite rotation formulae.
-    static final double INIT_ANGLE = Math.toRadians(90);
+    public static final double INIT_ANGLE = Math.toRadians(90);
 
     // The coordinate system in computer is not always Cartesian (because of different graphics libraries)
     // But we use all formulae for Cartesian coordinate system. In order to make these "classic" math formulae
@@ -36,8 +36,6 @@ public abstract class Restrictions {
     public static final int MAX_Y = Math.min(MONITOR_MAX_X, MONITOR_MAX_Y) / BLOCK_SIZE;
     public static final int MAX_Z = 16;
 
-    private static final int MAX_OBJECT_SIZE_BLOCKS = 3;
-
     public static final int MAX_MASS = 1000;
     public static final int MAX_ENERGY = 5000;
     public static final int MAX_ENERGY_CONSUMPTION = 100;
@@ -60,19 +58,8 @@ public abstract class Restrictions {
     public static final Vector3D_Integer MAX_DIM = new Vector3D_Integer(MAX_X, MAX_Y, MAX_Z);
     public static final Vector3D_Integer MAX_DIM_ABS = MAX_DIM.multClone(BLOCK_SIZE);
 
-    public static int getMaxObjectSizeBlocks() {
-        return Math.min(MAX_OBJECT_SIZE_BLOCKS, Math.min(MAX_X, MAX_Y));
-    }
-    public static int getMaxDetectRadiusAbs() { return Math.max(MAX_DIM_ABS.x(), MAX_DIM_ABS.y()) / 2; }
+    public static final int MAX_OBJECT_SIZE_BLOCKS = 3;
+    public static final int MAX_OBJECT_SIZE_PIXELS = Math.min(MAX_OBJECT_SIZE_BLOCKS, Math.min(MAX_X, MAX_Y));
+    public static final int MAX_DETECT_RADIUS_ABS = Math.max(MAX_DIM_ABS.x(), MAX_DIM_ABS.y()) / 2;
 
-    /*
-    // Singleton stuff
-    public static Restrictions instance = null;
-    public static Restrictions getInstance() {
-        if (instance == null) return new Restrictions();
-        return instance;
-    }
-    private Restrictions() { // must be private, but otherwise I cannot inherit in Main.
-        super();
-    }*/
 }
