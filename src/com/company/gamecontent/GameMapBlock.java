@@ -1,8 +1,8 @@
 package com.company.gamecontent;
 
-import com.company.gamegeom.Parallelepiped;
-import com.company.gamegeom.cortegemath.point.Point2D_Integer;
-import com.company.gamegeom.cortegemath.vector.Vector3D_Integer;
+import com.company.gamegeom._3d.ParallelepipedOfBlocks;
+import com.company.gamemath.cortegemath.point.Point2D_Integer;
+import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
 import com.company.gamegraphics.Sprite;
 import com.company.gamethread.ParameterizedMutexManager;
 import org.apache.logging.log4j.LogManager;
@@ -30,7 +30,7 @@ enum Nature {
 public class GameMapBlock implements Renderable {
     private static Logger LOG = LogManager.getLogger(GameMapBlock.class.getName());
 
-    private Parallelepiped parallelepiped;
+    private ParallelepipedOfBlocks parallelepiped;
 
     private Nature       nature;
     private final Sprite sprite = new Sprite(null);
@@ -59,7 +59,7 @@ public class GameMapBlock implements Renderable {
     public GameMapBlock(Point2D_Integer loc, int natType) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M")));
 
-        parallelepiped = new Parallelepiped(loc.to3D(), new Vector3D_Integer(1, 1, 1));
+        parallelepiped = new ParallelepipedOfBlocks(loc.to3D(), new Vector3D_Integer(1, 1, 1));
 
         Nature nat;
         try {
@@ -148,18 +148,11 @@ public class GameMapBlock implements Renderable {
         return parallelepiped.getAbsBottomRect();
     }
 
-    // wrapper method
+    // Method of the "Renderable" interface
     public void render(Graphics g) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
 
-        render(g, parallelepiped, 0);
-    }
-
-    // Method of the "Renderable" interface
-    public void render(Graphics g, Parallelepiped parallelepiped, double rotation_angle) {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V", "D")));
-
-        this.sprite.render(g, parallelepiped, rotation_angle);
+        this.sprite.draw(g, parallelepiped, 0);
     }
 
     /* TEST-01 */

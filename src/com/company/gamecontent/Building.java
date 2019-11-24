@@ -1,7 +1,7 @@
 package com.company.gamecontent;
 
-import com.company.gamegeom.cortegemath.point.Point3D_Integer;
-import com.company.gamegeom.cortegemath.vector.Vector3D_Integer;
+import com.company.gamemath.cortegemath.point.Point3D_Integer;
+import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
 import com.company.gamegraphics.Sprite;
 import com.company.gamethread.ParameterizedMutexManager;
 import org.apache.logging.log4j.LogManager;

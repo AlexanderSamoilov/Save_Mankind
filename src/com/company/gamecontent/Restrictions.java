@@ -1,6 +1,6 @@
 package com.company.gamecontent;
 
-import com.company.gamegeom.cortegemath.vector.Vector3D_Integer;
+import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
 
 import java.lang.Math;
 

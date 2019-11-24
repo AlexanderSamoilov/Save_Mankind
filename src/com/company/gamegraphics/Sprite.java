@@ -1,9 +1,8 @@
 // https://habr.com/post/145433/
 package com.company.gamegraphics;
 
-import com.company.gamegeom.Parallelepiped;
+import com.company.gamegeom._3d.Parallelepiped;
 
-import com.company.gamecontent.Renderable;
 import com.company.gamethread.Main;
 
 import javax.imageio.ImageIO;
@@ -13,7 +12,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
-public class Sprite implements Renderable {
+public class Sprite {
 //    private static Logger LOG = LogManager.getLogger(Sprite.class.getName());
 
     private String fileName;
@@ -51,8 +50,7 @@ public class Sprite implements Renderable {
         this.fileName = filename;
     }
 
-    // Method of the "Renderable" interface
-    public void render(Graphics g, Parallelepiped parallelepiped, double rotation_angle) {
+    public void draw(Graphics g, Parallelepiped parallelepiped, double rotation_angle) {
         AffineTransform saveAT = ((Graphics2D) g).getTransform();
 
         if (rotation_angle != 0) {

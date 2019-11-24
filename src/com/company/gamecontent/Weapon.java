@@ -1,6 +1,6 @@
 package com.company.gamecontent;
 
-import com.company.gamegeom.cortegemath.point.Point3D_Integer;
+import com.company.gamemath.cortegemath.point.Point3D_Integer;
 import com.company.gamethread.ParameterizedMutexManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -9,27 +9,23 @@ import java.awt.*;
 import java.util.Arrays;
 import java.util.HashSet;
 
-public class Weapon {
+public class Weapon implements Renderable {
     private static Logger LOG = LogManager.getLogger(Weapon.class.getName());
 
     // in order to support "shooter" field of class Bullet (see the comment in the class Bullet)
     private Unit owner = null;
 
-    private int damage        = 0;
-    private int radius        = 0;
-    private int speed         = 0;
-    private int caliber       = 0;
-    private int reload        = 0;
+    private final int radius;
+    private final int reload;
+    private BulletModel bulletModel = null;
     private int reloadCounter = 0;
 
-    public Weapon(int damage, int radius, int speed, int caliber, int reload) {
+    public Weapon(int radius, int reload, BulletModel bulletModel) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
 
         this.radius  = radius;
-        this.damage  = damage;
-        this.speed   = speed;
-        this.caliber = caliber;
         this.reload  = reload;
+        this.bulletModel = bulletModel;
 
         // default
         this.reloadCounter = 0;
@@ -45,11 +41,6 @@ public class Weapon {
     // FIXME Getter() to Class.attr
     public Unit getOwner() {
         return owner;
-    }
-
-    // FIXME Getter() to Class.attr
-    public int getDamage() {
-        return damage;
     }
 
     // FIXME Getter() to Class.attr
@@ -69,7 +60,7 @@ public class Weapon {
         if (reloadCounter == 0) {
             Integer plId = owner.getPlayerId();
             LOG.debug("Player #(" + plId + ")" + Player.getPlayers()[plId] + ", unit #" + owner + " is shooting -> " + target);
-            Bullet b = new Bullet(owner, location, target, damage, speed, caliber);
+            Bullet b = new Bullet(owner, location, target, bulletModel);
             GameMap.getInstance().registerBullet(b);
         }
 

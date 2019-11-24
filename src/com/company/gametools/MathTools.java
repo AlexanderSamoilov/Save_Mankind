@@ -1,10 +1,9 @@
 package com.company.gametools;
 
-import com.company.gamegeom.cortegemath.cortege.Cortege3D_Integer;
-import com.company.gamegeom.cortegemath.point.Point2D_Integer;
-import com.company.gamegeom.cortegemath.point.Point3D_Integer;
+import com.company.gamemath.cortegemath.cortege.Cortege3D_Integer;
+import com.company.gamemath.cortegemath.point.Point2D_Integer;
+import com.company.gamemath.cortegemath.point.Point3D_Integer;
 import com.company.gamethread.Main;
-import com.sun.org.apache.xpath.internal.functions.FuncCeiling;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

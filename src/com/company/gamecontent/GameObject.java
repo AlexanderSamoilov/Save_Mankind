@@ -1,18 +1,18 @@
 package com.company.gamecontent;
 
-import com.company.gamegeom.Parallelepiped;
-import com.company.gamegeom.Parallelepiped.GridRectangle;
-import com.company.gamegeom.ParallelogramHorizontal;
-import com.company.gamegeom.ParallelogramHorizontal.GridMatrixHorizontal;
-import com.company.gamegeom.ParallelogramVertical;
-import com.company.gamegeom.ParallelogramVertical.GridMatrixVertical;
+import com.company.gamegeom._3d.ParallelepipedOfBlocks;
+import com.company.gamegeom._2d.GridRectangle;
+import com.company.gamegeom._2d.ParallelogramHorizontal;
+import com.company.gamegeom._2d.GridMatrixHorizontal;
+import com.company.gamegeom._2d.ParallelogramVertical;
+import com.company.gamegeom._2d.GridMatrixVertical;
 
-import com.company.gamegeom.cortegemath.cortege.Cortege2D_Integer;
-import com.company.gamegeom.cortegemath.point.Point2D_Integer;
-import com.company.gamegeom.cortegemath.point.Point3D_Double;
-import com.company.gamegeom.cortegemath.point.Point3D_Integer;
-import com.company.gamegeom.cortegemath.vector.Vector2D_Integer;
-import com.company.gamegeom.cortegemath.vector.Vector3D_Integer;
+import com.company.gamemath.cortegemath.cortege.Cortege2D_Integer;
+import com.company.gamemath.cortegemath.point.Point2D_Integer;
+import com.company.gamemath.cortegemath.point.Point3D_Double;
+import com.company.gamemath.cortegemath.point.Point3D_Integer;
+import com.company.gamemath.cortegemath.vector.Vector2D_Integer;
+import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
 
 import com.company.gamegraphics.GraphBugfixes;
 import com.company.gamegraphics.GraphExtensions;
@@ -42,7 +42,7 @@ import static com.company.gamethread.Main.terminateNoGiveUp;
 public class GameObject implements Moveable, Rotatable, Centerable, Renderable, Selectable {
     private static Logger LOG = LogManager.getLogger(GameObject.class.getName());
 
-    private Parallelepiped parallelepiped;
+    private ParallelepipedOfBlocks parallelepiped;
 
     protected Point3D_Integer destPoint; // The map point (x, y, z) where the object is going to move to
 
@@ -117,17 +117,18 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         valid = valid && (preMoveAngle <= MAX_PRE_MOVE_ANGLE);
 
         // Check object dimensions
-        valid = valid && in_range(0, dim.x(), Restrictions.MAX_OBJECT_SIZE_PIXELS + 1, true);
-        valid = valid && in_range(0, dim.y(), Restrictions.MAX_OBJECT_SIZE_PIXELS + 1, true);
-        valid = valid && in_range(0, dim.z(), Restrictions.MAX_OBJECT_SIZE_PIXELS + 1, true);
+        valid = valid && in_range(0, dim.x(), Restrictions.MAX_OBJECT_SIZE_BLOCKS + 1, true);
+        valid = valid && in_range(0, dim.y(), Restrictions.MAX_OBJECT_SIZE_BLOCKS + 1, true);
+        valid = valid && in_range(0, dim.z(), Restrictions.MAX_OBJECT_SIZE_BLOCKS + 1, true);
 
         // Check that we don't create the object overlapped with another object
         // In order to use the function occupiedByAnotherObject for still not completely created class instance
         // we have to define the object dimensions first:
-        this.parallelepiped = new Parallelepiped(loc.multClone(BLOCK_SIZE), dim);
+        this.parallelepiped = new ParallelepipedOfBlocks(loc.multClone(BLOCK_SIZE), dim);
         if (GameMap.getInstance().occupied(getRect(), this)) {
             valid = false;
         }
+
         // Check object resources limits
         valid = valid && in_range(
                 0, res.get(Resource.MASS), MAX_MASS + 1, true
@@ -194,19 +195,12 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         GameMap.getInstance().registerObject(this);
     }
 
-    // wrapper method
+    // Method of the "Renderable" interface
     public void render(Graphics g) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
 
-        render(g, parallelepiped, currAngle);
-    }
-
-    // Method of the "Renderable" interface
-    public void render(Graphics g, Parallelepiped parallelepiped, double rotation_angle) {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
-
         // ----> Drawing sprite with actual orientation
-        this.sprite.render(g, parallelepiped, INIT_ANGLE - rotation_angle);
+        this.sprite.draw(g, parallelepiped, INIT_ANGLE - currAngle);
 
         // ----> Drawing HP rectangle
         if (isSelected) {
@@ -781,7 +775,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
         if (! GameMap.getInstance().contains(
                 // new_x, new_y, new_z - absolute coordinates, not aliquot to the grid vertices
-                new Parallelepiped(new_loc, getSize()))
+                new ParallelepipedOfBlocks(new_loc, getSize()))
         ) {
             // prevent movement outside the map
             LOG.debug("prevent movement outside the map");
@@ -815,7 +809,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
         GameMap.getInstance().eraseObject(this);
 
-        this.parallelepiped.loc = new_loc;
+        this.parallelepiped.loc.assign(new_loc);
 
         GameMap.getInstance().registerObject(this);
 
@@ -830,7 +824,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         this.isSelected = false;
     }
 
-    public Rectangle getRect () {
+    public Rectangle getRect() {
         return parallelepiped.getAbsBottomRect();
     }
 

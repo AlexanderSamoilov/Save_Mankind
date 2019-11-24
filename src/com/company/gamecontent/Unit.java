@@ -5,10 +5,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import com.company.gamegeom.cortegemath.cortege.Cortege3D_Integer;
-import com.company.gamegeom.cortegemath.point.Point3D_Integer;
-import com.company.gamegeom.cortegemath.vector.Vector3D_Integer;
-import com.company.gamegeom.Parallelepiped.GridRectangle;
+import com.company.gamemath.cortegemath.cortege.Cortege3D_Integer;
+import com.company.gamemath.cortegemath.point.Point3D_Integer;
+import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
+import com.company.gamegeom._2d.GridRectangle;
 
 import com.company.gamegraphics.Sprite;
 import com.company.gamethread.ParameterizedMutexManager;

@@ -1,12 +1,12 @@
 package com.company.gamecontent;
 
-import com.company.gamegeom.Parallelepiped.GridRectangle;
-import com.company.gamegeom.Parallelepiped;
+import com.company.gamegeom._2d.GridRectangle;
+import com.company.gamegeom._3d.ParallelepipedOfBlocks;
 
 import com.company.gamecontrollers.MouseController;
-import com.company.gamegeom.cortegemath.point.Point2D_Integer;
-import com.company.gamegeom.cortegemath.point.Point3D_Integer;
-import com.company.gamegeom.cortegemath.vector.Vector3D_Integer;
+import com.company.gamemath.cortegemath.point.Point2D_Integer;
+import com.company.gamemath.cortegemath.point.Point3D_Integer;
+import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
 import com.company.gamethread.Main;
 import com.company.gamethread.ParameterizedMutexManager;
 import com.company.gamethread.V_Thread;
@@ -23,15 +23,13 @@ import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 import static com.company.gamecontent.Restrictions.INTERSECTION_STRATEGY_SEVERITY;
 
 
-public class GameMap {
+public class GameMap implements Renderable {
 
     private static Logger LOG = LogManager.getLogger(GameMap.class.getName());
 
     private static final GameMap instance = new GameMap();
     // TODO: make it public final. For that we have to get rid of init() and do everything in the constructor.
-    private Vector3D_Integer dim;
-    private Vector3D_Integer abs_dim;
-    private Parallelepiped parallelepiped;
+    private ParallelepipedOfBlocks parallelepiped;
 
     // TODO what about Units, Buildings? Why Bullets separate of them?
     // TODO Guava has Table<R, C, V> (table.get(x, y)). May be create Generic Class?
@@ -73,9 +71,7 @@ public class GameMap {
 
         this.landscapeBlocks = new GameMapBlock[width][height];
         // MAX_Z because we don't support 3D so far
-        dim = new Vector3D_Integer(width, height, Restrictions.MAX_Z);
-        abs_dim = dim.multClone(BLOCK_SIZE);
-        parallelepiped = new Parallelepiped(new Point3D_Integer(0, 0, 0), dim);
+        parallelepiped = new ParallelepipedOfBlocks(new Point3D_Integer(0, 0, 0), new Vector3D_Integer(width, height, Restrictions.MAX_Z));
 
         // TODO What about collections and Maps?
         this.objectsOnMap = new HashSet[width][height];
@@ -338,11 +334,11 @@ public class GameMap {
 
     // FIXME Remove Getter. See comment above dim, abs_dim declaration.
     public Vector3D_Integer getDim() {
-        return this.dim;
+        return this.parallelepiped.dimInBlocks;
     }
 
     public Vector3D_Integer getAbsDim() {
-        return this.abs_dim;
+        return this.parallelepiped.dim;
     }
 
     public void validateBlockCoordinates(int grid_x, int grid_y) {
@@ -458,7 +454,7 @@ public class GameMap {
         return croppedRect;
     }
 
-    boolean contains(Parallelepiped ppd) {
+    boolean contains(ParallelepipedOfBlocks ppd) {
         return parallelepiped.contains(ppd);
     }
 

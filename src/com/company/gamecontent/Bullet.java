@@ -1,11 +1,9 @@
 package com.company.gamecontent;
 
-import com.company.gamegeom.Parallelepiped;
-import com.company.gamegeom.cortegemath.point.Point2D_Integer;
-import com.company.gamegeom.cortegemath.point.Point3D_Double;
-import com.company.gamegeom.cortegemath.point.Point3D_Integer;
-import com.company.gamegeom.cortegemath.vector.Vector3D_Double;
-import com.company.gamegeom.cortegemath.vector.Vector3D_Integer;
+import com.company.gamegeom._3d.Parallelepiped;
+import com.company.gamemath.cortegemath.point.Point2D_Integer;
+import com.company.gamemath.cortegemath.point.Point3D_Integer;
+import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
 import com.company.gamegraphics.GraphExtensions;
 import com.company.gamethread.ParameterizedMutexManager;
 import com.company.gametools.MathBugfixes;
@@ -19,7 +17,7 @@ import java.util.HashSet;
 
 import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 
-public class Bullet implements Moveable, Centerable, Renderable {
+public class Bullet implements Moveable, Renderable {
     private static Logger LOG = LogManager.getLogger(Bullet.class.getName());
 
     // NOTE: now this field is used to detect which Unit made a shoot in order to set its "targetObject" to null when the target dies
@@ -28,18 +26,14 @@ public class Bullet implements Moveable, Centerable, Renderable {
     // existence of an object in the list many times (proportional to the number of units on the map)
     // Moreover, this  "shooter" field may be used for another purpose - to know whom to grant the kill frag (experience)
     // when its bullet kills something.
-    private Unit shooter = null; // who shoot?
-    private int damage   = 0;
-    private int caliber  = 0;
-    private int speed    = 0;
-
-    // TODO loc_x, loc_y
-    private Point3D_Integer loc = null;
+    private final Unit shooter; // who shoot?
+    private final Parallelepiped parallelepiped;
+    private final BulletModel bulletModel;
 
     // TODO dest_x, dest_y
     private Point3D_Integer destPoint = null;
 
-    public Bullet(Unit shooter, Point3D_Integer center_location, Point3D_Integer target, int damage, int speed, int caliber) {
+    public Bullet(Unit shooter, Point3D_Integer center_location, Point3D_Integer target, BulletModel bulletModel) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         this.shooter = shooter;
@@ -47,21 +41,13 @@ public class Bullet implements Moveable, Centerable, Renderable {
         // TODO: so far we don't consider Z-coordinate
 
         // NOTE: yes, we modify the existing "center_location" here, but it is not used anywhere else afterwards
-        this.loc = center_location.minus(new Vector3D_Integer(1,1,1).mult(caliber - 1).divInt(2));
+        this.parallelepiped   = new Parallelepiped(
+                center_location.minus(new Vector3D_Integer(1,1,1).mult(bulletModel.caliber - 1).divInt(2)),
+                new Vector3D_Integer(1,1,1).mult(bulletModel.caliber)
+        );
+
         this.destPoint = target; // use reference safely, because it was cloned in the calling function
-        this.damage    = damage;
-        this.speed     = speed;
-        this.caliber   = caliber;
-    }
-
-    // ATTENTION: If the object width or length has uneven size in pixels then this function returns not integer!
-    // We support rotation of such objects around floating coordinate which does not exist on the screen
-    public Point3D_Double getAbsCenterDouble() {
-        return loc.plusClone(new Vector3D_Double(1,1,1).mult(caliber - 1).div(2));
-    }
-
-    public Point3D_Integer getAbsCenterInteger() {
-        return loc.plusClone(new Vector3D_Integer(1,1,1).mult(caliber - 1).divInt(2));
+        this.bulletModel = bulletModel;
     }
 
     public void setDestinationPoint(Point3D_Integer dest) {
@@ -89,15 +75,15 @@ public class Bullet implements Moveable, Centerable, Renderable {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         // Calculate future coordinates where we want to move hypothetically (if nothing prevents this)
-        LOG.trace("bullet_center: " + getAbsCenterInteger() + ", next: " + next);
-        Point3D_Integer new_center = MathTools.getNextPointOnRay(getAbsCenterInteger(), next, speed);
+        LOG.trace("bullet_center: " + parallelepiped.getAbsCenterInteger() + ", next: " + next);
+        Point3D_Integer new_center = MathTools.getNextPointOnRay(parallelepiped.getAbsCenterInteger(), next, bulletModel.speed);
 
         // translation vector
-        Vector3D_Integer dv = new_center.minusClone(getAbsCenterInteger());
+        Vector3D_Integer dv = new_center.minusClone(parallelepiped.getAbsCenterInteger());
 
         // move left-top object angle to the same vector which the center was moved to
-        loc.plus(dv);
-        LOG.trace("move?: new_loc=" + loc + ", dist=" + MathBugfixes.sqrt(dv.sumSqr()) + ", obj=" + this);
+        parallelepiped.loc.plus(dv);
+        LOG.trace("move?: new_loc=" + parallelepiped.loc + ", dist=" + MathBugfixes.sqrt(dv.sumSqr()) + ", obj=" + this);
 
         if (! GameMap.getInstance().contains(new_center)) {
             // the bullet left the map - forget it!
@@ -117,14 +103,14 @@ public class Bullet implements Moveable, Centerable, Renderable {
     public void causeDamage() {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
-        Point2D_Integer block = loc.to2D().divInt(BLOCK_SIZE);
+        Point2D_Integer block = parallelepiped.loc.to2D().divInt(BLOCK_SIZE);
 
         HashSet<GameObject> objectsOnBlock = (HashSet<GameObject>)GameMap.getInstance().objectsOnMap[block.x()][block.y()].clone();
 
         for (GameObject objOnBlock : objectsOnBlock) {
-            LOG.debug("--- hit [" + damage + " dmg] -> " + block + " -> " + objOnBlock);
-            if (objOnBlock.hitPoints > damage) {
-                objOnBlock.hitPoints -= damage;
+            LOG.debug("--- hit [" + bulletModel.damage + " dmg] -> " + block + " -> " + objOnBlock);
+            if (objOnBlock.hitPoints > bulletModel.damage) {
+                objOnBlock.hitPoints -= bulletModel.damage;
                 continue;
             }
 
@@ -168,18 +154,12 @@ public class Bullet implements Moveable, Centerable, Renderable {
         GameMap.getInstance().destroyBullet(this);
     }
 
-    // wrapper method
+    // TODO Use Sprite rendering
     public void render(Graphics g) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
 
-        render(g, null, 0);
-    }
-
-    // TODO Use Sprite rendering
-    public void render(Graphics g, Parallelepiped parallelepiped, double rotation_angle) {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
-
-        g.setColor(Color.PINK);
-        GraphExtensions.fillRect(g, new Rectangle(loc.x(), loc.y(), caliber, caliber), 0);
+        g.setColor(bulletModel.color);
+        GraphExtensions.fillRect(g, new Rectangle(parallelepiped.loc.x(), parallelepiped.loc.y(), parallelepiped.getAbsSize().x(), parallelepiped.getAbsSize().y()), 0);
+        parallelepiped.render(g);
     }
 }

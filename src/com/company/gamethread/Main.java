@@ -1,8 +1,8 @@
 package com.company.gamethread;
 
-import com.company.gamegeom.cortegemath.CortegeTest;
-import com.company.gamegeom.cortegemath.point.Point3D_Integer;
-import com.company.gamegeom.cortegemath.vector.Vector3D_Integer;
+import com.company.gamemath.cortegemath.CortegeTest;
+import com.company.gamemath.cortegemath.point.Point3D_Integer;
+import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
 import com.company.gamelogger.LogConfFactory;
 
 import com.company.gamecontent.*;
@@ -206,10 +206,11 @@ public class Main {
         for (int i=0; i <= testNumTanks - 1; i++) {
             testPlayerUnits.add(
                     new Unit(
-                            new Weapon(
-                                    10, 150, 15, 6, 7
+                            new Weapon(150, 7,
+                                    new BulletModel(10, 15, 7, Color.YELLOW, "Kurva_Smert-90")
                             ),
-                            2, testPlayerTankSprite,
+                            2,
+                            testPlayerTankSprite,
                             new Point3D_Integer(4*i + 1, 1, 0),
                             new Vector3D_Integer(3, 3, 3),
                             testPlayerTankResources, 5000, 600, 10, 45,25, 15, 5, 5, 5
@@ -235,10 +236,11 @@ public class Main {
         for (int i=0; i <= testEnemyTanks - 1; i++) {
             testEnemyUnits.add(
                     new Unit(
-                            new Weapon(
-                                    30, 150, 10, 8, 5
+                            new Weapon(150, 5,
+                                    new BulletModel(30, 10, 8, Color.BLUE, "Dolbo-Banka-5M")
                             ),
-                            3, testEnemyTankSprite,
+                            3,
+                            testEnemyTankSprite,
                             new Point3D_Integer(Restrictions.MAX_X - 2 - 2*i,Restrictions.MAX_DIM.y() - 2, 0),
                             new Vector3D_Integer(1, 1, 1),
                             testEnemyTankResources, 500, 7, 15, 45, 25, 15, 5, 5, 5

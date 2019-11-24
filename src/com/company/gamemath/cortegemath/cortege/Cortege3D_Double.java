@@ -1,17 +1,17 @@
-package com.company.gamegeom.cortegemath.cortege;
+package com.company.gamemath.cortegemath.cortege;
 
 import com.company.gametools.GenericTools;
 
-public class Cortege3D_Integer extends Cortege3D<Cortege3D_Integer, Integer> {
+public class Cortege3D_Double extends Cortege3D<Cortege3D_Double, Double> {
 
-    public Cortege3D_Integer clone() { return new Cortege3D_Integer(data.clone()); }
-    public Cortege3D_Integer(Integer [] arr) { super(Integer.class, arr); }
-    public Cortege3D_Integer(Number x, Number y, Number z) {
+    public Cortege3D_Double clone() { return new Cortege3D_Double(data.clone()); }
+    public Cortege3D_Double(Double [] arr) { super(Double.class, arr); }
+    public Cortege3D_Double(Number x, Number y, Number z) {
         super(
-                Integer.class,
-                x == null ? null : x.intValue(),
-                y == null ? null : y.intValue(),
-                z == null ? null : z.intValue()
+                Double.class,
+                x == null ? null : x.doubleValue(),
+                y == null ? null : y.doubleValue(),
+                z == null ? null : z.doubleValue()
         );
     }
 
@@ -19,7 +19,12 @@ public class Cortege3D_Integer extends Cortege3D<Cortege3D_Integer, Integer> {
        https://stackoverflow.com/questions/55891828/java-parameterized-base-constructor-is-not-called-if-derived-class-constructor?noredirect=1#comment98440567_55891828.
        Due this we are forced to duplicate them in the derived class calling "super":
      */
-    public Cortege3D_Integer(Cortege3D_Integer c) { super(c); }
+    public Cortege3D_Double(Cortege3D_Double c) { super(c); }
+    public Cortege3D_Double(Cortege3D_Integer c) {
+        super(Double.class, null);
+        if ((c == null) || (c.data == null)) return;
+        this.data = new Double[] {c.data[0].doubleValue(), c.data[1].doubleValue(), c.data[2].doubleValue()};
+    }
 
     /* Problem 2: Java does not automatically downcast the methods implemented only in the base class.
        That is such a construction as:
@@ -72,23 +77,22 @@ public class Cortege3D_Integer extends Cortege3D<Cortege3D_Integer, Integer> {
      */
 
     /* Unary operators modifying current object and returning it */
-    public <R extends Cortege3D_Integer> R plus(Cortege3D_Integer c) {  return super.plus(c); }
-    public <R extends Cortege3D_Integer> R plus(Cortege3D_Double c) {  return super.plus(c); }
-    public <R extends Cortege3D_Integer> R minus(Cortege3D_Integer c) {  return super.minus(c); }
-    public <R extends Cortege3D_Integer> R minus(Cortege3D_Double c) {  return super.minus(c); }
-    public <R extends Cortege3D_Integer> R mult(Number num) {  return super.mult(num); }
-    public <R extends Cortege3D_Integer> R divInt(Number num) {  return super.div(num); }
-    public <R extends Cortege3D_Integer> R div(Number num) {  return super.div(num); }
+    public <R extends Cortege3D_Double> R plus(Cortege3D_Integer c) {  return super.plus(c); }
+    public <R extends Cortege3D_Double> R plus(Cortege3D_Double c) {  return super.plus(c); }
+    public <R extends Cortege3D_Double> R minus(Cortege3D_Integer c) {  return super.minus(c); }
+    public <R extends Cortege3D_Double> R minus(Cortege3D_Double c) {  return super.minus(c); }
+    public <R extends Cortege3D_Double> R mult(Number num) {  return super.mult(num); }
+    public <R extends Cortege3D_Double> R div(Number num) {  return super.div(num); }
 
     /* Unary operators returning new object */
-    public <R extends Cortege3D_Integer> R plusClone(Cortege3D_Integer c) {  return _plusClone(c); }
-    public <R extends Cortege3D_Double> R plusClone(Cortege3D_Double c) {  return this.toDouble()._plusClone(c); }
-    public <R extends Cortege3D_Integer> R minusClone(Cortege3D_Integer c) {  return _minusClone(c); }
-    public <R extends Cortege3D_Double> R minusClone(Cortege3D_Double c) {  return this.toDouble()._minusClone(c); }
-    public <R extends Cortege3D_Integer> R multClone(Integer num) {  return _multClone(num); }
-    public <R extends Cortege3D_Double> R multClone(Double num) {  return this.toDouble()._multToDoubleClone(num); }
-    public <R extends Cortege3D_Integer> R divIntClone(Number num) {  return _divIntClone(num); }
-    public <R extends Cortege3D_Double> R divClone(Number num) {  return this.toDouble()._divClone(num); }
+    public <R extends Cortege3D_Double> R plusClone(Cortege3D_Integer c) {  return _plusClone(c); }
+    public <R extends Cortege3D_Double> R plusClone(Cortege3D_Double c) {  return _plusClone(c); }
+    public <R extends Cortege3D_Double> R minusClone(Cortege3D_Integer c) {  return _minusClone(c); }
+    public <R extends Cortege3D_Double> R minusClone(Cortege3D_Double c) {  return _minusClone(c); }
+    public <R extends Cortege3D_Double> R multClone(Integer num) {  return _multClone(num); }
+    public <R extends Cortege3D_Double> R multClone(Double num) {  return _multToDoubleClone(num); }
+    public <R extends Cortege3D_Integer> R divIntClone(Number num) {  return this.toInteger()._divIntClone(num); }
+    public <R extends Cortege3D_Double> R divClone(Number num) {  return _divClone(num); }
 
     /* Binary operators */
 
@@ -99,20 +103,20 @@ public class Cortege3D_Integer extends Cortege3D<Cortege3D_Integer, Integer> {
                 (c1.getClass() != Cortege3D_Integer.class) && (c1.getClass() != Cortege3D_Double.class) ||
                 (c2.getClass() != Cortege3D_Integer.class) && (c2.getClass() != Cortege3D_Double.class)
         ) {
-            GenericTools.checkCallerClass(Cortege3D_Integer.class, 1);
+            GenericTools.checkCallerClass(Cortege3D_Double.class, 1);
         }
     }
 
-    public static <R extends Cortege3D_Integer> R plus2(Cortege3D_Integer c1, Cortege3D_Integer c2) { checkWhoCalled(c1, c2); return (R)_plus2(c1, c2); }
-    public static <R extends Cortege3D_Double> R plus2(Cortege3D_Integer c1, Cortege3D_Double c2) { checkWhoCalled(c1, c2); return (R)_plus2(c1.toDouble(), c2); }
-    public static <R extends Cortege3D_Integer> R minus2(Cortege3D_Integer c1, Cortege3D_Integer c2) { checkWhoCalled(c1, c2); return (R)_minus2(c1, c2); }
-    public static <R extends Cortege3D_Double> R minus2(Cortege3D_Integer c1, Cortege3D_Double c2) { checkWhoCalled(c1, c2); return (R)_minus2(c1.toDouble(), c2); }
-    public static <R extends Cortege3D_Integer> R mult2(Cortege3D_Integer c, Integer num) { return (R)_mult2(c, num); }
-    public static <R extends Cortege3D_Double> R mult2(Cortege3D_Integer c, Double num) { return (R)_multToDouble2(c.toDouble(), num); }
-    public static <R extends Cortege3D_Double> R div2(Cortege3D_Integer c, Number num) { return (R)_div2(c.toDouble(), num.doubleValue()); }
-    public static <R extends Cortege3D_Integer> R divInt2(Cortege3D_Integer c, Number num) { return (R)_divInt2(c, num); }
+    public static <R extends Cortege3D_Double> R plus2(Cortege3D_Double c1, Cortege3D_Integer c2) { checkWhoCalled(c1, c2); return (R)_plus2(c1, c2); }
+    public static <R extends Cortege3D_Double> R plus2(Cortege3D_Double c1, Cortege3D_Double c2) { checkWhoCalled(c1, c2); return (R)_plus2(c1, c2); }
+    public static <R extends Cortege3D_Double> R minus2(Cortege3D_Double c1, Cortege3D_Integer c2) { checkWhoCalled(c1, c2); return (R)_minus2(c1, c2); }
+    public static <R extends Cortege3D_Double> R minus2(Cortege3D_Double c1, Cortege3D_Double c2) { checkWhoCalled(c1, c2); return (R)_minus2(c1, c2); }
+    public static <R extends Cortege3D_Double> R mult2(Cortege3D_Double c, Integer num) { return (R)_mult2(c, num); }
+    public static <R extends Cortege3D_Double> R mult2(Cortege3D_Double c, Double num) { return (R)_multToDouble2(c, num); }
+    public static <R extends Cortege3D_Double> R div2(Cortege3D_Double c, Number num) { return (R)_div2(c, num.doubleValue()); }
+    public static <R extends Cortege3D_Integer> R divInt2(Cortege3D_Double c, Number num) { return (R)_divInt2(c.toInteger(), num); }
 
     /* Conversion operators */
-    public Cortege2D_Integer to2D() { return new Cortege2D_Integer(x(), y()); }
-    public Cortege3D_Double toDouble() { return new Cortege3D_Double(this); }
+    public Cortege2D_Double to2D() { return new Cortege2D_Double(x(), y()); }
+    public Cortege3D_Integer toInteger() { return new Cortege3D_Integer(this.x().intValue(), this.y().intValue(), this.z().intValue()); }
 }
