@@ -125,7 +125,8 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         // In order to use the function occupiedByAnotherObject for still not completely created class instance
         // we have to define the object dimensions first:
         this.parallelepiped = new ParallelepipedOfBlocks(loc.multClone(BLOCK_SIZE), dim);
-        if (GameMap.getInstance().occupied(getRect(), this)) {
+        // Using .getNextInstance(), because we need take into account already made modifications (other new objects)
+        if (GameMap.getNextInstance().occupied(getRect(), this)) {
             valid = false;
         }
 
@@ -192,7 +193,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         this.playerId = -1;
 
         // Mark the object on the map
-        GameMap.getInstance().registerObject(this);
+        GameMap.getNextInstance().registerObject(this);
     }
 
     // Method of the "Renderable" interface
@@ -400,7 +401,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         if (dv.y() != 0) { // a)
             for (int i = 0; i <= pgmHorizOccupiedBlocks.bottom - pgmHorizOccupiedBlocks.top; i++) {
                 for (int j = pgmHorizOccupiedBlocks.left[i]; j <= pgmHorizOccupiedBlocks.right[i]; j++) {
-                    HashSet<GameObject> objectsOnBlock = GameMap.getInstance().objectsOnMap[j][i + pgmHorizOccupiedBlocks.top];
+                    HashSet<GameObject> objectsOnBlock = GameMap.getNextInstance().objectsOnMap[j][i + pgmHorizOccupiedBlocks.top];
                     for (GameObject gameObject : objectsOnBlock) {
                         if (gameObject != this) affectedObjects.add(gameObject.getRect());
                     }
@@ -412,7 +413,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
                                     && (!objectsOnBlock.isEmpty())          // somebody is on the block
                                     && (!objectsOnBlock.contains(this))     // but not me
                     ) {
-                        affectedObjects.add(GameMap.getInstance().landscapeBlocks[j][i + pgmHorizOccupiedBlocks.top].getRect());
+                        affectedObjects.add(GameMap.getNextInstance().landscapeBlocks[j][i + pgmHorizOccupiedBlocks.top].getRect());
                     }
                 }
             }
@@ -421,7 +422,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         if (dv.x() != 0) { // b)
             for (int i = 0; i <= pgmVertOccupiedBlocks.right - pgmVertOccupiedBlocks.left; i++) {
                 for (int j = pgmVertOccupiedBlocks.top[i]; j <= pgmVertOccupiedBlocks.bottom[i]; j++) {
-                    HashSet<GameObject> objectsOnBlock = GameMap.getInstance().objectsOnMap[i + pgmVertOccupiedBlocks.left][j];
+                    HashSet<GameObject> objectsOnBlock = GameMap.getNextInstance().objectsOnMap[i + pgmVertOccupiedBlocks.left][j];
                     for (GameObject gameObject : objectsOnBlock) {
                         if (gameObject != this) affectedObjects.add(gameObject.getRect());
                     }
@@ -433,7 +434,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
                                     && (!objectsOnBlock.isEmpty())          // somebody is on the block
                                     && (!objectsOnBlock.contains(this))     // but not me
                     ) {
-                        affectedObjects.add(GameMap.getInstance().landscapeBlocks[i + pgmVertOccupiedBlocks.left][j].getRect());
+                        affectedObjects.add(GameMap.getNextInstance().landscapeBlocks[i + pgmVertOccupiedBlocks.left][j].getRect());
                     }
                 }
             }
@@ -773,7 +774,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         new_loc = getAbsLoc().plusClone(dv);
         LOG.debug("move?: " + getAbsLoc() + " -> " + new_loc + ", speed=" + speed);
 
-        if (! GameMap.getInstance().contains(
+        if (! GameMap.getNextInstance().contains(
                 // new_x, new_y, new_z - absolute coordinates, not aliquot to the grid vertices
                 new ParallelepipedOfBlocks(new_loc, getSize()))
         ) {
@@ -782,7 +783,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
             return false;
         }
 
-        //if (GameMap.getInstance().occupied(new_rect, this)) {
+        //if (GameMap.getNextInstance().occupied(new_rect, this)) {
         if (INTERSECTION_STRATEGY_SEVERITY > 0) {
             // Check if there are impediments on the way to the destination point.
             // If they are, move along the vector (dv) towards destination point until the first impediment.
@@ -794,7 +795,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
         Rectangle new_rect = getRect();
         new_rect.translate(dv.x(), dv.y()); // translocated rectangle
-        if (GameMap.getInstance().occupied(new_rect, this)) {
+        if (GameMap.getNextInstance().occupied(new_rect, this)) {
             Main.terminateNoGiveUp(null,1000, "Objects overlapping has been detected! The algorithm has a bug!");
         }
 
@@ -807,11 +808,11 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
             unsetDestinationPoint();
         }
 
-        GameMap.getInstance().eraseObject(this);
+        GameMap.getNextInstance().eraseObject(this);
 
         this.parallelepiped.loc.assign(new_loc);
 
-        GameMap.getInstance().registerObject(this);
+        GameMap.getNextInstance().registerObject(this);
 
 //        LOG.debug("move: point=" + loc + ", obj=" + this);
 

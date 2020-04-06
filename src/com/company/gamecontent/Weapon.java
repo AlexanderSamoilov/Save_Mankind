@@ -61,7 +61,7 @@ public class Weapon implements Renderable {
             Integer plId = owner.getPlayerId();
             LOG.debug("Player #(" + plId + ")" + Player.getPlayers()[plId] + ", unit #" + owner + " is shooting -> " + target);
             Bullet b = new Bullet(owner, location, target, bulletModel);
-            GameMap.getInstance().registerBullet(b);
+            GameMap.getNextInstance().registerBullet(b);
         }
 
         this.reloadCounter++;

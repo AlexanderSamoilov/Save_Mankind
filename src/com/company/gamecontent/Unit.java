@@ -286,6 +286,7 @@ public class Unit extends GameObject implements Shootable {
 
     // TODO Move it in AI_Tools_Class
     public void searchTargetsInRadius() {
+        // Using .getNextInstance(), because we need take into account already made modifications (other new objects)
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         // TODO: introduce some algorithm of the optimal search to consider the closes blocks first
@@ -303,7 +304,7 @@ public class Unit extends GameObject implements Shootable {
         // Find the result of intersection of two rectangles: detectionAreaRect and the global map rectangle
         // and save the result of intersection again to the varible detectionAreaRect
         // So we actually "crop" the rectangle detectionAreaRect with the map rectangle
-        detectionAreaRect = GameMap.getInstance().crop(detectionAreaRect);
+        detectionAreaRect = GameMap.getNextInstance().crop(detectionAreaRect);
 
         GridRectangle gridRect = new GridRectangle(detectionAreaRect);
 //        LOG.debug("Player " + this.getPlayerId() + ": left=" + left + ", right=" + right + ", top=" + top + ", bottom=" + bottom);
@@ -311,7 +312,7 @@ public class Unit extends GameObject implements Shootable {
         // TODO Use Collections
         for (int i = gridRect.left; (i <= gridRect.right) && (targetObject == null); i++) {
             for(int j = gridRect.top; (j <= gridRect.bottom) && (targetObject == null); j++) {
-                HashSet<GameObject> objectsOnTheBlock = GameMap.getInstance().objectsOnMap[i][j];
+                HashSet<GameObject> objectsOnTheBlock = GameMap.getNextInstance().objectsOnMap[i][j];
                 if (objectsOnTheBlock.size() == 0) {
                     continue;
                 }

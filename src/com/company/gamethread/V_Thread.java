@@ -1,5 +1,7 @@
 package com.company.gamethread;
 
+import com.company.gamecontent.GameMap;
+
 import java.util.concurrent.Semaphore;
 
 // Singleton
@@ -27,9 +29,9 @@ public class V_Thread extends Main.ThreadPattern {
             if (Main.SIGNAL_TERM_GENERAL != true) throw(e);
         }
 //         LOG.trace("-> " + super.getName() + " is drawing. Permits: " + String.valueOf(sem.availablePermits()));
-        //GameMap.getInstance().rerandom();
-        //GameMap.getInstance().render(); - moved to EDT
-        //GameMap.getInstance().print();
+        //GameMap.getCurrentInstance().rerandom();
+        //GameMap.getCurrentInstance().render(Main.getFrame().getRootPane().getGraphics()); //- moved to EDT
+        //GameMap.getCurrentInstance().print();
         Main.getFrame().repaint(0);
 //         LOG.trace("<- " + super.getName() + " is drawing. Permits: " + String.valueOf(sem.availablePermits()));
         try {

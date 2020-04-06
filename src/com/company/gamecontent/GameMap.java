@@ -27,14 +27,15 @@ public class GameMap implements Renderable {
 
     private static Logger LOG = LogManager.getLogger(GameMap.class.getName());
 
-    private static final GameMap instance = new GameMap();
+    private static GameMap curr = new GameMap();
+    private static GameMap next = new GameMap();
+
     // TODO: make it public final. For that we have to get rid of init() and do everything in the constructor.
-    private ParallelepipedOfBlocks parallelepiped;
+    private static ParallelepipedOfBlocks parallelepiped;
 
     // TODO what about Units, Buildings? Why Bullets separate of them?
     // TODO Guava has Table<R, C, V> (table.get(x, y)). May be create Generic Class?
     HashSet<GameObject>[][]       objectsOnMap    = null;
-
     HashSet<GameObject>           selectedObjects = null;
     HashMap<Integer,Boolean> [][] visibleMap      = null;
     GameMapBlock[][]              landscapeBlocks = null;
@@ -42,20 +43,101 @@ public class GameMap implements Renderable {
 
     private static boolean initialized = false;
 
-    public static GameMap getInstance() {
-        return instance;
+    public static GameMap getNextInstance() {
+        // Only calculation thread is allowed to operate with the "next" game state
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C", "D")));
+        return next;
+    }
+
+    public static GameMap getCurrentInstance() {
+        // Only visualization thread is allowed to operate with the "current" game state
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "V")));
+        return curr;
+    }
+
+    public static void switchRoles() {
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+        GameMap swap = next;
+        next = curr;
+        curr = swap;
+
+        // clone:
+        /*
+        for (int i = 0; i < getDim().x(); i++) {
+            for (int j = 0; j < getDim().y(); j++) {
+                curr.objectsOnMap[i][j] = next.objectsOnMap[i][j];
+            }
+        }
+        for (GameObject selectedObj : (HashSet<GameObject>)curr.selectedObjects.clone()) {
+            if (! next.selectedObjects.contains(selectedObj)) {
+                curr.selectedObjects.remove(selectedObj);
+            }
+        }
+        for (GameObject selectedObj : next.selectedObjects) {
+            if (! curr.selectedObjects.contains(selectedObj)) {
+                curr.selectedObjects.add(selectedObj);
+            }
+        }
+        for (Bullet bul : (HashSet<Bullet>)curr.bullets.clone()) {
+            if (! next.bullets.contains(bul)) {
+                curr.bullets.remove(bul);
+            }
+        }
+        for (Bullet bul : next.bullets) {
+            if (! curr.bullets.contains(bul)) {
+                curr.bullets.add(bul);
+            }
+        }*/
     }
 
     private GameMap() {}
 
-    public void init(int[][] map, int width, int height) throws EnumConstantNotPresentException {
+    private static void initInstance(GameMap inst, int[][] map, int width, int height) throws EnumConstantNotPresentException {
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M")));
+        // TODO What about collections and Maps?
+        inst.objectsOnMap = new HashSet[width][height];
+        inst.visibleMap   = new HashMap[width][height];
+        inst.landscapeBlocks = new GameMapBlock[width][height];
+
+        // TODO What is i and j?
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                // Declaring landscape blocks
+                try {
+                    inst.landscapeBlocks[i][j] = new GameMapBlock(i, j, map[i][j]);
+                } catch (Exception e) {
+                    LOG.error("Block (" + i + ", " + j + ")");
+                    LOG.error("Map size: " + width + "x" + height);
+                    Main.terminateNoGiveUp(e,
+                            1000,
+                            inst.getClass() + ": Map initialization failed with " + e.getClass().getSimpleName()
+                    );
+                }
+
+                // Declaring map with default objects
+                inst.objectsOnMap[i][j] = new HashSet<GameObject>();
+
+                // Declaring visibility map for blocks
+                // TODO: currently everything is visible for everybody - the logic is to be designed
+                inst.visibleMap[i][j] = new HashMap<Integer, Boolean>();
+                for (int k = 0; k <= Restrictions.MAX_PLAYERS - 1; k++) {
+                    inst.visibleMap[i][j].put(k, true);
+                }
+            }
+        }
+
+        inst.selectedObjects = new HashSet<GameObject>();
+        inst.bullets = new HashSet<Bullet>();
+    }
+
+    public static void init(int[][] map, int width, int height) throws EnumConstantNotPresentException {
 
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M")));
 
         if (initialized) {
             Main.terminateNoGiveUp(null,
                     1000,
-                    getClass() + " init error. Not allowed to initialize the map twice!"
+                    GameMap.class + " init error. Not allowed to initialize the map twice!"
             );
         }
 
@@ -65,47 +147,15 @@ public class GameMap implements Renderable {
         if (width_validation || height_validation) {
             Main.terminateNoGiveUp(null,
                     1000,
-                    getClass() + " init error. Width and Height are beyond the restricted boundaries."
+                    GameMap.class + " init error. Width and Height are beyond the restricted boundaries."
             );
         }
 
-        this.landscapeBlocks = new GameMapBlock[width][height];
         // MAX_Z because we don't support 3D so far
         parallelepiped = new ParallelepipedOfBlocks(new Point3D_Integer(0, 0, 0), new Vector3D_Integer(width, height, Restrictions.MAX_Z));
 
-        // TODO What about collections and Maps?
-        this.objectsOnMap = new HashSet[width][height];
-        this.visibleMap   = new HashMap[width][height];
-
-        // TODO What is i and j?
-        for (int i = 0; i < width; i++) {
-            for (int j = 0; j < height; j++) {
-                // Declaring landscape blocks
-                try {
-                    this.landscapeBlocks[i][j] = new GameMapBlock(i, j, map[i][j]);
-                } catch (Exception e) {
-                    LOG.error("Block (" + i + ", " + j + ")");
-                    LOG.error("Map size: " + width + "x" + height);
-                    Main.terminateNoGiveUp(e,
-                            1000,
-                            getClass() + ": Map initialization failed with " + e.getClass().getSimpleName()
-                    );
-                }
-
-                // Declaring map with default objects
-                this.objectsOnMap[i][j] = new HashSet<GameObject>();
-
-                // Declaring visibility map for blocks
-                // TODO: currently everything is visible for everybody - the logic is to be designed
-                this.visibleMap[i][j] = new HashMap<Integer, Boolean>();
-                for (int k = 0; k <= Restrictions.MAX_PLAYERS - 1; k++) {
-                    this.visibleMap[i][j].put(k, true);
-                }
-            }
-        }
-
-        this.selectedObjects = new HashSet<GameObject>();
-        this.bullets = new HashSet<Bullet>();
+        initInstance(curr, map, width, height);
+        initInstance(next, map, width, height);
 
         initialized = true;
     }
@@ -176,7 +226,18 @@ public class GameMap implements Renderable {
         }
     }
 
-    public void select(Rectangle mouseRect) {
+    // IMPORTANT: This method is static, because it operates with both "current" and "next" map states.
+    // The problem is that when the user selects units on the map he relies on the picture he is seeing.
+    // But this picture is produced by the V-Thread while C-thread might already move/create/destroy some units
+    // which is still not visible on the screen, because C-Thread is calculating "for future".
+    // But we must assure for the user that he selects/assigns exactly what he is seeing on the screen!
+    // This is why this method must work this way:
+    // 1. Check which units of "current" map were selected (using .getCurrentInstance()).
+    // 2. Find the same units in the "next" map and select them there (using .getNextInstance()).
+    //    During this action C-Thread must be locked!!
+    //    Q: V-Thread also must be locked?
+    // TODO: we call here many times getNextInstance() and the thread check is done many times. Maybe improve this.
+    public static void select(Rectangle mouseRect) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("D")));
 
         /* crop the selection rectangle to take into account
@@ -184,25 +245,25 @@ public class GameMap implements Renderable {
          */
         Rectangle mouseRectCropped = crop(mouseRect);
 
-        if (selectedObjects == null) {
-            selectedObjects = new HashSet<GameObject>();
+        if (getNextInstance().selectedObjects == null) {
+            getNextInstance().selectedObjects = new HashSet<GameObject>();
         }
 
         // First deselect all selected objects
         // TODO Why we Clone them?
-        this.deselect((HashSet<GameObject>)selectedObjects.clone());
+        getNextInstance().deselect((HashSet<GameObject>)getNextInstance().selectedObjects.clone());
 
-        // Check objects in Rect-Selector and add them to selectedObjects
+        // Check objects in Rect-Selector of "curr" and add them to selectedObjects of "next"
         GridRectangle gridRect = new GridRectangle(mouseRectCropped);
         for (int i = gridRect.left; i <= gridRect.right; i++) {
             for (int j = gridRect.top; j <= gridRect.bottom; j++) {
-                if (objectsOnMap[i][j].size() == 0) {
+                if (getCurrentInstance().objectsOnMap[i][j].size() == 0) {
                     continue;
                 }
 
                 boolean in_the_middle = gridRect.isMiddleBlock(i, j);
 
-                for (GameObject objectOnMap : objectsOnMap[i][j]) {
+                for (GameObject objectOnMap : getCurrentInstance().objectsOnMap[i][j]) {
                     Rectangle objectOnMapRect = objectOnMap.getRect();
 
                     // TODO Why is this working without contains()?
@@ -218,39 +279,66 @@ public class GameMap implements Renderable {
                     // TODO I can select Enemy objects!
                     // If this Objects not mine or neutral
                     if (objectOnMap.getPlayerId() > 0) {
+                        // NOTE: The object will not be selected if he changed the ownership
+                        // exactly between game state switch (the object is "mine" on the "current" state
+                        // but already not "mine" on the "next" state)
                         continue;
                     }
 
-                    objectOnMap.select();
-                    this.selectedObjects.add(objectOnMap);
+                    // FIXME: this will be very very slow, I should not commit it!! Only temporarily!!
+                    boolean objectExistsOnFutureMapState = false;
+                    for (int ii = 0; ii < getDim().x(); ii++) {
+                        for (int jj = 0; jj < getDim().y(); jj++) {
+                            if (getCurrentInstance().objectsOnMap[ii][jj].contains(objectOnMap)) {
+                                objectExistsOnFutureMapState = true;
+                                break;
+                            }
+                        }
+                        if (objectExistsOnFutureMapState) { // found it
+                            break;
+                        }
+                    }
+                    // FIXME
+
+                    if (objectExistsOnFutureMapState) {
+                        objectOnMap.select();
+                        getNextInstance().selectedObjects.add(objectOnMap);
+                    }
                 }
             }
         }
     }
 
-    private void deselect(HashSet<GameObject> objects) {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("D")));
+    // C-Thread may call this method if the object gets killed/destroyed.
+    // D-thread may call this method on mouse event.
+    public static void deselect(HashSet<GameObject> objects) {
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
 
-        if (selectedObjects == null) {
+        if (getNextInstance().selectedObjects == null) {
             return;
         }
 
         for (GameObject selectedObj : objects) {
             selectedObj.deselect();
-            this.selectedObjects.remove(selectedObj);
+            // NOTE: Should not be a problem if it does not exist already (if C-Thread did it for "next" faster)
+            getNextInstance().selectedObjects.remove(selectedObj);
         }
     }
 
-    public void assign(Point3D_Integer point) {
+    // C-Thread may call this method if the object gets detected and targeted.
+    // D-thread may call this method on mouse event.
+    public static void assign(Point3D_Integer point) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
 
-        if (selectedObjects == null || selectedObjects.size() == 0) {
+        if (getNextInstance().selectedObjects == null || getNextInstance().selectedObjects.size() == 0) {
+            LOG.debug("--- return");
             return;
         }
 
-        for (GameObject selectedObj : selectedObjects) {
+        for (GameObject selectedObj : getNextInstance().selectedObjects) {
             // TODO: that is wrong if we allow moveable Buildings
             if (selectedObj instanceof Unit) {
+                LOG.debug("--- assignUnit");
                 assignUnit(selectedObj, point);
             }
         }
@@ -258,16 +346,16 @@ public class GameMap implements Renderable {
 
     // QUESTION What this do? May be rename?
     // QUESTION Is this super.method() for GameObject.Unit.setTargets()? Why?
-    private void assignUnit(GameObject selectedObj, Point3D_Integer point){
+    private static void assignUnit(GameObject selectedObj, Point3D_Integer point){
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
 
         // FIXME: We must take floor(), not just divide!
         Point2D_Integer block = point.to2D().divInt(BLOCK_SIZE);
 
         // TODO: currently we don't consider "visibility" of the point by the player/enemy.
-        HashSet<GameObject> objectsOnBlock = objectsOnMap[block.x()][block.y()];
+        HashSet<GameObject> objectsOnBlock = getNextInstance().objectsOnMap[block.x()][block.y()];
 
-        boolean block_visible = isBlockVisibleForMe(block);
+        boolean block_visible = getNextInstance().isBlockVisibleForMe(block);
         boolean is_me         = (objectsOnBlock.size() == 1) && objectsOnBlock.contains(selectedObj);
         boolean nobody        = objectsOnBlock.size() == 0;
 
@@ -309,7 +397,7 @@ public class GameMap implements Renderable {
 
         for (int i = gridRect.left; i <= gridRect.right; i++) {
             for (int j = gridRect.top; j <= gridRect.bottom; j++) {
-                GameMap.getInstance().validateBlockCoordinates(i, j);
+                GameMap.getNextInstance().validateBlockCoordinates(i, j);
                 this.objectsOnMap[i][j].add(gameObj);
             }
         }
@@ -325,7 +413,7 @@ public class GameMap implements Renderable {
 
         for (int i = gridRect.left; i <= gridRect.right; i++) {
             for (int j = gridRect.top; j <= gridRect.bottom; j++) {
-                GameMap.getInstance().validateBlockCoordinates(i, j);
+                GameMap.getNextInstance().validateBlockCoordinates(i, j);
                 // TODO: check what if does not exist
                 this.objectsOnMap[i][j].remove(gameObj);
             }
@@ -333,12 +421,12 @@ public class GameMap implements Renderable {
     }
 
     // FIXME Remove Getter. See comment above dim, abs_dim declaration.
-    public Vector3D_Integer getDim() {
-        return this.parallelepiped.dimInBlocks;
+    public static Vector3D_Integer getDim() {
+        return parallelepiped.dimInBlocks;
     }
 
-    public Vector3D_Integer getAbsDim() {
-        return this.parallelepiped.dim;
+    public static Vector3D_Integer getAbsDim() {
+        return parallelepiped.dim;
     }
 
     public void validateBlockCoordinates(int grid_x, int grid_y) {
@@ -352,6 +440,7 @@ public class GameMap implements Renderable {
 
     // Checks if the area "givenRect" is occupied by some GameObject.
     public boolean occupied(Rectangle givenRect) {
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
         return occupied(givenRect, null);
     }
 
@@ -359,9 +448,14 @@ public class GameMap implements Renderable {
     // Depending of INTERSECTION_STRATEGY_SEVERITY we decide how strictly we consider "occupied".
     // TODO: check not only intersection, but also containing (inclusion).
     public boolean occupied(Rectangle givenRect, GameObject exceptObject) {
+        // Theoretically we can allow this method to with in V thread as well, because it is not supposed
+        // to modify anything. But it should never happen, because we are going to call it only from M- and C-Thread
+        // when we are locating new objects or moving existing objects on the map.
+        // That is this method is supposed to work only with .getNextInstance() of GameMap.
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
+
         // With intersection severity level INTERSECTION_STRATEGY_SEVERITY=0 of two game objects is allowed.
         // Multiple units can use the same place (unreal, but let it be).
-
         if (INTERSECTION_STRATEGY_SEVERITY == 0) {
             return false;
         }
@@ -374,9 +468,9 @@ public class GameMap implements Renderable {
             for (int j = gridRect.top; j <= gridRect.bottom; j++) {
 
                 // TODO: We could introduce occupied(i, j, exceptMe) and call it in the loop
-                GameMap.getInstance().validateBlockCoordinates(i, j);
+                GameMap.getNextInstance().validateBlockCoordinates(i, j);
 
-                HashSet<GameObject> objectsOnBlock = GameMap.getInstance().objectsOnMap[i][j];
+                HashSet<GameObject> objectsOnBlock = GameMap.getNextInstance().objectsOnMap[i][j];
                 if (objectsOnBlock.size() == 0) {
                     continue;
                 }
@@ -441,16 +535,16 @@ public class GameMap implements Renderable {
 //        b = null;
     }
 
-    Rectangle getRect() {
+    static Rectangle getRect() {
         return parallelepiped.getAbsBottomRect();
     }
 
     // Crops the given rectangle with the map rectangle (is used to avoid going outside the map)
-    Rectangle crop(Rectangle rect) {
+    static Rectangle crop(Rectangle rect) {
         // TODO: taking into account Swing bug with drawRect() I would recommend also to check how
         // properly works this .intersect method.
         Rectangle croppedRect = new Rectangle(rect);
-        Rectangle.intersect(croppedRect, GameMap.getInstance().getRect(), croppedRect);
+        Rectangle.intersect(croppedRect, GameMap.getRect(), croppedRect);
         return croppedRect;
     }
 

@@ -19,24 +19,10 @@ public class C_Thread extends Main.ThreadPattern {
         super(threadName);
     }
 
-    @Override
-    public void repeat() throws InterruptedException {
-
-        Semaphore sem = ParameterizedMutexManager.getInstance().getMutex("V", "recalc");
-        try {
-            sem.acquire();
-        } catch (InterruptedException e) {
-            // It is naturally to have this exception while the thread is dying
-            // Don't report about it in case of total termination
-            if (Main.SIGNAL_TERM_GENERAL != true) throw(e);
-        }
-
-        LOG.trace("-> " + super.getName() + " is calculating. Permits: " + String.valueOf(sem.availablePermits()));
-
+    public void recalc() {
         // recalculate positions of each game object
-        // TODO: do it according to our documentation (swap pointers worldCurr, worldNext)
-        if (GameMap.getInstance().getBullets() != null) {
-            HashSet<Bullet> bullets = (HashSet<Bullet>)GameMap.getInstance().getBullets().clone();
+        if (GameMap.getNextInstance().getBullets() != null) {
+            HashSet<Bullet> bullets = (HashSet<Bullet>)GameMap.getNextInstance().getBullets().clone();
 
             for (Bullet b : bullets) {
                 b.move();
@@ -54,6 +40,25 @@ public class C_Thread extends Main.ThreadPattern {
                 }
             }
         }
+    }
+
+    @Override
+    public void repeat() throws InterruptedException {
+
+        recalc(); // calculate next game state
+
+        Semaphore sem = ParameterizedMutexManager.getInstance().getMutex("V", "recalc");
+        try {
+            sem.acquire();
+        } catch (InterruptedException e) {
+            // It is naturally to have this exception while the thread is dying
+            // Don't report about it in case of total termination
+            if (Main.SIGNAL_TERM_GENERAL != true) throw(e);
+        }
+
+        LOG.trace("-> " + super.getName() + " is calculating. Permits: " + String.valueOf(sem.availablePermits()));
+
+        GameMap.switchRoles();
 
         LOG.trace("<- " + super.getName() + " is calculating. Permits: " + String.valueOf(sem.availablePermits()));
         try {

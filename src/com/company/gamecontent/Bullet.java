@@ -85,10 +85,10 @@ public class Bullet implements Moveable, Renderable {
         parallelepiped.loc.plus(dv);
         LOG.trace("move?: new_loc=" + parallelepiped.loc + ", dist=" + MathBugfixes.sqrt(dv.sumSqr()) + ", obj=" + this);
 
-        if (! GameMap.getInstance().contains(new_center)) {
+        if (! GameMap.getNextInstance().contains(new_center)) {
             // the bullet left the map - forget it!
             // TODO: check it it is safe to make null the object which method is being called at the moment
-            GameMap.getInstance().destroyBullet(this);
+            GameMap.getNextInstance().destroyBullet(this);
             return false;
         }
 
@@ -105,7 +105,7 @@ public class Bullet implements Moveable, Renderable {
 
         Point2D_Integer block = parallelepiped.loc.to2D().divInt(BLOCK_SIZE);
 
-        HashSet<GameObject> objectsOnBlock = (HashSet<GameObject>)GameMap.getInstance().objectsOnMap[block.x()][block.y()].clone();
+        HashSet<GameObject> objectsOnBlock = (HashSet<GameObject>)GameMap.getNextInstance().objectsOnMap[block.x()][block.y()].clone();
 
         for (GameObject objOnBlock : objectsOnBlock) {
             LOG.debug("--- hit [" + bulletModel.damage + " dmg] -> " + block + " -> " + objOnBlock);
@@ -116,7 +116,7 @@ public class Bullet implements Moveable, Renderable {
 
             // Get experience - not implemented yet
             // shooter.giveExp(go.getExpFromMe());
-            GameMap.getInstance().eraseObject(objOnBlock);
+            GameMap.getNextInstance().eraseObject(objOnBlock);
 
             // TODO: it is a hard question what is more optimal:
             // - to check the list of all Units who had a given Unit as a target and unset their targetObject
@@ -151,7 +151,7 @@ public class Bullet implements Moveable, Renderable {
         }
 
         // TODO: check it it is safe to make null the object which method is being called at the moment
-        GameMap.getInstance().destroyBullet(this);
+        GameMap.getNextInstance().destroyBullet(this);
     }
 
     // TODO Use Sprite rendering

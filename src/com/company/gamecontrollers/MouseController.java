@@ -49,7 +49,7 @@ public class MouseController extends MouseAdapter {
             // and this (D) thread (actually EDT in Java) assigns also a dest point or vice versa
             C_Thread.getInstance().suspend();
 
-            GameMap.getInstance().assign(new Point3D_Integer(e.getX(), e.getY(), 0));
+            GameMap.assign(new Point3D_Integer(e.getX(), e.getY(), 0));
             C_Thread.getInstance().resume();
             // TODO: probably V thread should be also suspended
             // currently it works, but from the next round
@@ -79,8 +79,8 @@ public class MouseController extends MouseAdapter {
 ////                last_drag_y = -1;
 //
 //                // Selection of units by rect-selection
-////                GameMap.getInstance().select(rectX, rectY, rectWidth, rectHeight);
-//                GameMap.getInstance().select(Main.getMouseRect().getRect());
+////                GameMap.select(rectX, rectY, rectWidth, rectHeight);
+//                GameMap.select(Main.getMouseRect().getRect());
 //
 ////                // Remove previous rect-selection
 ////                Main.getMouseRect().redefineRect(-1, -1, -1, -1);
@@ -96,7 +96,7 @@ public class MouseController extends MouseAdapter {
 //                Main.suspendAll();
 //
 //                // Selection of units by rect-selection
-//                GameMap.getInstance().select(e.getX(), e.getY(), 1, 1);
+//                GameMap.select(e.getX(), e.getY(), 1, 1);
 //
 ////                Main.resumeAll();
 //
@@ -116,11 +116,11 @@ public class MouseController extends MouseAdapter {
                 Main.suspendAll();
 
                 // Point selection of unit by rect-selection
-                GameMap.getInstance().select(new Rectangle(e.getX(), e.getY(), 1, 1));
+                GameMap.select(new Rectangle(e.getX(), e.getY(), 1, 1));
                 LOG.debug("released_press(" + e.getButton() + "): x=" + x + ", y=" + y);
             } else {
                 // Selection of units by rect-selection
-                GameMap.getInstance().select(Main.getMouseRect().getRect());
+                GameMap.select(Main.getMouseRect().getRect());
                 LOG.debug("released_drag(" + e.getButton() + "): x=" + x + ", y=" + y);
             }
 
@@ -227,7 +227,7 @@ public class MouseController extends MouseAdapter {
         /*if (e.getButton() == MouseEvent.BUTTON3) { // right click
             // TODO: ideally C and V threads should be locked here when we reassignin the targets
             // currently it also works, but from the next round
-            GameMap.getInstance().assign(e.getX(), e.getY());
+            GameMap.assign(e.getX(), e.getY());
         }
         */
 

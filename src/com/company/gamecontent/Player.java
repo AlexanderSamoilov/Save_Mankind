@@ -166,6 +166,9 @@ public class Player {
         }
 
         this.buildings.remove(building);
+        HashSet blds = new HashSet();
+        blds.add(building);
+        GameMap.deselect(blds);
     }
 
     private void removeUnit (Unit unit) {
@@ -182,5 +185,8 @@ public class Player {
         }
 
         this.units.remove(unit);
+        HashSet unts = new HashSet();
+        unts.add(unit);
+        GameMap.deselect(unts);
     }
 }

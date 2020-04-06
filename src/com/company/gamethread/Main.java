@@ -53,18 +53,19 @@ public class Main {
     private static JFrame frame = new JFrame("Sosochek Konchika Mnogothreadovyj") {
 
 
-//    <editor-fold desc="ATTENTION: Please, don't remove this implementation!">
+//   <editor-fold desc="ATTENTION: Please, don't remove this implementation!">
 //
-//    ATTENTION: Please, don't remove this implementation!
-//    I added it to synchronize C-thread with EDT (Swing) thread.
-//    Normally EDT thread is working automatically and is drawing asynchronously to the other game threads.
-//    This contradicts however with Hayami's game concept where all drawing (which is done by V-Thread)
-//    is completely controlled and synchronized with other game threads. For example (it is reproduced better with very small TIME_QUANT):
+//   ATTENTION: Please, don't remove this implementation!
+//   I added it to synchronize C-thread with EDT (Swing) thread.
+//   Normally EDT thread is working automatically and is drawing asynchronously to the other game threads.
+//   This contradicts however with Hayami's game concept where all drawing (which is done by V-Thread)
+//   is completely controlled and synchronized with other game threads.
+//   For example (it is reproduced better with very small TIME_QUANT):
 //
 //    DEBUG [16]ConcurrentModificationException has reproduced!
 //    DEBUG [16]java.util.HashMap$HashIterator.nextNode(HashMap.java:1442)
 //    DEBUG [16]java.util.HashMap$KeyIterator.next(HashMap.java:1466)
-//    EBUG [16]com.company.gamecontent.GameMap.renderObjects(GameMap.java:136)
+//    DEBUG [16]com.company.gamecontent.GameMap.renderObjects(GameMap.java:136)
 //    DEBUG [16]com.company.gamecontent.GameMap.render(GameMap.java:109)
 //    DEBUG [16]com.company.gamethread.Main$1.paintComponent(Main.java:96)
 //    DEBUG [16]javax.swing.JComponent.paint(JComponent.java:1056)
@@ -108,15 +109,15 @@ public class Main {
 //    DEBUG [16]java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:93)
 //    DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
 //
-//    This stack trace appears because C-Thread and EDT are trying to modify the GameMap.objectsOnMap matrix at the same time.
+//   This stack trace appears because C-Thread and EDT are trying to access the GameMap.objectsOnMap matrix
+//   at the same time (EDT is reading data while C-Thread is modifying it).
+//   Thus we really need synchronous drawing by EDT and therefore we use .paintImmediately as shown below
+//   in order to force EDT to write everything synchronously and only when we order it.
 //
-//    Thus we really need synchronous drawing by EDT and therefore we use .paintImmediately as shown below
-//    in order to force EDT to write everything synchronously and only when we order it.
-//
-//    Moreover when we implement the game driver not in Java there will be no EDT and there will be valid D-V-C thread concept
-//    in which V-Thread performing all drawing is fully controlled by us and nothing is done automatically in background.
-//
-//    The drawback of the synchronous EDT writing is performance degradation on small TIME_QUANT.
+//   Moreover when in future we implement the game driver not in Java there will be no EDT and there will be valid
+//   D-V-C thread concept (see game documentation "Game_Thread_Concept.doc")
+//   in which V-Thread drawing routines are fully controlled by us and nothing is done automatically in background.
+//   The drawback of the synchronous EDT writing is performance degradation on small TIME_QUANT (measurements were done).
 //
 //    </editor-fold>
 
@@ -166,7 +167,7 @@ public class Main {
                 EDT_ID = Thread.currentThread().getId();
             }
             super.paintComponent(g);
-            GameMap.getInstance().render(g);
+            GameMap.getCurrentInstance().render(g);
         }
     };
 
@@ -179,7 +180,7 @@ public class Main {
 
     private static void initMap(int [][] terrain_map, int width, int height) {
         try {
-            GameMap.getInstance().init(terrain_map, width, height);
+            GameMap.init(terrain_map, width, height);
         } catch (Exception e) {
             terminateNoGiveUp(e,1000, null);
         }
@@ -199,7 +200,7 @@ public class Main {
 
         // This is a test. Initialising tanks for Player.
         // We try calculate how much tanks we can place on map by width
-//        int testNumTanks = GameMap.getInstance().getMaxX() / 2 - 1;
+//        int testNumTanks = GameMap.getCurrentInstance().getMaxX() / 2 - 1;
         int testNumTanks = 2;
 
         ArrayList<Unit> testPlayerUnits = new ArrayList<Unit>();
@@ -230,7 +231,7 @@ public class Main {
 
         // This is a test. Initialising tanks for Player.
         // We try calculate how much tanks we can place on map by width
-//        int testEnemyTanks = GameMap.getInstance().getMaxX() / 2 - 1;
+//        int testEnemyTanks = GameMap.getCurrentInstance().getMaxX() / 2 - 1;
         int testEnemyTanks = 2;
         ArrayList<Unit> testEnemyUnits = new ArrayList<Unit>();
         for (int i=0; i <= testEnemyTanks - 1; i++) {
@@ -303,13 +304,13 @@ public class Main {
         // FIXME do not use try for all of them.
         try {
             jpOber.setLayout(new BorderLayout());
-            jpOber.setBounds(0,0,GameMap.getInstance().getAbsDim().x(), GameMap.getInstance().getAbsDim().y());
+            jpOber.setBounds(0,0,GameMap.getAbsDim().x(), GameMap.getAbsDim().y());
             jpOber.setOpaque(false);
             mouseRectangle.setOpaque(false);
             jpOber.add(mouseRectangle);
 
             //jpUnter.setLayout(null);
-            jpUnter.setBounds(0,0,GameMap.getInstance().getAbsDim().x(), GameMap.getInstance().getAbsDim().y());
+            jpUnter.setBounds(0,0,GameMap.getAbsDim().x(), GameMap.getAbsDim().y());
             jpUnter.setOpaque(true);
 
             // Создаём окно, в котором будет запускаться игра
@@ -327,8 +328,8 @@ public class Main {
             // Empirically I found that calling of .setPreferredSize to the contained JRootPane solves it.
             // Both .getRootPane() and .getContentPane() give good result.
             frame.getRootPane().setPreferredSize(new Dimension(
-                    GameMap.getInstance().getAbsDim().x(),
-                    GameMap.getInstance().getAbsDim().y()
+                    GameMap.getAbsDim().x(),
+                    GameMap.getAbsDim().y()
                     )
             );
 
