@@ -28,13 +28,11 @@ public class GameMap implements Renderable {
     private static Logger LOG = LogManager.getLogger(GameMap.class.getName());
 
     private static final GameMap instance = new GameMap();
-    // TODO: make it public final. For that we have to get rid of init() and do everything in the constructor.
-    private ParallelepipedOfBlocks parallelepiped;
+    public final ParallelepipedOfBlocks parallelepiped;
 
     // TODO what about Units, Buildings? Why Bullets separate of them?
     // TODO Guava has Table<R, C, V> (table.get(x, y)). May be create Generic Class?
     HashSet<GameObject>[][]       objectsOnMap    = null;
-
     HashSet<GameObject>           selectedObjects = null;
     HashMap<Integer,Boolean> [][] visibleMap      = null;
     GameMapBlock[][]              landscapeBlocks = null;
@@ -42,72 +40,101 @@ public class GameMap implements Renderable {
 
     private static boolean initialized = false;
 
-    public static GameMap getInstance() {
+    public static synchronized GameMap getInstance() {
         return instance;
     }
 
-    private GameMap() {}
-
-    public void init(int[][] map, int width, int height) throws EnumConstantNotPresentException {
-
+    /*
+       This constructor has no parameters.
+       width, height and other parameters are taken either from a configuration file
+       or from the default values list. The reason is that Java does not support well
+       singletons with parameters. There is one workaround https://stackoverflow.com/a/39731434/4807875,
+       but it is not worth on my opinion to use it when it is not quite necessary in our situation.
+     */
+    private GameMap() throws EnumConstantNotPresentException {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M")));
 
-        if (initialized) {
-            Main.terminateNoGiveUp(null,
-                    1000,
-                    getClass() + " init error. Not allowed to initialize the map twice!"
-            );
-        }
+        // Moved it here from synchronized init() method.
+        // I refused from the init() method in order to let declare "parallelepiped" final.
+        synchronized (this) {
 
-        // Validating map
-        boolean width_validation = (width <= 0) || (width > Restrictions.MAX_X);
-        boolean height_validation = (height <= 0) || (height > Restrictions.MAX_Y);
-        if (width_validation || height_validation) {
-            Main.terminateNoGiveUp(null,
-                    1000,
-                    getClass() + " init error. Width and Height are beyond the restricted boundaries."
-            );
-        }
+            // 1 - Check if this method was already called once (this is why we use "synchronized")
+            if (initialized) {
+                Main.terminateNoGiveUp(null,
+                        1000,
+                        getClass() + " init error. Not allowed to initialize the map twice!"
+                );
+            }
 
-        this.landscapeBlocks = new GameMapBlock[width][height];
-        // MAX_Z because we don't support 3D so far
-        parallelepiped = new ParallelepipedOfBlocks(new Point3D_Integer(0, 0, 0), new Vector3D_Integer(width, height, Restrictions.MAX_Z));
-
-        // TODO What about collections and Maps?
-        this.objectsOnMap = new HashSet[width][height];
-        this.visibleMap   = new HashMap[width][height];
-
-        // TODO What is i and j?
-        for (int i = 0; i < width; i++) {
-            for (int j = 0; j < height; j++) {
-                // Declaring landscape blocks
-                try {
-                    this.landscapeBlocks[i][j] = new GameMapBlock(i, j, map[i][j]);
-                } catch (Exception e) {
-                    LOG.error("Block (" + i + ", " + j + ")");
-                    LOG.error("Map size: " + width + "x" + height);
-                    Main.terminateNoGiveUp(e,
-                            1000,
-                            getClass() + ": Map initialization failed with " + e.getClass().getSimpleName()
-                    );
-                }
-
-                // Declaring map with default objects
-                this.objectsOnMap[i][j] = new HashSet<GameObject>();
-
-                // Declaring visibility map for blocks
-                // TODO: currently everything is visible for everybody - the logic is to be designed
-                this.visibleMap[i][j] = new HashMap<Integer, Boolean>();
-                for (int k = 0; k <= Restrictions.MAX_PLAYERS - 1; k++) {
-                    this.visibleMap[i][j].put(k, true);
+            // 2 - Obtain the map sizes (in blocks) and landscape block sprites
+            // TODO: read it from the game config. If not available - use default values.
+            int width = Restrictions.MAX_X;
+            int height = Restrictions.MAX_Y;
+            int[][] terrain_map = new int[width][height];
+            // Fill map with random numbers of textures (get it from the game config in the future)
+            for (int i = 0; i < width; i++) {
+                for (int j = 0; j < height; j++) {
+                    terrain_map[i][j] = ((i * i + j * j) / 7) % 8;
                 }
             }
+
+            // 3 - Validation of the map sizes.
+            boolean width_ok = (width <= 0) || (width > Restrictions.MAX_X);
+            boolean height_ok = (height <= 0) || (height > Restrictions.MAX_Y);
+            if (width_ok || height_ok) {
+                Main.terminateNoGiveUp(null,
+                    1000,
+                    getClass() + " init error. width=" + width + ", height=" + height +
+                    " - beyond the restricted boundaries."
+                );
+            }
+
+            // 4 - Initialization of the map geometry (parallelepiped) and landscape blocks
+            this.landscapeBlocks = new GameMapBlock[width][height];
+            // MAX_Z because we don't support 3D so far
+            this.parallelepiped = new ParallelepipedOfBlocks(
+                    new Point3D_Integer(0, 0, 0),
+                    new Vector3D_Integer(width, height, Restrictions.MAX_Z)
+            );
+
+            // TODO What about collections and Maps?
+            this.objectsOnMap = new HashSet[width][height];
+            this.visibleMap = new HashMap[width][height];
+
+            // TODO What is i and j?
+            for (int i = 0; i < width; i++) {
+                for (int j = 0; j < height; j++) {
+                    // Declaring landscape blocks
+                    try {
+                        this.landscapeBlocks[i][j] = new GameMapBlock(i, j, terrain_map[i][j]);
+                    } catch (Exception e) {
+                        LOG.error("Block (" + i + ", " + j + ")");
+                        LOG.error("Map size: " + width + "x" + height);
+                        Main.terminateNoGiveUp(e,
+                                1000,
+                                getClass() + ": Map initialization failed with " + e.getClass().getSimpleName()
+                        );
+                    }
+
+                    // Declaring map with default objects
+                    this.objectsOnMap[i][j] = new HashSet<GameObject>();
+
+                    // Declaring visibility map for blocks
+                    // TODO: currently everything is visible for everybody - the logic is to be designed
+                    this.visibleMap[i][j] = new HashMap<Integer, Boolean>();
+                    for (int k = 0; k <= Restrictions.MAX_PLAYERS - 1; k++) {
+                        this.visibleMap[i][j].put(k, true);
+                    }
+                }
+            }
+
+            this.selectedObjects = new HashSet<GameObject>();
+            this.bullets = new HashSet<Bullet>();
+
+            initialized = true;
+
+            LOG.info("Initialized map " + width + "x" + height);
         }
-
-        this.selectedObjects = new HashSet<GameObject>();
-        this.bullets = new HashSet<Bullet>();
-
-        initialized = true;
     }
 
     public void render(Graphics g) {

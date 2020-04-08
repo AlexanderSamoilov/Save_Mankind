@@ -173,18 +173,15 @@ public class Main {
     private static void initLoggers() {
         ConfigurationFactory.setConfigurationFactory(new LogConfFactory());
         LOG = LogManager.getLogger(Main.class.getName());
-
         LOG.info("The loggers are ready!");
     }
 
-    private static void initMap(int [][] terrain_map, int width, int height) {
+    private static void initMap() {
         try {
-            GameMap.getInstance().init(terrain_map, width, height);
+            GameMap.getInstance(); // trigger singleton initialization
         } catch (Exception e) {
             terminateNoGiveUp(e,1000, null);
         }
-
-        LOG.info("Initialized map " + width + "x" + height);
     }
 
     // TODO Move to some inits()
@@ -795,20 +792,7 @@ public class Main {
         // Remember ID of the main thread to give it to other threads
         threadId = Thread.currentThread().getId();
 
-        // ----> Initing GameMap
-        // TODO -> Map.init()
-        int width = Restrictions.MAX_X;
-        int height = Restrictions.MAX_Y;
-        int [][] map = new int[width][height];
-
-        // Fill map with random numbers of textures (initing in future)
-        for(int i=0; i<width; i++) {
-            for (int j = 0; j < height; j++) {
-                map[i][j] = ((i * i + j * j) / 7) % 8;
-            }
-        }
-
-        initMap(map, width, height);
+        initMap();
         initObjects();
         initGraph();
 
