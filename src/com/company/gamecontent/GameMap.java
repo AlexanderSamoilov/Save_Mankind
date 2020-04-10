@@ -23,12 +23,11 @@ import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 import static com.company.gamecontent.Restrictions.INTERSECTION_STRATEGY_SEVERITY;
 
 
-public class GameMap implements Renderable {
+public class GameMap extends ParallelepipedOfBlocks implements Renderable {
 
     private static Logger LOG = LogManager.getLogger(GameMap.class.getName());
 
     private static final GameMap instance = new GameMap();
-    public final ParallelepipedOfBlocks parallelepiped;
 
     // TODO what about Units, Buildings? Why Bullets separate of them?
     // TODO Guava has Table<R, C, V> (table.get(x, y)). May be create Generic Class?
@@ -44,6 +43,47 @@ public class GameMap implements Renderable {
         return instance;
     }
 
+    private static synchronized Vector3D_Integer getMapDimensions() {
+        // TODO: read it from the game config. If not available - use default values.
+        int width = Restrictions.MAX_X;
+        int height = Restrictions.MAX_Y;
+        int depth = Restrictions.MAX_Z; // MAX_Z because we don't support 3D so far
+
+        // Validation of the map sizes.
+        boolean width_ok = (width <= 0) || (width > Restrictions.MAX_X);
+        boolean height_ok = (height <= 0) || (height > Restrictions.MAX_Y);
+        boolean depth_ok = (depth <= 0) || (depth > Restrictions.MAX_Z);
+        if (width_ok || height_ok || depth_ok) {
+            Main.terminateNoGiveUp(null,
+               1000,
+               GameMap.class +
+               " init error. width=" + width + ", height=" + height + ", depth=" + depth +
+               " - beyond the restricted boundaries."
+            );
+        }
+
+        return new Vector3D_Integer(width, height, depth);
+    }
+
+    private synchronized int [][] getMapLandscape() {
+        int [][] terrain_map = new int[getDim().x()][getDim().y()];
+        // Fill map with random numbers of textures (get it from the game config in the future)
+        for (int i = 0; i < getDim().x(); i++) {
+            for (int j = 0; j < getDim().y(); j++) {
+                terrain_map[i][j] = ((i * i + j * j) / 7) % 8;
+            }
+        }
+        return terrain_map;
+    }
+
+    private GameMap() {
+        super( // Initialization of the map geometry (ParallelepipedOfBlocks)
+                new Point3D_Integer(0, 0, 0),
+                getMapDimensions() // static computation before super(): https://stackoverflow.com/a/17769207/4807875
+        );
+        init();
+    }
+
     /*
        This constructor has no parameters.
        width, height and other parameters are taken either from a configuration file
@@ -51,90 +91,57 @@ public class GameMap implements Renderable {
        singletons with parameters. There is one workaround https://stackoverflow.com/a/39731434/4807875,
        but it is not worth on my opinion to use it when it is not quite necessary in our situation.
      */
-    private GameMap() throws EnumConstantNotPresentException {
+    private synchronized void init() throws EnumConstantNotPresentException {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M")));
 
-        // Moved it here from synchronized init() method.
-        // I refused from the init() method in order to let declare "parallelepiped" final.
-        synchronized (this) {
-
-            // 1 - Check if this method was already called once (this is why we use "synchronized")
-            if (initialized) {
-                Main.terminateNoGiveUp(null,
-                        1000,
-                        getClass() + " init error. Not allowed to initialize the map twice!"
-                );
-            }
-
-            // 2 - Obtain the map sizes (in blocks) and landscape block sprites
-            // TODO: read it from the game config. If not available - use default values.
-            int width = Restrictions.MAX_X;
-            int height = Restrictions.MAX_Y;
-            int[][] terrain_map = new int[width][height];
-            // Fill map with random numbers of textures (get it from the game config in the future)
-            for (int i = 0; i < width; i++) {
-                for (int j = 0; j < height; j++) {
-                    terrain_map[i][j] = ((i * i + j * j) / 7) % 8;
-                }
-            }
-
-            // 3 - Validation of the map sizes.
-            boolean width_ok = (width <= 0) || (width > Restrictions.MAX_X);
-            boolean height_ok = (height <= 0) || (height > Restrictions.MAX_Y);
-            if (width_ok || height_ok) {
-                Main.terminateNoGiveUp(null,
-                    1000,
-                    getClass() + " init error. width=" + width + ", height=" + height +
-                    " - beyond the restricted boundaries."
-                );
-            }
-
-            // 4 - Initialization of the map geometry (parallelepiped) and landscape blocks
-            this.landscapeBlocks = new GameMapBlock[width][height];
-            // MAX_Z because we don't support 3D so far
-            this.parallelepiped = new ParallelepipedOfBlocks(
-                    new Point3D_Integer(0, 0, 0),
-                    new Vector3D_Integer(width, height, Restrictions.MAX_Z)
+        // Check if this method was already called once (this is why we use "synchronized")
+        if (initialized) {
+            Main.terminateNoGiveUp(null,
+                1000,
+                getClass() + " init error. Not allowed to initialize the map twice!"
             );
+        }
 
-            // TODO What about collections and Maps?
-            this.objectsOnMap = new HashSet[width][height];
-            this.visibleMap = new HashMap[width][height];
+        // TODO What about collections and Maps?
+        this.landscapeBlocks = new GameMapBlock[getDim().x()][getDim().y()];
+        this.objectsOnMap = new HashSet[getDim().x()][getDim().y()];
+        this.visibleMap = new HashMap[getDim().x()][getDim().y()];
 
-            // TODO What is i and j?
-            for (int i = 0; i < width; i++) {
-                for (int j = 0; j < height; j++) {
-                    // Declaring landscape blocks
-                    try {
-                        this.landscapeBlocks[i][j] = new GameMapBlock(i, j, terrain_map[i][j]);
-                    } catch (Exception e) {
-                        LOG.error("Block (" + i + ", " + j + ")");
-                        LOG.error("Map size: " + width + "x" + height);
-                        Main.terminateNoGiveUp(e,
+        // TODO What is i and j?
+        int[][] terrain_map = getMapLandscape();
+        for (int i = 0; i < getDim().x(); i++) {
+            for (int j = 0; j < getDim().y(); j++) {
+                // Declaring landscape blocks
+                try {
+                    this.landscapeBlocks[i][j] = new GameMapBlock(i, j, terrain_map[i][j]);
+                } catch (Exception e) {
+                    LOG.error("Block (" + i + ", " + j + ")");
+                    LOG.error("Map size: " + getDim().x() + "x" + getDim().y());
+                    Main.terminateNoGiveUp(e,
                                 1000,
                                 getClass() + ": Map initialization failed with " + e.getClass().getSimpleName()
-                        );
-                    }
+                    );
+                }
 
-                    // Declaring map with default objects
-                    this.objectsOnMap[i][j] = new HashSet<GameObject>();
+                // Declaring map with default objects
+                this.objectsOnMap[i][j] = new HashSet<GameObject>();
 
-                    // Declaring visibility map for blocks
-                    // TODO: currently everything is visible for everybody - the logic is to be designed
-                    this.visibleMap[i][j] = new HashMap<Integer, Boolean>();
-                    for (int k = 0; k <= Restrictions.MAX_PLAYERS - 1; k++) {
-                        this.visibleMap[i][j].put(k, true);
-                    }
+                // Declaring visibility map for blocks
+                // TODO: currently everything is visible for everybody - the logic is to be designed
+                this.visibleMap[i][j] = new HashMap<Integer, Boolean>();
+                for (int k = 0; k <= Restrictions.MAX_PLAYERS - 1; k++) {
+                    this.visibleMap[i][j].put(k, true);
                 }
             }
-
-            this.selectedObjects = new HashSet<GameObject>();
-            this.bullets = new HashSet<Bullet>();
-
-            initialized = true;
-
-            LOG.info("Initialized map " + width + "x" + height);
         }
+        // free(terrain_map); - this line will be active in C implementation
+
+        this.selectedObjects = new HashSet<GameObject>();
+        this.bullets = new HashSet<Bullet>();
+
+        initialized = true;
+
+        LOG.info("Initialized map " + getDim().x() + "x" + getDim().y());
     }
 
     public void render(Graphics g) {
@@ -359,15 +366,6 @@ public class GameMap implements Renderable {
         }
     }
 
-    // FIXME Remove Getter. See comment above dim, abs_dim declaration.
-    public Vector3D_Integer getDim() {
-        return this.parallelepiped.dimInBlocks;
-    }
-
-    public Vector3D_Integer getAbsDim() {
-        return this.parallelepiped.dim;
-    }
-
     public void validateBlockCoordinates(int grid_x, int grid_y) {
         if (! getRect().contains(grid_x, grid_y)) {
             Main.terminateNoGiveUp(null,
@@ -469,7 +467,7 @@ public class GameMap implements Renderable {
     }
 
     Rectangle getRect() {
-        return parallelepiped.getAbsBottomRect();
+        return getAbsBottomRect();
     }
 
     // Crops the given rectangle with the map rectangle (is used to avoid going outside the map)
@@ -479,14 +477,6 @@ public class GameMap implements Renderable {
         Rectangle croppedRect = new Rectangle(rect);
         Rectangle.intersect(croppedRect, GameMap.getInstance().getRect(), croppedRect);
         return croppedRect;
-    }
-
-    boolean contains(ParallelepipedOfBlocks ppd) {
-        return parallelepiped.contains(ppd);
-    }
-
-    boolean contains(Point3D_Integer point) {
-        return parallelepiped.contains(point);
     }
 
     /* DEBUG */

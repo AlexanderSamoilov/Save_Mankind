@@ -14,8 +14,12 @@ public class ParallelepipedOfBlocks extends Parallelepiped {
         return loc.divIntClone(BLOCK_SIZE).to2D().to3D();
     }
 
-    public Vector3D_Integer getSize() {
+    public Vector3D_Integer getDim() {
         return dimInBlocks.clone();
+    }
+
+    public Vector3D_Integer getAbsDim() {
+        return super.getAbsSize();
     }
 
     public ParallelepipedOfBlocks(Point3D_Integer loc, Vector3D_Integer dim) {

@@ -249,7 +249,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
     public Point3D_Integer getAbsLoc() { return parallelepiped.getAbsLoc(); }
     public Point3D_Integer getLoc() { return parallelepiped.getLoc(); }
-    public Vector3D_Integer getSize() { return parallelepiped.getSize(); }
+    public Vector3D_Integer getDim() { return parallelepiped.getDim(); }
     public Vector3D_Integer getAbsSize() { return parallelepiped.getAbsSize(); }
     public Point3D_Double getAbsCenterDouble() { return parallelepiped.getAbsCenterDouble(); }
     public Point3D_Integer getAbsCenterInteger() { return parallelepiped.getAbsCenterInteger(); }
@@ -775,7 +775,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
         if (! GameMap.getInstance().contains(
                 // new_x, new_y, new_z - absolute coordinates, not aliquot to the grid vertices
-                new ParallelepipedOfBlocks(new_loc, getSize()))
+                new ParallelepipedOfBlocks(new_loc, getDim()))
         ) {
             // prevent movement outside the map
             LOG.debug("prevent movement outside the map");
