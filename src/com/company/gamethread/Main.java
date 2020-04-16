@@ -178,7 +178,13 @@ public class Main {
 
     private static void initMap() {
         try {
-            GameMap.getInstance(); // trigger singleton initialization
+            /*
+             Call GameMap singleton constructor explicitly (the map is created here).
+             We have to do it in order to control when the map is created(initialized).
+             Despite GameMap singleton instance is "static final", it is not called on the class loading stage
+             (I see this from the stack trace printed out from the GameMap() singleton constructor).
+             */
+            GameMap.getInstance();
         } catch (Exception e) {
             terminateNoGiveUp(e,1000, null);
         }

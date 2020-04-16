@@ -61,7 +61,7 @@ public class Unit extends GameObject implements Shootable {
         }
 
         double shootRadiusMinimal = (INTERSECTION_STRATEGY_SEVERITY - 1) * BLOCK_SIZE * MathBugfixes.sqrt(2) +
-                0.5 * MathBugfixes.sqrt(getAbsSize().to2D().sumSqr());
+                0.5 * MathBugfixes.sqrt(getAbsDim().to2D().sumSqr());
 
         if (w.getShootRadius() < shootRadiusMinimal) {
             LOG.error("The given shooting radius " + w.getShootRadius()

@@ -227,19 +227,19 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
         // "healthy" HP
         g.setColor(hpColor);
-        GraphExtensions.fillRect(g, new Rectangle(getAbsLoc().x(), getAbsLoc().y() + getAbsSize().y(), getAbsSize().x() * percentageHP / 100, 5), 0);
+        GraphExtensions.fillRect(g, new Rectangle(getAbsLoc().x(), getAbsLoc().y() + getAbsDim().y(), getAbsDim().x() * percentageHP / 100, 5), 0);
 
         // "loosed" HP
         g.setColor(Color.BLACK);
         GraphExtensions.fillRect(g, new Rectangle(
-                getAbsLoc().x() + getAbsSize().x() * percentageHP / 100,
-                getAbsLoc().y() + getAbsSize().y(),
-                getAbsSize().y() * (100 - percentageHP) / 100,
+                getAbsLoc().x() + getAbsDim().x() * percentageHP / 100,
+                getAbsLoc().y() + getAbsDim().y(),
+               getAbsDim().y() * (100 - percentageHP) / 100,
                 5),
                 0
         );
 
-        GraphBugfixes.drawRect(g, new Rectangle(getAbsLoc().x(), getAbsLoc().y() + getAbsSize().y(), getAbsSize().x(), 5));
+        GraphBugfixes.drawRect(g, new Rectangle(getAbsLoc().x(), getAbsLoc().y() + getAbsDim().y(), getAbsDim().x(), 5));
 
         // Mark the center of the object
         g.setColor(Color.YELLOW);
@@ -250,7 +250,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
     public Point3D_Integer getAbsLoc() { return parallelepiped.getAbsLoc(); }
     public Point3D_Integer getLoc() { return parallelepiped.getLoc(); }
     public Vector3D_Integer getDim() { return parallelepiped.getDim(); }
-    public Vector3D_Integer getAbsSize() { return parallelepiped.getAbsSize(); }
+    public Vector3D_Integer getAbsDim() { return parallelepiped.getAbsDim(); }
     public Point3D_Double getAbsCenterDouble() { return parallelepiped.getAbsCenterDouble(); }
     public Point3D_Integer getAbsCenterInteger() { return parallelepiped.getAbsCenterInteger(); }
     public int getAbsRight() { return parallelepiped.getAbsRight(); }
@@ -378,14 +378,14 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
 
         if (dv.y() != 0) { // a)
             if (dv.y() < 0) pgmHoriz = new ParallelogramHorizontal(new Point2D_Integer(new_rect.x, new_rect.y), new_rect.width, getAbsLoc().y() - new_rect.y + 1, -dv.x());
-            if (dv.y() > 0) pgmHoriz = new ParallelogramHorizontal(new Point2D_Integer(getAbsLoc().x(), getAbsLoc().y() + getAbsSize().y() - 1), new_rect.width, new_rect.y - getAbsLoc().y() + 1, dv.x());
+            if (dv.y() > 0) pgmHoriz = new ParallelogramHorizontal(new Point2D_Integer(getAbsLoc().x(), getAbsLoc().y() + getAbsDim().y() - 1), new_rect.width, new_rect.y - getAbsLoc().y() + 1, dv.x());
             pgmHorizOccupiedBlocks = new GridMatrixHorizontal(pgmHoriz);
             pgmHoriz.render(currentGraphics); // DEBUG (draw parallelogram)
             pgmHorizOccupiedBlocks.render(currentGraphics); // DEBUG (draw occupied blocks)
         }
         if (dv.x() != 0) { // b)
             if (dv.x() < 0) pgmVert = new ParallelogramVertical(new Point2D_Integer(new_rect.x, new_rect.y), getAbsLoc().x() - new_rect.x + 1, new_rect.height, -dv.y());
-            if (dv.x() > 0) pgmVert = new ParallelogramVertical(new Point2D_Integer(getAbsLoc().x() + getAbsSize().x() - 1, getAbsLoc().y()), new_rect.x - getAbsLoc().x() + 1, new_rect.height, dv.y());
+            if (dv.x() > 0) pgmVert = new ParallelogramVertical(new Point2D_Integer(getAbsLoc().x() + getAbsDim().x() - 1, getAbsLoc().y()), new_rect.x - getAbsLoc().x() + 1, new_rect.height, dv.y());
             pgmVertOccupiedBlocks = new GridMatrixVertical(pgmVert);
             pgmVert.render(currentGraphics); // DEBUG (draw parallelogram)
             pgmVertOccupiedBlocks.render(currentGraphics); // DEBUG (draw occupied blocks)

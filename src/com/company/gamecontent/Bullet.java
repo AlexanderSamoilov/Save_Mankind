@@ -159,7 +159,7 @@ public class Bullet implements Moveable, Renderable {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
 
         g.setColor(bulletModel.color);
-        GraphExtensions.fillRect(g, new Rectangle(parallelepiped.loc.x(), parallelepiped.loc.y(), parallelepiped.getAbsSize().x(), parallelepiped.getAbsSize().y()), 0);
+        GraphExtensions.fillRect(g, new Rectangle(parallelepiped.loc.x(), parallelepiped.loc.y(), parallelepiped.getAbsDim().x(), parallelepiped.getAbsDim().y()), 0);
         parallelepiped.render(g);
     }
 }

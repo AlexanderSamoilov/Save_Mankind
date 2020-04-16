@@ -17,7 +17,7 @@ public class Parallelepiped extends Figure_3D implements Centerable {
     public final Color color = Color.GREEN;
 
     public Point3D_Integer getAbsLoc() { return loc.clone(); }
-    public Vector3D_Integer getAbsSize() { return dim.clone(); }
+    public Vector3D_Integer getAbsDim() { return dim.clone(); }
 
     public int getAbsRight() { return loc.x() + dim.x() - 1; }
     public int getAbsBottom() { return loc.y() + dim.y() - 1; }
@@ -48,18 +48,18 @@ public class Parallelepiped extends Figure_3D implements Centerable {
 
     public boolean contains(Parallelepiped otherPpd) {
         if (
-           (loc.x() <= otherPpd.loc.x()) && (otherPpd.loc.x() + otherPpd.getAbsSize().x() <= loc.x() + getAbsSize().x()) &&
-           (loc.y() <= otherPpd.loc.y()) && (otherPpd.loc.y() + otherPpd.getAbsSize().y() <= loc.y() + getAbsSize().y()) &&
-           (loc.z() <= otherPpd.loc.z()) && (otherPpd.loc.z() + otherPpd.getAbsSize().z() <= loc.z() + getAbsSize().z())
+           (loc.x() <= otherPpd.loc.x()) && (otherPpd.loc.x() + otherPpd.dim.x() <= loc.x() + dim.x()) &&
+           (loc.y() <= otherPpd.loc.y()) && (otherPpd.loc.y() + otherPpd.dim.y() <= loc.y() + dim.y()) &&
+           (loc.z() <= otherPpd.loc.z()) && (otherPpd.loc.z() + otherPpd.dim.z() <= loc.z() + dim.z())
         ) return true;
         return false;
     }
 
     public boolean contains(Point3D_Integer point) {
         if (
-           (loc.x() <= point.x()) && (point.x() <= loc.x() + getAbsSize().x() - 1) &&
-           (loc.y() <= point.y()) && (point.y() <= loc.y() + getAbsSize().y() - 1) &&
-           (loc.z() <= point.z()) && (point.z() <= loc.z() + getAbsSize().z() - 1)
+           (loc.x() <= point.x()) && (point.x() <= loc.x() + dim.x() - 1) &&
+           (loc.y() <= point.y()) && (point.y() <= loc.y() + dim.y() - 1) &&
+           (loc.z() <= point.z()) && (point.z() <= loc.z() + dim.z() - 1)
         ) return true;
         return false;
     }

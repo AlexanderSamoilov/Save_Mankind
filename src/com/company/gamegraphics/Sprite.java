@@ -60,7 +60,7 @@ public class Sprite {
         }
 
         g.setColor(Color.GREEN);
-        g.drawImage(image, parallelepiped.getAbsLoc().x(), parallelepiped.getAbsLoc().y(), parallelepiped.getAbsSize().x(), parallelepiped.getAbsSize().y(), null);
+        g.drawImage(image, parallelepiped.getAbsLoc().x(), parallelepiped.getAbsLoc().y(), parallelepiped.getAbsDim().x(), parallelepiped.getAbsDim().y(), null);
         ((Graphics2D) g).setTransform(saveAT);
     }
 }
