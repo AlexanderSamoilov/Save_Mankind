@@ -21,8 +21,6 @@ import org.apache.logging.log4j.Logger;
 
 import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
 import static com.company.gamecontent.Restrictions.INTERSECTION_STRATEGY_SEVERITY;
-import static com.sun.corba.se.impl.util.Utility.printStackTrace;
-
 
 public class GameMap extends ParallelepipedOfBlocks implements Renderable {
 
@@ -50,7 +48,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
                 new Point3D_Integer(0, 0, 0),
                 readMapDimensions() // static computation before super(): https://stackoverflow.com/a/17769207/4807875
         );
-        printStackTrace(); // DEBUG
+        Main.printStackTrace(null); // DEBUG
         init();
     }
 
@@ -89,6 +87,35 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
         return terrain_map;
     }
 
+    private synchronized void initMapBlocks() {
+        int[][] terrain_map = readMapLandscape();
+
+        for (int i = 0; i < getDim().x(); i++) {
+            for (int j = 0; j < getDim().y(); j++) {
+                try {
+                    this.landscapeBlocks[i][j] = new GameMapBlock(i, j, terrain_map[i][j]);
+                } catch (Exception e) {
+                    LOG.error("Block (" + i + ", " + j + ")");
+                    LOG.error("Map size: " + getDim().x() + "x" + getDim().y());
+                    Main.terminateNoGiveUp(e,
+                        1000,
+                        getClass() + ": Map initialization failed with " + e.getClass().getSimpleName()
+                    );
+                }
+
+                this.objectsOnMap[i][j] = new HashSet<GameObject>();
+
+                // TODO: currently everything is visible for everybody - the logic is to be designed
+                this.visibleMap[i][j] = new HashMap<Integer, Boolean>();
+                for (int k = 0; k <= Restrictions.MAX_PLAYERS - 1; k++) {
+                    this.visibleMap[i][j].put(k, true);
+                }
+            }
+        }
+
+        // C Lang: free(terrain_map);
+    }
+
     /*
        The init() method has no parameters.
        width, height and other parameters are taken either from a configuration file
@@ -112,32 +139,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
         this.landscapeBlocks = new GameMapBlock[getDim().x()][getDim().y()];
         this.objectsOnMap = new HashSet[getDim().x()][getDim().y()];
         this.visibleMap = new HashMap[getDim().x()][getDim().y()];
-
-        int[][] terrain_map = readMapLandscape();
-        for (int i = 0; i < getDim().x(); i++) {
-            for (int j = 0; j < getDim().y(); j++) {
-                try {
-                    this.landscapeBlocks[i][j] = new GameMapBlock(i, j, terrain_map[i][j]);
-                } catch (Exception e) {
-                    LOG.error("Block (" + i + ", " + j + ")");
-                    LOG.error("Map size: " + getDim().x() + "x" + getDim().y());
-                    Main.terminateNoGiveUp(e,
-                                1000,
-                                getClass() + ": Map initialization failed with " + e.getClass().getSimpleName()
-                    );
-                }
-
-                this.objectsOnMap[i][j] = new HashSet<GameObject>();
-
-                // TODO: currently everything is visible for everybody - the logic is to be designed
-                this.visibleMap[i][j] = new HashMap<Integer, Boolean>();
-                for (int k = 0; k <= Restrictions.MAX_PLAYERS - 1; k++) {
-                    this.visibleMap[i][j].put(k, true);
-                }
-            }
-        }
-        // C Lang: free(terrain_map);
-
+        initMapBlocks();
         this.selectedObjects = new HashSet<GameObject>();
         this.bullets = new HashSet<Bullet>();
 
@@ -345,7 +347,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
 
         for (int i = gridRect.left; i <= gridRect.right; i++) {
             for (int j = gridRect.top; j <= gridRect.bottom; j++) {
-                GameMap.getInstance().validateBlockCoordinates(i, j);
+                validateBlockCoordinates(i, j);
                 this.objectsOnMap[i][j].add(gameObj);
             }
         }
@@ -361,7 +363,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
 
         for (int i = gridRect.left; i <= gridRect.right; i++) {
             for (int j = gridRect.top; j <= gridRect.bottom; j++) {
-                GameMap.getInstance().validateBlockCoordinates(i, j);
+                validateBlockCoordinates(i, j);
                 // TODO: check what if does not exist
                 this.objectsOnMap[i][j].remove(gameObj);
             }
@@ -369,7 +371,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
     }
 
     public void validateBlockCoordinates(int grid_x, int grid_y) {
-        if (! GameMap.getInstance().getAbsBottomRect().contains(grid_x, grid_y)) {
+        if (! getAbsBottomRect().contains(grid_x, grid_y)) {
             Main.terminateNoGiveUp(null,
                     1000, "Block (" + grid_x + "," + grid_y +
                     " is outside of map " + getDim().x() + " x " + getDim().y()
@@ -401,9 +403,9 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
             for (int j = gridRect.top; j <= gridRect.bottom; j++) {
 
                 // TODO: We could introduce occupied(i, j, exceptMe) and call it in the loop
-                GameMap.getInstance().validateBlockCoordinates(i, j);
+                validateBlockCoordinates(i, j);
 
-                HashSet<GameObject> objectsOnBlock = GameMap.getInstance().objectsOnMap[i][j];
+                HashSet<GameObject> objectsOnBlock = objectsOnMap[i][j];
                 if (objectsOnBlock.size() == 0) {
                     continue;
                 }
@@ -473,7 +475,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
         // TODO: taking into account Swing bug with drawRect() I would recommend also to check how
         // properly works this .intersect method.
         Rectangle croppedRect = new Rectangle(rect);
-        Rectangle.intersect(croppedRect, GameMap.getInstance().getAbsBottomRect(), croppedRect);
+        Rectangle.intersect(croppedRect, getAbsBottomRect(), croppedRect);
         return croppedRect;
     }
 
