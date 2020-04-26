@@ -15,7 +15,7 @@ enum Nature {
     PLATE,
 }
 
-public abstract class GameMapConfigurator {
+public abstract class GameMapGenerator {
 
     private synchronized String [][] readMapFromConfig() {
         return null; // Will be implemented soon.

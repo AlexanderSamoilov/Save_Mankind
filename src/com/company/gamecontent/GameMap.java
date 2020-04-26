@@ -44,7 +44,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
         // Initialization of the map geometry (ParallelepipedOfBlocks)
         super(
                 new Point3D_Integer(0, 0, 0),
-                GameMapConfigurator.readMapDimensionsFromConfig() // static computation before super(): https://stackoverflow.com/a/17769207/4807875
+                GameMapGenerator.readMapDimensionsFromConfig() // static computation before super(): https://stackoverflow.com/a/17769207/4807875
         );
         Main.printStackTrace(null); // DEBUG
         init();
@@ -63,8 +63,8 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
     }
 
     private synchronized void initMapBlocks() {
-        //String[][] terrain_map = GameMapConfigurator.readMapFromConfig();
-        String [][] terrain_map = GameMapConfigurator.generateRandomMap(getDim().x(), getDim().y());
+        //String[][] terrain_map = GameMapGenerator.readMapFromConfig();
+        String [][] terrain_map = GameMapGenerator.generateRandomMap(getDim().x(), getDim().y());
         for (int x = 0; x < getDim().x(); x++) {
             for (int y = 0; y < getDim().y(); y++) {
                 try {
