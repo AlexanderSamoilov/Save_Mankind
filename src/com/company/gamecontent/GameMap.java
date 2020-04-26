@@ -44,35 +44,13 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
         // Initialization of the map geometry (ParallelepipedOfBlocks)
         super(
                 new Point3D_Integer(0, 0, 0),
-                readMapDimensions() // static computation before super(): https://stackoverflow.com/a/17769207/4807875
+                GameMapConfigurator.readMapDimensionsFromConfig() // static computation before super(): https://stackoverflow.com/a/17769207/4807875
         );
         Main.printStackTrace(null); // DEBUG
         init();
     }
 
-    private static synchronized Vector3D_Integer readMapDimensions() {
-        // TODO: read it from the game config. If not available - use default values.
-        int width = Restrictions.MAX_X;
-        int height = Restrictions.MAX_Y;
-        int depth = Restrictions.MAX_Z; // MAX_Z because we don't support 3D so far
-
-        // Validation of the map sizes.
-        boolean width_ok = (width <= 0) || (width > Restrictions.MAX_X);
-        boolean height_ok = (height <= 0) || (height > Restrictions.MAX_Y);
-        boolean depth_ok = (depth <= 0) || (depth > Restrictions.MAX_Z);
-        if (width_ok || height_ok || depth_ok) {
-            Main.terminateNoGiveUp(null,
-               1000,
-               GameMap.class +
-               " init error. width=" + width + ", height=" + height + ", depth=" + depth +
-               " - beyond the restricted boundaries."
-            );
-        }
-
-        return new Vector3D_Integer(width, height, depth);
-    }
-
-    private static synchronized void generateDefaultLandscapeBlockTemplates() {
+    private static synchronized void initDefaultLandscapeBlockTemplates() {
         LandscapeBlockTemplate.add("SAND", true, true, false, "sand_dark_stackable.png");
         LandscapeBlockTemplate.add("DIRT", true, true, false, "dirt.png");
         LandscapeBlockTemplate.add("PLATE", true, true, false, "plate.png");
@@ -101,7 +79,6 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
                 }
             }
         }
-
         // C Lang: free(terrain_map);
     }
 
@@ -126,7 +103,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
 
         // TODO What about collections and Maps?
         this.landscapeBlocks = new GameMapBlock[getDim().x()][getDim().y()];
-        generateDefaultLandscapeBlockTemplates();
+        initDefaultLandscapeBlockTemplates();
         initMapBlocks();
         this.selectedObjects = new HashSet<GameObject>();
         this.bullets = new HashSet<Bullet>();
@@ -134,72 +111,6 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
         initialized = true;
 
         LOG.info("Initialized map " + getDim().x() + "x" + getDim().y());
-    }
-
-    public void render(Graphics g) {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
-
-        // Redraw map blocks and Objects on them
-        // TODO What about collections and Maps?
-        // FIXME Can't move render landscapeBlocks into function - bad realisation
-        for (int i = 0; i < getDim().x(); i++) {
-            for (int j = 0; j < getDim().y(); j++) {
-
-                /* For debug purpose: We draw only those blocks which are not occupied, otherwise
-                there will be white space there, because the whole picture is "erased" on each step.
-                To remove/add marking of the occupied blocks with white color please comment/uncomment "if".
-                 */
-                if (landscapeBlocks[i][j].objectsOnBlock.size() == 0) {
-                    this.landscapeBlocks[i][j].render(g);
-                }
-            }
-        }
-
-        // Rendering objects on a blocks
-        for (int i = 0; i < getDim().x(); i++) {
-            for (int j = 0; j < getDim().y(); j++) {
-                this.renderObjects(g, landscapeBlocks[i][j].objectsOnBlock);
-            }
-        }
-
-        // TODO: fix ConcurrentModificationException
-        this.renderBullets(g);
-    }
-
-    private void renderBullets(Graphics g) {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
-
-        // TODO: fix ConcurrentModificationException
-        if (bullets == null) {
-            return;
-        }
-
-        for (Bullet b : bullets) {
-            b.render(g);
-        }
-    }
-
-    private void renderObjects(Graphics g, HashSet<GameObject> gameObjSet) {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
-
-        // FIXME Exception in thread "AWT-EventQueue-0" java.util.ConcurrentModificationException\
-        if (gameObjSet.size() == 0) {
-            return;
-        }
-
-        try {
-            LOG.trace("--->");
-            for (GameObject gameObj : gameObjSet) {
-                gameObj.render(g);
-            }
-            LOG.trace("<---");
-        } catch (ConcurrentModificationException e) {
-            LOG.error("ConcurrentModificationException has reproduced!");
-            for (StackTraceElement stackTraceElement : e.getStackTrace()) {
-                LOG.error(stackTraceElement.toString());
-            }
-            V_Thread.getInstance().terminate(1000);
-        }
     }
 
     public void select(Rectangle mouseRect) {

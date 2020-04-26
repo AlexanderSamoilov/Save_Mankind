@@ -166,7 +166,7 @@ public class Main {
                 EDT_ID = Thread.currentThread().getId();
             }
             super.paintComponent(g);
-            GameMap.getInstance().render(g);
+            GameMapRenderer.render(g, GameMap.getInstance());
         }
     };
 
