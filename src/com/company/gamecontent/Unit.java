@@ -311,7 +311,7 @@ public class Unit extends GameObject implements Shootable {
         // TODO Use Collections
         for (int i = gridRect.left; (i <= gridRect.right) && (targetObject == null); i++) {
             for(int j = gridRect.top; (j <= gridRect.bottom) && (targetObject == null); j++) {
-                HashSet<GameObject> objectsOnTheBlock = GameMap.getInstance().objectsOnMap[i][j];
+                HashSet<GameObject> objectsOnTheBlock = GameMap.getInstance().landscapeBlocks[i][j].objectsOnBlock;
                 if (objectsOnTheBlock.size() == 0) {
                     continue;
                 }

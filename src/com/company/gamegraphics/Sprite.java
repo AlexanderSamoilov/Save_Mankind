@@ -37,6 +37,10 @@ public class Sprite {
 
     //TODO We must wait loading of image
     public void setImage(String filename) {
+        if (filename == null) {
+            throw new NullPointerException("setImage: filename is null");
+        }
+
         try {
             this.image = ImageIO.read(new File("./res/drawable/" + filename));
         } catch (IOException e) {

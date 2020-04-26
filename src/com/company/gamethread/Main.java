@@ -108,7 +108,7 @@ public class Main {
 //    DEBUG [16]java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:93)
 //    DEBUG [16]java.awt.EventDispatchThread.run(EventDispatchThread.java:82)
 //
-//    This stack trace appears because C-Thread and EDT are trying to modify the GameMap.objectsOnMap matrix at the same time.
+//    This stack trace appears because C-Thread and EDT are trying to modify the GameMap.landscapeBlocks[i][j].objectsOnMap matrix at the same time.
 //
 //    Thus we really need synchronous drawing by EDT and therefore we use .paintImmediately as shown below
 //    in order to force EDT to write everything synchronously and only when we order it.
@@ -210,7 +210,7 @@ public class Main {
             testPlayerUnits.add(
                     new Unit(
                             new Weapon(150, 7,
-                                    new BulletModel(10, 15, 7, Color.YELLOW, "Kurva_Smert-90")
+                                    new BulletTemplate(10, 15, 7, Color.YELLOW, "Kurva_Smert-90")
                             ),
                             2,
                             testPlayerTankSprite,
@@ -240,7 +240,7 @@ public class Main {
             testEnemyUnits.add(
                     new Unit(
                             new Weapon(150, 5,
-                                    new BulletModel(30, 10, 8, Color.BLUE, "Dolbo-Banka-5M")
+                                    new BulletTemplate(30, 10, 8, Color.BLUE, "Dolbo-Banka-5M")
                             ),
                             3,
                             testEnemyTankSprite,

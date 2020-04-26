@@ -30,9 +30,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
 
     // TODO what about Units, Buildings? Why Bullets separate of them?
     // TODO Guava has Table<R, C, V> (table.get(x, y)). May be create Generic Class?
-    HashSet<GameObject>[][]       objectsOnMap    = null;
     HashSet<GameObject>           selectedObjects = null;
-    HashMap<Integer,Boolean> [][] visibleMap      = null;
     GameMapBlock[][]              landscapeBlocks = null;
     HashSet<Bullet>               bullets         = null;
 
@@ -74,41 +72,32 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
         return new Vector3D_Integer(width, height, depth);
     }
 
-    private synchronized int [][] readMapLandscape() {
-        int [][] terrain_map = new int[getDim().x()][getDim().y()];
-
-        // Fill map with random numbers of textures (get it from the game config in the future)
-        for (int i = 0; i < getDim().x(); i++) {
-            for (int j = 0; j < getDim().y(); j++) {
-                terrain_map[i][j] = ((i * i + j * j) / 7) % 8;
-            }
-        }
-
-        return terrain_map;
+    private static synchronized void generateDefaultLandscapeBlockTemplates() {
+        LandscapeBlockTemplate.add("SAND", true, true, false, "sand_dark_stackable.png");
+        LandscapeBlockTemplate.add("DIRT", true, true, false, "dirt.png");
+        LandscapeBlockTemplate.add("PLATE", true, true, false, "plate.png");
+        LandscapeBlockTemplate.add("FOREST", true, true, false, "forest.png");
+        LandscapeBlockTemplate.add("BUSH", true, true, false, "bush.png");
+        LandscapeBlockTemplate.add("WATER", true, true, false, "water_dirt.png");
+        LandscapeBlockTemplate.add("HOLE", true, true, false, "hole_dirt.png");
+        LandscapeBlockTemplate.add("MARSH", true, true, false, "marsh_dirt_stackable.png");
+        LandscapeBlockTemplate.add("HILL", true, true, false, "hill_dirt.png");
     }
 
     private synchronized void initMapBlocks() {
-        int[][] terrain_map = readMapLandscape();
-
-        for (int i = 0; i < getDim().x(); i++) {
-            for (int j = 0; j < getDim().y(); j++) {
+        //String[][] terrain_map = GameMapConfigurator.readMapFromConfig();
+        String [][] terrain_map = GameMapConfigurator.generateRandomMap(getDim().x(), getDim().y());
+        for (int x = 0; x < getDim().x(); x++) {
+            for (int y = 0; y < getDim().y(); y++) {
                 try {
-                    this.landscapeBlocks[i][j] = new GameMapBlock(i, j, terrain_map[i][j]);
+                    this.landscapeBlocks[x][y] = new GameMapBlock(x, y, terrain_map[x][y]);
                 } catch (Exception e) {
-                    LOG.error("Block (" + i + ", " + j + ")");
+                    LOG.error("Block (" + x + ", " + y + ")");
                     LOG.error("Map size: " + getDim().x() + "x" + getDim().y());
                     Main.terminateNoGiveUp(e,
                         1000,
                         getClass() + ": Map initialization failed with " + e.getClass().getSimpleName()
                     );
-                }
-
-                this.objectsOnMap[i][j] = new HashSet<GameObject>();
-
-                // TODO: currently everything is visible for everybody - the logic is to be designed
-                this.visibleMap[i][j] = new HashMap<Integer, Boolean>();
-                for (int k = 0; k <= Restrictions.MAX_PLAYERS - 1; k++) {
-                    this.visibleMap[i][j].put(k, true);
                 }
             }
         }
@@ -137,8 +126,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
 
         // TODO What about collections and Maps?
         this.landscapeBlocks = new GameMapBlock[getDim().x()][getDim().y()];
-        this.objectsOnMap = new HashSet[getDim().x()][getDim().y()];
-        this.visibleMap = new HashMap[getDim().x()][getDim().y()];
+        generateDefaultLandscapeBlockTemplates();
         initMapBlocks();
         this.selectedObjects = new HashSet<GameObject>();
         this.bullets = new HashSet<Bullet>();
@@ -161,7 +149,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
                 there will be white space there, because the whole picture is "erased" on each step.
                 To remove/add marking of the occupied blocks with white color please comment/uncomment "if".
                  */
-                if (objectsOnMap[i][j].size() == 0) {
+                if (landscapeBlocks[i][j].objectsOnBlock.size() == 0) {
                     this.landscapeBlocks[i][j].render(g);
                 }
             }
@@ -170,7 +158,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
         // Rendering objects on a blocks
         for (int i = 0; i < getDim().x(); i++) {
             for (int j = 0; j < getDim().y(); j++) {
-                this.renderObjects(g, objectsOnMap[i][j]);
+                this.renderObjects(g, landscapeBlocks[i][j].objectsOnBlock);
             }
         }
 
@@ -234,13 +222,13 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
         GridRectangle gridRect = new GridRectangle(mouseRectCropped);
         for (int i = gridRect.left; i <= gridRect.right; i++) {
             for (int j = gridRect.top; j <= gridRect.bottom; j++) {
-                if (objectsOnMap[i][j].size() == 0) {
+                if (landscapeBlocks[i][j].objectsOnBlock.size() == 0) {
                     continue;
                 }
 
                 boolean in_the_middle = gridRect.isMiddleBlock(i, j);
 
-                for (GameObject objectOnMap : objectsOnMap[i][j]) {
+                for (GameObject objectOnMap : landscapeBlocks[i][j].objectsOnBlock) {
                     Rectangle objectOnMapRect = objectOnMap.getRect();
 
                     // TODO Why is this working without contains()?
@@ -303,7 +291,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
         Point2D_Integer block = point.to2D().divInt(BLOCK_SIZE);
 
         // TODO: currently we don't consider "visibility" of the point by the player/enemy.
-        HashSet<GameObject> objectsOnBlock = objectsOnMap[block.x()][block.y()];
+        HashSet<GameObject> objectsOnBlock = landscapeBlocks[block.x()][block.y()].objectsOnBlock;
 
         boolean block_visible = isBlockVisibleForMe(block);
         boolean is_me         = (objectsOnBlock.size() == 1) && objectsOnBlock.contains(selectedObj);
@@ -348,7 +336,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
         for (int i = gridRect.left; i <= gridRect.right; i++) {
             for (int j = gridRect.top; j <= gridRect.bottom; j++) {
                 validateBlockCoordinates(i, j);
-                this.objectsOnMap[i][j].add(gameObj);
+                landscapeBlocks[i][j].objectsOnBlock.add(gameObj);
             }
         }
     }
@@ -365,7 +353,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
             for (int j = gridRect.top; j <= gridRect.bottom; j++) {
                 validateBlockCoordinates(i, j);
                 // TODO: check what if does not exist
-                this.objectsOnMap[i][j].remove(gameObj);
+                landscapeBlocks[i][j].objectsOnBlock.remove(gameObj);
             }
         }
     }
@@ -405,7 +393,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
                 // TODO: We could introduce occupied(i, j, exceptMe) and call it in the loop
                 validateBlockCoordinates(i, j);
 
-                HashSet<GameObject> objectsOnBlock = objectsOnMap[i][j];
+                HashSet<GameObject> objectsOnBlock = landscapeBlocks[i][j].objectsOnBlock;
                 if (objectsOnBlock.size() == 0) {
                     continue;
                 }
@@ -448,7 +436,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
     // TODO: check that i,j are within allowed boundaries
     public boolean isBlockVisibleForMe(Point2D_Integer b) {
 //        LOG.debug("get: " + i + "." + j + "." + Player.getMyPlayerId());
-        return visibleMap[b.x()][b.y()].get(0);
+        return landscapeBlocks[b.x()][b.y()].visible.get(0);
     }
 
     public void registerBullet(Bullet b) {
@@ -485,8 +473,8 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
             for (int j = 0; j < getDim().y(); j++) {
                 int plId = -1;
                 GameObject target = null;
-                if (objectsOnMap[i][j].size() != 0) {
-                    for (GameObject currObj : objectsOnMap[i][j]) {
+                if (landscapeBlocks[i][j].objectsOnBlock.size() != 0) {
+                    for (GameObject currObj : landscapeBlocks[i][j].objectsOnBlock) {
                         plId = currObj.getPlayerId();
                         target = ((Unit) (currObj)).getTargetObject();
                         LOG.debug("(" + i + "," + j + ")[" + plId + "]:" + currObj + " -> " + target);
@@ -496,8 +484,8 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
         }
     }
 
-    /* TEST-01 */
     // Randomising landscapeBlocks
+    /*
     public void rerandom() {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M")));
         for(int i=0; i < getDim().x(); i++)
@@ -505,5 +493,5 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
             {
                 landscapeBlocks[i][j].changeNature(); // pseudo-random
             }
-    }
+    }*/
 }

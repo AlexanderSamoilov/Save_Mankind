@@ -28,12 +28,12 @@ public class Bullet implements Moveable, Renderable {
     // when its bullet kills something.
     private final Unit shooter; // who shoot?
     private final Parallelepiped parallelepiped;
-    private final BulletModel bulletModel;
+    private final BulletTemplate bulletTemplate;
 
     // TODO dest_x, dest_y
     private Point3D_Integer destPoint = null;
 
-    public Bullet(Unit shooter, Point3D_Integer center_location, Point3D_Integer target, BulletModel bulletModel) {
+    public Bullet(Unit shooter, Point3D_Integer center_location, Point3D_Integer target, BulletTemplate bulletTemplate) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
         this.shooter = shooter;
@@ -42,12 +42,12 @@ public class Bullet implements Moveable, Renderable {
 
         // NOTE: yes, we modify the existing "center_location" here, but it is not used anywhere else afterwards
         this.parallelepiped   = new Parallelepiped(
-                center_location.minus(new Vector3D_Integer(1,1,1).mult(bulletModel.caliber - 1).divInt(2)),
-                new Vector3D_Integer(1,1,1).mult(bulletModel.caliber)
+                center_location.minus(new Vector3D_Integer(1,1,1).mult(bulletTemplate.caliber - 1).divInt(2)),
+                new Vector3D_Integer(1,1,1).mult(bulletTemplate.caliber)
         );
 
         this.destPoint = target; // use reference safely, because it was cloned in the calling function
-        this.bulletModel = bulletModel;
+        this.bulletTemplate = bulletTemplate;
     }
 
     public void setDestinationPoint(Point3D_Integer dest) {
@@ -76,7 +76,7 @@ public class Bullet implements Moveable, Renderable {
 
         // Calculate future coordinates where we want to move hypothetically (if nothing prevents this)
         LOG.trace("bullet_center: " + parallelepiped.getAbsCenterInteger() + ", next: " + next);
-        Point3D_Integer new_center = MathTools.getNextPointOnRay(parallelepiped.getAbsCenterInteger(), next, bulletModel.speed);
+        Point3D_Integer new_center = MathTools.getNextPointOnRay(parallelepiped.getAbsCenterInteger(), next, bulletTemplate.speed);
 
         // translation vector
         Vector3D_Integer dv = new_center.minusClone(parallelepiped.getAbsCenterInteger());
@@ -105,12 +105,12 @@ public class Bullet implements Moveable, Renderable {
 
         Point2D_Integer block = parallelepiped.loc.to2D().divInt(BLOCK_SIZE);
 
-        HashSet<GameObject> objectsOnBlock = (HashSet<GameObject>)GameMap.getInstance().objectsOnMap[block.x()][block.y()].clone();
+        HashSet<GameObject> objectsOnBlock = (HashSet<GameObject>)GameMap.getInstance().landscapeBlocks[block.x()][block.y()].objectsOnBlock.clone();
 
         for (GameObject objOnBlock : objectsOnBlock) {
-            LOG.debug("--- hit [" + bulletModel.damage + " dmg] -> " + block + " -> " + objOnBlock);
-            if (objOnBlock.hitPoints > bulletModel.damage) {
-                objOnBlock.hitPoints -= bulletModel.damage;
+            LOG.debug("--- hit [" + bulletTemplate.damage + " dmg] -> " + block + " -> " + objOnBlock);
+            if (objOnBlock.hitPoints > bulletTemplate.damage) {
+                objOnBlock.hitPoints -= bulletTemplate.damage;
                 continue;
             }
 
@@ -158,7 +158,7 @@ public class Bullet implements Moveable, Renderable {
     public void render(Graphics g) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
 
-        g.setColor(bulletModel.color);
+        g.setColor(bulletTemplate.color);
         GraphExtensions.fillRect(g, new Rectangle(parallelepiped.loc.x(), parallelepiped.loc.y(), parallelepiped.getAbsDim().x(), parallelepiped.getAbsDim().y()), 0);
         parallelepiped.render(g);
     }

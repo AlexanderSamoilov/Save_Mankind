@@ -400,7 +400,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         if (dv.y() != 0) { // a)
             for (int i = 0; i <= pgmHorizOccupiedBlocks.bottom - pgmHorizOccupiedBlocks.top; i++) {
                 for (int j = pgmHorizOccupiedBlocks.left[i]; j <= pgmHorizOccupiedBlocks.right[i]; j++) {
-                    HashSet<GameObject> objectsOnBlock = GameMap.getInstance().objectsOnMap[j][i + pgmHorizOccupiedBlocks.top];
+                    HashSet<GameObject> objectsOnBlock = GameMap.getInstance().landscapeBlocks[j][i + pgmHorizOccupiedBlocks.top].objectsOnBlock;
                     for (GameObject gameObject : objectsOnBlock) {
                         if (gameObject != this) affectedObjects.add(gameObject.getRect());
                     }
@@ -412,7 +412,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
                                     && (!objectsOnBlock.isEmpty())          // somebody is on the block
                                     && (!objectsOnBlock.contains(this))     // but not me
                     ) {
-                        affectedObjects.add(GameMap.getInstance().landscapeBlocks[j][i + pgmHorizOccupiedBlocks.top].getRect());
+                        affectedObjects.add(GameMap.getInstance().landscapeBlocks[j][i + pgmHorizOccupiedBlocks.top].getAbsBottomRect());
                     }
                 }
             }
@@ -421,7 +421,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
         if (dv.x() != 0) { // b)
             for (int i = 0; i <= pgmVertOccupiedBlocks.right - pgmVertOccupiedBlocks.left; i++) {
                 for (int j = pgmVertOccupiedBlocks.top[i]; j <= pgmVertOccupiedBlocks.bottom[i]; j++) {
-                    HashSet<GameObject> objectsOnBlock = GameMap.getInstance().objectsOnMap[i + pgmVertOccupiedBlocks.left][j];
+                    HashSet<GameObject> objectsOnBlock = GameMap.getInstance().landscapeBlocks[i + pgmVertOccupiedBlocks.left][j].objectsOnBlock;
                     for (GameObject gameObject : objectsOnBlock) {
                         if (gameObject != this) affectedObjects.add(gameObject.getRect());
                     }
@@ -433,7 +433,7 @@ public class GameObject implements Moveable, Rotatable, Centerable, Renderable, 
                                     && (!objectsOnBlock.isEmpty())          // somebody is on the block
                                     && (!objectsOnBlock.contains(this))     // but not me
                     ) {
-                        affectedObjects.add(GameMap.getInstance().landscapeBlocks[i + pgmVertOccupiedBlocks.left][j].getRect());
+                        affectedObjects.add(GameMap.getInstance().landscapeBlocks[i + pgmVertOccupiedBlocks.left][j].getAbsBottomRect());
                     }
                 }
             }

@@ -17,15 +17,15 @@ public class Weapon implements Renderable {
 
     private final int radius;
     private final int reload;
-    private BulletModel bulletModel = null;
+    private BulletTemplate bulletTemplate = null;
     private int reloadCounter = 0;
 
-    public Weapon(int radius, int reload, BulletModel bulletModel) {
+    public Weapon(int radius, int reload, BulletTemplate bulletTemplate) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
 
         this.radius  = radius;
         this.reload  = reload;
-        this.bulletModel = bulletModel;
+        this.bulletTemplate = bulletTemplate;
 
         // default
         this.reloadCounter = 0;
@@ -60,7 +60,7 @@ public class Weapon implements Renderable {
         if (reloadCounter == 0) {
             Integer plId = owner.getPlayerId();
             LOG.debug("Player #(" + plId + ")" + Player.getPlayers()[plId] + ", unit #" + owner + " is shooting -> " + target);
-            Bullet b = new Bullet(owner, location, target, bulletModel);
+            Bullet b = new Bullet(owner, location, target, bulletTemplate);
             GameMap.getInstance().registerBullet(b);
         }
 
