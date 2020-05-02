@@ -38,11 +38,15 @@ public abstract class MathTools {
         return new Double(value * value);
     }
 
+    public static Integer trunc(Double x) {
+        return x.intValue();
+    }
+
     public static Integer round(Double x) {
         RoundingMode rm = getRoundingMode();
         switch (rm) {
             case TRUNC: // https://stackoverflow.com/questions/58220779/java-trunc-method-equivalent/58221383
-                return x.intValue();
+                return trunc(x);
             case CEIL:
                 return (int)Math.ceil(x);
             case FLOOR:

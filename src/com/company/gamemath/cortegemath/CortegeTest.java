@@ -44,10 +44,10 @@ public class CortegeTest {
         c2i.minus(c2d).assertEq(new Cortege2D_Integer(2, -4)); c2i.assign(c2iInitial);
         c2i.mult(2).assertEq(new Cortege2D_Integer(2, -6)); c2i.assign(c2iInitial);
         c2i.mult(2.0).assertEq(new Cortege2D_Integer(2, -6)); c2i.assign(c2iInitial);
-        c2i.div(2).assertEq(new Cortege2D_Integer(1, -1)); c2i.assign(c2iInitial);
-        c2i.div(2.0).assertEq(new Cortege2D_Integer(1, -1)); c2i.assign(c2iInitial);
-        c2i.divInt(2).assertEq(new Cortege2D_Integer(1, -1)); c2i.assign(c2iInitial);
-        c2i.divInt(2.0).assertEq(new Cortege2D_Integer(1, -1)); c2i.assign(c2iInitial);
+        c2i.div(2).assertEq(new Cortege2D_Integer(0, -1)); c2i.assign(c2iInitial);
+        c2i.div(2.0).assertEq(new Cortege2D_Integer(0, -1)); c2i.assign(c2iInitial);
+        c2i.divInt(2).assertEq(new Cortege2D_Integer(0, -1)); c2i.assign(c2iInitial);
+        c2i.divInt(2.0).assertEq(new Cortege2D_Integer(0, -1)); c2i.assign(c2iInitial);
 
         c2d.plus(c2i).assertEqDouble(new Cortege2D_Double(0.1, -1.5), eps); c2d.assign(c2dInitial);
         c2d.plus(c2d).assertEqDouble(new Cortege2D_Double(-1.8, 3), eps); c2d.assign(c2dInitial);
@@ -68,8 +68,8 @@ public class CortegeTest {
         c2i.minus(c2d).minus(c2i).assertEq(new Cortege2D_Integer(0, 0)); c2i.assign(c2iInitial);
         c2i.minus(c2d).minus(c2d).assertEq(new Cortege2D_Integer(3, -5)); c2i.assign(c2iInitial);
         c2i.mult(2).mult(2.0).mult(2).assertEq(new Cortege2D_Integer(8, -24)); c2i.assign(c2iInitial);
-        c2i.div(2).div(2.0).div(2).assertEq(new Cortege2D_Integer(1, 0)); c2i.assign(c2iInitial);
-        c2i.divInt(2).divInt(2.0).divInt(2).assertEq(new Cortege2D_Integer(1, 0)); c2i.assign(c2iInitial);
+        c2i.div(2).div(2.0).div(2).assertEq(new Cortege2D_Integer(0, 0)); c2i.assign(c2iInitial);
+        c2i.divInt(2).divInt(2.0).divInt(2).assertEq(new Cortege2D_Integer(0, 0)); c2i.assign(c2iInitial);
 
         c2d.plus(c2i).plus(c2i).assertEqDouble(new Cortege2D_Double(1.1, -4.5), eps); c2d.assign(c2dInitial);
         c2d.plus(c2i).plus(c2d).assertEqDouble(new Cortege2D_Double(0.2, -3), eps); c2d.assign(c2dInitial);
@@ -96,7 +96,7 @@ public class CortegeTest {
         c2i.multClone(2).multClone(2).multClone(2).assertEq(new Cortege2D_Integer(8, -24));
         c2i.multClone(2).multClone(2.0).multClone(2).assertEqDouble(new Cortege2D_Double(8, -24), eps);
         c2i.divClone(2).divClone(2.0).divClone(2).assertEqDouble(new Cortege2D_Double(0.125, -0.375), eps);
-        c2i.divIntClone(2).divIntClone(2.0).divIntClone(2).assertEq(new Cortege2D_Integer(1, 0));
+        c2i.divIntClone(2).divIntClone(2.0).divIntClone(2).assertEq(new Cortege2D_Integer(0, 0));
         c2i.assertEq(c2iInitial);
 
         c2d.plusClone(c2i).plusClone(c2i).assertEqDouble(new Cortege2D_Double(1.1, -4.5), eps);
@@ -109,7 +109,7 @@ public class CortegeTest {
         c2d.minusClone(c2d).minusClone(c2d).assertEqDouble(new Cortege2D_Double(0.9, -1.5), eps);
         c2d.multClone(2).multClone(2.0).multClone(2).assertEqDouble(new Cortege2D_Double(-7.2, 12), eps);
         c2d.divClone(2).divClone(2.0).divClone(2).assertEqDouble(new Cortege2D_Double(-0.1125, 0.1875), eps);
-        c2d.divIntClone(2).divIntClone(2.0).divIntClone(2).assertEq(new Cortege2D_Integer(0, 1));
+        c2d.divIntClone(2).divIntClone(2.0).divIntClone(2).assertEq(new Cortege2D_Integer(0, 0));
         c2d.assertEq(c2dInitial);
 
         // Test transitivity of binary operators
@@ -129,10 +129,10 @@ public class CortegeTest {
         Cortege2D_Integer.div2(c2i, 2.0).to3D().to2D().assertEqDouble(new Cortege2D_Double(0.5, -1.5), eps);
         Cortege2D_Double.div2(c2d, 2).to3D().to2D().assertEqDouble(new Cortege2D_Double(-0.45, 0.75), eps);
         Cortege2D_Double.div2(c2d, 2.0).to3D().to2D().assertEqDouble(new Cortege2D_Double(-0.45, 0.75), eps);
-        Cortege2D_Integer.divInt2(c2i, 2).to3D().to2D().assertEq(new Cortege2D_Integer(1, -1));
-        Cortege2D_Integer.divInt2(c2i, 2.0).to3D().to2D().assertEq(new Cortege2D_Integer(1, -1));
-        Cortege2D_Double.divInt2(c2d, 2).to3D().to2D().assertEq(new Cortege2D_Integer(0, 1));
-        Cortege2D_Double.divInt2(c2d, 2.0).to3D().to2D().assertEq(new Cortege2D_Integer(0, 1));
+        Cortege2D_Integer.divInt2(c2i, 2).to3D().to2D().assertEq(new Cortege2D_Integer(0, -1));
+        Cortege2D_Integer.divInt2(c2i, 2.0).to3D().to2D().assertEq(new Cortege2D_Integer(0, -1));
+        Cortege2D_Double.divInt2(c2d, 2).to3D().to2D().assertEq(new Cortege2D_Integer(0, 0));
+        Cortege2D_Double.divInt2(c2d, 2.0).to3D().to2D().assertEq(new Cortege2D_Integer(0, 0));
         c2i.assertEq(c2iInitial);
         c2d.assertEq(c2dInitial);
     }
@@ -163,10 +163,10 @@ public class CortegeTest {
         c3i.minus(c3d).assertEq(new Cortege3D_Integer(-1, 0, 2)); c3i.assign(c3iInitial);
         c3i.mult(2).assertEq(new Cortege3D_Integer(-2, 0, 2)); c3i.assign(c3iInitial);
         c3i.mult(2.0).assertEq(new Cortege3D_Integer(-2, 0, 2)); c3i.assign(c3iInitial);
-        c3i.div(2).assertEq(new Cortege3D_Integer(0, 0, 1)); c3i.assign(c3iInitial);
-        c3i.div(2.0).assertEq(new Cortege3D_Integer(0, 0, 1)); c3i.assign(c3iInitial);
-        c3i.divInt(2).assertEq(new Cortege3D_Integer(0, 0, 1)); c3i.assign(c3iInitial);
-        c3i.divInt(2.0).assertEq(new Cortege3D_Integer(0, 0, 1)); c3i.assign(c3iInitial);
+        c3i.div(2).assertEq(new Cortege3D_Integer(0, 0, 0)); c3i.assign(c3iInitial);
+        c3i.div(2.0).assertEq(new Cortege3D_Integer(0, 0, 0)); c3i.assign(c3iInitial);
+        c3i.divInt(2).assertEq(new Cortege3D_Integer(0, 0, 0)); c3i.assign(c3iInitial);
+        c3i.divInt(2.0).assertEq(new Cortege3D_Integer(0, 0, 0)); c3i.assign(c3iInitial);
 
         c3d.plus(c3i).assertEqDouble(new Cortege3D_Double(-0.5, 0.2, 0.2), eps); c3d.assign(c3dInitial);
         c3d.plus(c3d).assertEqDouble(new Cortege3D_Double(1, 0.4, -1.6), eps); c3d.assign(c3dInitial);
@@ -187,8 +187,8 @@ public class CortegeTest {
         c3i.minus(c3d).minus(c3i).assertEq(new Cortege3D_Integer(0, 0, 0)); c3i.assign(c3iInitial);
         c3i.minus(c3d).minus(c3d).assertEq(new Cortege3D_Integer(-1, 0, 3)); c3i.assign(c3iInitial);
         c3i.mult(2).mult(2.0).mult(2).assertEq(new Cortege3D_Integer(-8, 0, 8)); c3i.assign(c3iInitial);
-        c3i.div(2).div(2.0).div(2).assertEq(new Cortege3D_Integer(0, 0, 1)); c3i.assign(c3iInitial);
-        c3i.divInt(2).divInt(2.0).divInt(2).assertEq(new Cortege3D_Integer(0, 0, 1)); c3i.assign(c3iInitial);
+        c3i.div(2).div(2.0).div(2).assertEq(new Cortege3D_Integer(0, 0, 0)); c3i.assign(c3iInitial);
+        c3i.divInt(2).divInt(2.0).divInt(2).assertEq(new Cortege3D_Integer(0, 0, 0)); c3i.assign(c3iInitial);
 
         c3d.plus(c3i).plus(c3i).assertEqDouble(new Cortege3D_Double(-1.5, 0.2, 1.2), eps); c3d.assign(c3dInitial);
         c3d.plus(c3i).plus(c3d).assertEqDouble(new Cortege3D_Double(-1, 0.4, 0.4), eps); c3d.assign(c3dInitial);
@@ -214,7 +214,7 @@ public class CortegeTest {
         c3i.multClone(2).multClone(2).multClone(2).assertEq(new Cortege3D_Integer(-8, 0, 8));
         c3i.multClone(2).multClone(2.0).multClone(2).assertEqDouble(new Cortege3D_Double(-8, 0, 8), eps);
         c3i.divClone(2).divClone(2.0).divClone(2).assertEqDouble(new Cortege3D_Double(-0.125, 0, 0.125), eps);
-        c3i.divIntClone(2).divIntClone(2.0).divIntClone(2).assertEq(new Cortege3D_Integer(0, 0, 1));
+        c3i.divIntClone(2).divIntClone(2.0).divIntClone(2).assertEq(new Cortege3D_Integer(0, 0, 0));
         c3i.assertEq(c3iInitial);
 
         c3d.plusClone(c3i).plusClone(c3i).assertEqDouble(new Cortege3D_Double(-1.5, 0.2, 1.2), eps);
@@ -308,8 +308,8 @@ public class CortegeTest {
         p2i.minus(v2d).assertEq(new Point2D_Integer(2, -4)); p2i.assign(p2iInitial);
         p2i.mult(2).assertEq(new Point2D_Integer(2, -6)); p2i.assign(p2iInitial);
         p2i.mult(2.0).assertEq(new Point2D_Integer(2, -6)); p2i.assign(p2iInitial);
-        p2i.div(2).assertEq(new Point2D_Integer(1, -1)); p2i.assign(p2iInitial);
-        p2i.div(2.0).assertEq(new Point2D_Integer(1, -1)); p2i.assign(p2iInitial);
+        p2i.div(2).assertEq(new Point2D_Integer(0, -1)); p2i.assign(p2iInitial);
+        p2i.div(2.0).assertEq(new Point2D_Integer(0, -1)); p2i.assign(p2iInitial);
 
         p2d.plus(v2i).assertEqDouble(new Point2D_Double(0.1, -1.5), eps); p2d.assign(p2dInitial);
         p2d.plus(v2d).assertEqDouble(new Point2D_Double(-1.8, 3), eps); p2d.assign(p2dInitial);
@@ -326,8 +326,8 @@ public class CortegeTest {
         v2i.minus(v2d).assertEq(new Vector2D_Integer(2, -4)); v2i.assign(v2iInitial);
         v2i.mult(2).assertEq(new Vector2D_Integer(2, -6)); v2i.assign(v2iInitial);
         v2i.mult(2.0).assertEq(new Vector2D_Integer(2, -6)); v2i.assign(v2iInitial);
-        v2i.div(2).assertEq(new Vector2D_Integer(1, -1)); v2i.assign(v2iInitial);
-        v2i.div(2.0).assertEq(new Vector2D_Integer(1, -1)); v2i.assign(v2iInitial);
+        v2i.div(2).assertEq(new Vector2D_Integer(0, -1)); v2i.assign(v2iInitial);
+        v2i.div(2.0).assertEq(new Vector2D_Integer(0, -1)); v2i.assign(v2iInitial);
 
         v2d.plus(v2i).assertEqDouble(new Vector2D_Double(0.1, -1.5), eps); v2d.assign(v2dInitial);
         v2d.plus(v2d).assertEqDouble(new Vector2D_Double(-1.8, 3), eps); v2d.assign(v2dInitial);
@@ -348,8 +348,8 @@ public class CortegeTest {
         p2i.minus(v2d).minus(v2i).assertEq(new Point2D_Integer(1, -1)); p2i.assign(p2iInitial);
         p2i.minus(v2d).minus(v2d).assertEq(new Point2D_Integer(3, -5)); p2i.assign(p2iInitial);
         p2i.mult(2).mult(2.0).mult(2).assertEq(new Point2D_Integer(8, -24)); p2i.assign(p2iInitial);
-        p2i.div(2).div(2.0).div(2).assertEq(new Point2D_Integer(1, 0)); p2i.assign(p2iInitial);
-        p2i.divInt(2).divInt(2.0).divInt(2).assertEq(new Point2D_Integer(1, 0)); p2i.assign(p2iInitial);
+        p2i.div(2).div(2.0).div(2).assertEq(new Point2D_Integer(0, 0)); p2i.assign(p2iInitial);
+        p2i.divInt(2).divInt(2.0).divInt(2).assertEq(new Point2D_Integer(0, 0)); p2i.assign(p2iInitial);
 
         p2d.plus(v2i).plus(v2i).assertEqDouble(new Point2D_Double(1.1, -4.5), eps); p2d.assign(p2dInitial);
         p2d.plus(v2i).plus(v2d).assertEqDouble(new Point2D_Double(-0.8, 0), eps); p2d.assign(p2dInitial);
@@ -371,8 +371,8 @@ public class CortegeTest {
         v2i.minus(v2d).minus(v2i).assertEq(new Vector2D_Integer(0, 0)); v2i.assign(v2iInitial);
         v2i.minus(v2d).minus(v2d).assertEq(new Vector2D_Integer(3, -5)); v2i.assign(v2iInitial);
         v2i.mult(2).mult(2.0).mult(2).assertEq(new Vector2D_Integer(8, -24)); v2i.assign(v2iInitial);
-        v2i.div(2).div(2.0).div(2).assertEq(new Vector2D_Integer(1, 0)); v2i.assign(v2iInitial);
-        v2i.divInt(2).divInt(2.0).divInt(2).assertEq(new Vector2D_Integer(1, 0)); v2i.assign(v2iInitial);
+        v2i.div(2).div(2.0).div(2).assertEq(new Vector2D_Integer(0, 0)); v2i.assign(v2iInitial);
+        v2i.divInt(2).divInt(2.0).divInt(2).assertEq(new Vector2D_Integer(0, 0)); v2i.assign(v2iInitial);
 
         v2d.plus(v2i).plus(v2i).assertEqDouble(new Vector2D_Double(1.1, -4.5), eps); v2d.assign(v2dInitial);
         v2d.plus(v2i).plus(v2d).assertEqDouble(new Vector2D_Double(0.2, -3), eps); v2d.assign(v2dInitial);
@@ -401,7 +401,7 @@ public class CortegeTest {
         p2i.minusClone(v2d).minusClone(v2d).assertEqDouble(new Point2D_Double(2.8, -6), eps);
         p2i.multClone(2).multClone(2.0).multClone(2).assertEq(new Point2D_Double(8, -24));
         p2i.divClone(2).divClone(2.0).divClone(2).assertEqDouble(new Point2D_Double(0.125, -0.375), eps);
-        p2i.divIntClone(2).divIntClone(2.0).divIntClone(2).assertEq(new Point2D_Integer(1, 0));
+        p2i.divIntClone(2).divIntClone(2.0).divIntClone(2).assertEq(new Point2D_Integer(0, 0));
         p2i.assertEq(p2iInitial);
 
         p2d.plusClone(v2i).plusClone(v2i).assertEqDouble(new Point2D_Double(1.1, -4.5), eps);
@@ -418,7 +418,7 @@ public class CortegeTest {
         p2d.minusClone(v2d).minusClone(v2d).assertEqDouble(new Point2D_Double(0.9, -1.5), eps);
         p2d.multClone(2).multClone(2.0).multClone(2).assertEqDouble(new Point2D_Double(-7.2, 12), eps);
         p2d.divClone(2).divClone(2.0).divClone(2).assertEqDouble(new Point2D_Double(-0.1125, 0.1875), eps);
-        p2d.divIntClone(2).divIntClone(2.0).divIntClone(2).assertEq(new Point2D_Integer(0, 1));
+        p2d.divIntClone(2).divIntClone(2.0).divIntClone(2).assertEq(new Point2D_Integer(0, 0));
         p2d.assertEq(p2dInitial);
 
         v2i.plusClone(v2i).plusClone(v2i).assertEq(new Vector2D_Integer(3, -9));
@@ -431,7 +431,7 @@ public class CortegeTest {
         v2i.minusClone(v2d).minusClone(v2d).assertEqDouble(new Vector2D_Double(2.8, -6), eps);
         v2i.multClone(2).multClone(2.0).multClone(2).assertEq(new Vector2D_Double(8, -24));
         v2i.divClone(2).divClone(2.0).divClone(2).assertEqDouble(new Vector2D_Double(0.125, -0.375), eps);
-        v2i.divIntClone(2).divIntClone(2.0).divIntClone(2).assertEq(new Vector2D_Integer(1, 0));
+        v2i.divIntClone(2).divIntClone(2.0).divIntClone(2).assertEq(new Vector2D_Integer(0, 0));
         v2i.assertEq(v2iInitial);
 
         v2d.plusClone(v2i).plusClone(v2i).assertEqDouble(new Vector2D_Double(1.1, -4.5), eps);
@@ -444,7 +444,7 @@ public class CortegeTest {
         v2d.minusClone(v2d).minusClone(v2d).assertEqDouble(new Vector2D_Double(0.9, -1.5), eps);
         v2d.multClone(2).multClone(2.0).multClone(2).assertEqDouble(new Vector2D_Double(-7.2, 12), eps);
         v2d.divClone(2).divClone(2.0).divClone(2).assertEqDouble(new Vector2D_Double(-0.1125, 0.1875), eps);
-        v2d.divIntClone(2).divIntClone(2.0).divIntClone(2).assertEq(new Vector2D_Integer(0, 1));
+        v2d.divIntClone(2).divIntClone(2.0).divIntClone(2).assertEq(new Vector2D_Integer(0, 0));
         v2d.assertEq(v2dInitial);
 
         // Test transitivity of binary operators
@@ -505,14 +505,14 @@ public class CortegeTest {
         v2i.assertEq(v2iInitial);
         v2d.assertEq(v2dInitial);
 
-        Point2D_Integer.divInt2(p2i, 2).to3D().to2D().assertEq(new Point2D_Integer(1, -1));
-        Point2D_Integer.divInt2(p2i, 2.0).to3D().to2D().assertEq(new Point2D_Integer(1, -1));
-        Point2D_Double.divInt2(p2d, 2).to3D().to2D().assertEq(new Point2D_Integer(0, 1));
-        Point2D_Double.divInt2(p2d, 2.0).to3D().to2D().assertEq(new Point2D_Integer(0, 1));
-        Vector2D_Integer.divInt2(v2i, 2).to3D().to2D().assertEq(new Vector2D_Integer(1, -1));
-        Vector2D_Integer.divInt2(v2i, 2.0).to3D().to2D().assertEq(new Vector2D_Integer(1, -1));
-        Vector2D_Double.divInt2(v2d, 2).to3D().to2D().assertEq(new Vector2D_Integer(0, 1));
-        Vector2D_Double.divInt2(v2d, 2.0).to3D().to2D().assertEq(new Vector2D_Integer(0, 1));
+        Point2D_Integer.divInt2(p2i, 2).to3D().to2D().assertEq(new Point2D_Integer(0, -1));
+        Point2D_Integer.divInt2(p2i, 2.0).to3D().to2D().assertEq(new Point2D_Integer(0, -1));
+        Point2D_Double.divInt2(p2d, 2).to3D().to2D().assertEq(new Point2D_Integer(0, 0));
+        Point2D_Double.divInt2(p2d, 2.0).to3D().to2D().assertEq(new Point2D_Integer(0, 0));
+        Vector2D_Integer.divInt2(v2i, 2).to3D().to2D().assertEq(new Vector2D_Integer(0, -1));
+        Vector2D_Integer.divInt2(v2i, 2.0).to3D().to2D().assertEq(new Vector2D_Integer(0, -1));
+        Vector2D_Double.divInt2(v2d, 2).to3D().to2D().assertEq(new Vector2D_Integer(0, 0));
+        Vector2D_Double.divInt2(v2d, 2.0).to3D().to2D().assertEq(new Vector2D_Integer(0, 0));
         p2i.assertEq(p2iInitial);
         p2d.assertEq(p2dInitial);
         v2i.assertEq(v2iInitial);
@@ -571,8 +571,8 @@ public class CortegeTest {
         p3i.minus(v3d).assertEq(new Point3D_Integer(-1, 1, 1)); p3i.assign(p3iInitial);
         p3i.mult(2).assertEq(new Point3D_Integer(-2, 0, 2)); p3i.assign(p3iInitial);
         p3i.mult(2.0).assertEq(new Point3D_Integer(-2, 0, 2)); p3i.assign(p3iInitial);
-        p3i.div(2).assertEq(new Point3D_Integer(0, 0, 1)); p3i.assign(p3iInitial);
-        p3i.div(2.0).assertEq(new Point3D_Integer(0, 0, 1)); p3i.assign(p3iInitial);
+        p3i.div(2).assertEq(new Point3D_Integer(0, 0, 0)); p3i.assign(p3iInitial);
+        p3i.div(2.0).assertEq(new Point3D_Integer(0, 0, 0)); p3i.assign(p3iInitial);
 
         p3d.plus(v3i).assertEqDouble(new Point3D_Double(-1.4, 0.6, 1.99), eps); p3d.assign(p3dInitial);
         p3d.plus(v3d).assertEqDouble(new Point3D_Double(0.1, 0.1, 1), eps); p3d.assign(p3dInitial);
@@ -589,8 +589,8 @@ public class CortegeTest {
         v3i.minus(v3d).assertEq(new Vector3D_Integer(-1, 1, 1)); v3i.assign(v3iInitial);
         v3i.mult(2).assertEq(new Vector3D_Integer(-2, 0, 2)); v3i.assign(v3iInitial);
         v3i.mult(2.0).assertEq(new Vector3D_Integer(-2, 0, 2)); v3i.assign(v3iInitial);
-        v3i.div(2).assertEq(new Vector3D_Integer(0, 0, 1)); v3i.assign(v3iInitial);
-        v3i.div(2.0).assertEq(new Vector3D_Integer(0, 0, 1)); v3i.assign(v3iInitial);
+        v3i.div(2).assertEq(new Vector3D_Integer(0, 0, 0)); v3i.assign(v3iInitial);
+        v3i.div(2.0).assertEq(new Vector3D_Integer(0, 0, 0)); v3i.assign(v3iInitial);
 
         v3d.plus(v3i).assertEqDouble(new Vector3D_Double(-0.5, -0.5, 1.01), eps); v3d.assign(v3dInitial);
         v3d.plus(v3d).assertEqDouble(new Vector3D_Double(1, -1, 0.02), eps); v3d.assign(v3dInitial);
@@ -611,8 +611,8 @@ public class CortegeTest {
         p3i.minus(v3d).minus(v3i).assertEq(new Point3D_Integer(0, 1, 0)); p3i.assign(p3iInitial);
         p3i.minus(v3d).minus(v3d).assertEq(new Point3D_Integer(-1, 2, 1)); p3i.assign(p3iInitial);
         p3i.mult(2).mult(2.0).mult(2).assertEq(new Point3D_Integer(-8, 0, 8)); p3i.assign(p3iInitial);
-        p3i.div(2).div(2.0).div(2).assertEq(new Point3D_Integer(0, 0, 1)); p3i.assign(p3iInitial);
-        p3i.divInt(2).divInt(2.0).divInt(2).assertEq(new Point3D_Integer(0, 0, 1)); p3i.assign(p3iInitial);
+        p3i.div(2).div(2.0).div(2).assertEq(new Point3D_Integer(0, 0, 0)); p3i.assign(p3iInitial);
+        p3i.divInt(2).divInt(2.0).divInt(2).assertEq(new Point3D_Integer(0, 0, 0)); p3i.assign(p3iInitial);
 
         p3d.plus(v3i).plus(v3i).assertEqDouble(new Point3D_Double(-2.4, 0.6, 2.99), eps); p3d.assign(p3dInitial);
         p3d.plus(v3i).plus(v3d).assertEqDouble(new Point3D_Double(-0.9, 0.1, 2), eps); p3d.assign(p3dInitial);
@@ -634,8 +634,8 @@ public class CortegeTest {
         v3i.minus(v3d).minus(v3i).assertEq(new Vector3D_Integer(0, 0, 0)); v3i.assign(v3iInitial);
         v3i.minus(v3d).minus(v3d).assertEq(new Vector3D_Integer(-1, 2, 1)); v3i.assign(v3iInitial);
         v3i.mult(2).mult(2.0).mult(2).assertEq(new Vector3D_Integer(-8, 0, 8)); v3i.assign(v3iInitial);
-        v3i.div(2).div(2.0).div(2).assertEq(new Vector3D_Integer(0, 0, 1)); v3i.assign(v3iInitial);
-        v3i.divInt(2).divInt(2.0).divInt(2).assertEq(new Vector3D_Integer(0, 0, 1)); v3i.assign(v3iInitial);
+        v3i.div(2).div(2.0).div(2).assertEq(new Vector3D_Integer(0, 0, 0)); v3i.assign(v3iInitial);
+        v3i.divInt(2).divInt(2.0).divInt(2).assertEq(new Vector3D_Integer(0, 0, 0)); v3i.assign(v3iInitial);
 
         v3d.plus(v3i).plus(v3i).assertEqDouble(new Vector3D_Double(-1.5, -0.5, 2.01), eps); v3d.assign(v3dInitial);
         v3d.plus(v3i).plus(v3d).assertEqDouble(new Vector3D_Double(-1, -1, 2.02), eps); v3d.assign(v3dInitial);
@@ -664,7 +664,7 @@ public class CortegeTest {
         p3i.minusClone(v3d).minusClone(v3d).assertEqDouble(new Point3D_Double(-2, 1, 0.98), eps);
         p3i.multClone(2).multClone(2.0).multClone(2).assertEq(new Point3D_Double(-8, 0, 8));
         p3i.divClone(2).divClone(2.0).divClone(2).assertEqDouble(new Point3D_Double(-0.125, 0, 0.125), eps);
-        p3i.divIntClone(2).divIntClone(2.0).divIntClone(2).assertEq(new Point3D_Integer(0, 0, 1));
+        p3i.divIntClone(2).divIntClone(2.0).divIntClone(2).assertEq(new Point3D_Integer(0, 0, 0));
         p3i.assertEq(p3iInitial);
 
         p3d.plusClone(v3i).plusClone(v3i).assertEqDouble(new Point3D_Double(-2.4, 0.6, 2.99), eps);
@@ -694,7 +694,7 @@ public class CortegeTest {
         v3i.minusClone(v3d).minusClone(v3d).assertEqDouble(new Vector3D_Double(-2, 1, 0.98), eps);
         v3i.multClone(2).multClone(2.0).multClone(2).assertEq(new Vector3D_Double(-8, 0, 8));
         v3i.divClone(2).divClone(2.0).divClone(2).assertEqDouble(new Vector3D_Double(-0.125, 0, 0.125), eps);
-        v3i.divIntClone(2).divIntClone(2.0).divIntClone(2).assertEq(new Vector3D_Integer(0, 0, 1));
+        v3i.divIntClone(2).divIntClone(2.0).divIntClone(2).assertEq(new Vector3D_Integer(0, 0, 0));
         v3i.assertEq(v3iInitial);
 
         v3d.plusClone(v3i).plusClone(v3i).assertEqDouble(new Vector3D_Double(-1.5, -0.5, 2.01), eps);

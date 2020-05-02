@@ -243,7 +243,7 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
         if (this.type() == Integer.class) {
             for (int i = 0; i <= this.size() - 1; i++) {
                 //this.data[i] = (T) (new Integer(this.data[i].intValue() * num));
-                this.data[i] = castToGeneric(MathTools.round(this.data[i].intValue() / num.doubleValue()), type);
+                this.data[i] = castToGeneric(MathTools.trunc(this.data[i].intValue() / num.doubleValue()), type);
             }
         } else if (this.type() == Double.class) {
             for (int i = 0; i <= this.size() - 1; i++) {
