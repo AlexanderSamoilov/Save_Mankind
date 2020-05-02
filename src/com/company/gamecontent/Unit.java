@@ -266,7 +266,7 @@ public class Unit extends GameObject implements Shootable {
                     );
                 }
 
-                if (targetObject.getRect().contains(far.x(), far.y())) {
+                if (targetObject.getAbsBottomRect().contains(far.x(), far.y())) {
                     LOG.trace("Player " + this.getPlayerId() + " shoots target border");
                     shoot(far);
                     return;

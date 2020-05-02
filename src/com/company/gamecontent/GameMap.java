@@ -140,7 +140,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
                 boolean in_the_middle = gridRect.isMiddleBlock(i, j);
 
                 for (GameObject objectOnMap : landscapeBlocks[i][j].objectsOnBlock) {
-                    Rectangle objectOnMapRect = objectOnMap.getRect();
+                    Rectangle objectOnMapRect = objectOnMap.getAbsBottomRect();
 
                     // TODO Why is this working without contains()?
                     if (
@@ -242,7 +242,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
     public void registerObject(GameObject gameObj) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
 
-        GridRectangle gridRect = new GridRectangle(gameObj.getRect());
+        GridRectangle gridRect = new GridRectangle(gameObj.getAbsBottomRect());
 
         for (int i = gridRect.left; i <= gridRect.right; i++) {
             for (int j = gridRect.top; j <= gridRect.bottom; j++) {
@@ -258,7 +258,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
     public void eraseObject(GameObject gameObj) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
 
-        GridRectangle gridRect = new GridRectangle(gameObj.getRect());
+        GridRectangle gridRect = new GridRectangle(gameObj.getAbsBottomRect());
 
         for (int i = gridRect.left; i <= gridRect.right; i++) {
             for (int j = gridRect.top; j <= gridRect.bottom; j++) {
@@ -323,7 +323,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
                     }
                     // ELSE: Severity 1: Multiple objects on the same block are allowed when they don't intersect
 
-                    Rectangle objOnBlockRect = objOnBlock.getRect();
+                    Rectangle objOnBlockRect = objOnBlock.getAbsBottomRect();
 
                     // DEBUG
                     LOG.trace("Check 1: (" + givenRect.x + "," + givenRect.y + "," + givenRect.width + "," + givenRect.height);

@@ -37,6 +37,8 @@ public abstract class GameMapRenderer {
         }
     }
 
+    // FIXME: Current implementation is not optimal
+    // We traverse through the same GO if it belongs to several LB.
     private static void renderObjects(Graphics g, GameMap map) {
         for (int i = 0; i < map.getDim().x(); i++) {
             for (int j = 0; j < map.getDim().y(); j++) {

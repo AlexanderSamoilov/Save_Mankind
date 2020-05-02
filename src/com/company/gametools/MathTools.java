@@ -1,6 +1,7 @@
 package com.company.gametools;
 
 import com.company.gamemath.cortegemath.cortege.Cortege3D_Integer;
+import com.company.gamemath.cortegemath.point.Point2D_Double;
 import com.company.gamemath.cortegemath.point.Point2D_Integer;
 import com.company.gamemath.cortegemath.point.Point3D_Integer;
 import com.company.gamethread.Main;
@@ -8,6 +9,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Random;
+
+import static com.company.gamecontent.Restrictions.Y_ORIENT;
 
 public abstract class MathTools {
 
@@ -88,6 +91,183 @@ public abstract class MathTools {
 
         return nextPoint;
     }
+
+    /*
+     This function calculates the rotation direction between two vectors.
+     The first vector is defined by its ray angle rayAngle.
+     The second vector is defined by its start and end points.
+
+     Return value:
+      1 - counter clockwise
+      0 - 180 degrees (turn opposite)
+     -1 - clockwise
+     */
+    public static int getRotationDirectionRay (double rayAngle, Point2D_Double pointFrom, Point2D_Integer pointTo) {
+
+        if (pointFrom == null) throw new NullPointerException("getRotationDirectionRay: pointFrom is NULL!");
+        if (pointTo == null) throw new NullPointerException("getRotationDirectionRay: pointTo is NULL!");
+
+        /*
+        Hayami uses the following formula to determine on which of two semi-planes (left or right)
+        obtained by the division of the 2D-space by the given ray with center in O(x0, y0) and direction-vector (xv,yv)
+        lays the given point P(xp, yp):
+
+                                           invariant = xv * (yp - y0) - (xp - x0) * yv
+
+        If invariant > 0 then the point (xp, yp) lays on the left semi-plane from the vector (xv,yv)
+        If invariant < 0 then the point (xp, yp) lays on the right semi-plane from the vector (xv,yv)
+        If invariant == 0 then the point (xp, yp) lays on the line given by the vector (xv,yv)
+
+        The goal is to rotate the ray given by the vector (xv, yv) until it intersects the point (xp, yp),
+        but in the direction of minimal angle (shorter angle). It is obvious that it is shorter to turn to
+        that semi-plane where the point is located.
+
+        Thus,
+        if invatiant > 0 we should turn left (counter clockwise)
+        if invariant < 0 we should turn right (clockwise)
+        if invariant == 0 we should turn backwards (180°)
+
+        */
+
+        // Point "O" - center of the object
+        double x0 =             pointFrom.x();
+        double y0 = Y_ORIENT  * pointFrom.y();
+
+        // Point "P"
+        int xp = pointTo.x();
+        int yp = Y_ORIENT  * pointTo.y();
+
+        // The direction-vector of the ray has coordinates (cos fi, sin fi) where fi = this.currAngle, so ...
+        double invariant = (yp - y0) * Math.cos(rayAngle) - (xp - x0) * Math.sin(rayAngle);
+        //double angleLeft = Math.acos(((xp - x0) * Math.cos(this.currAngle) + (yp - y0) * Math.sin(this.currAngle))
+        //        / MathBugfixes.sqrt(sqrVal(xp - x0) + sqrVal(yp - y0)));
+
+        // counter clockwise (1), clockwise (-1) or just backwards (0)
+        // NOTE: In the Cartesian coordinate system the angle is growing counter clockwise!
+        return (int)Math.signum(invariant);
+
+    }
+
+
+    /*
+        public int getRotationDirectionPolar () {
+            double destAngle = ...;
+            double diffAngles = destAngle - currAngle;
+
+            if (diffAngles > 0 && diffAngles < Math.toRadians(180)) {
+                return 1;
+            }
+
+            if (diffAngles > Math.toRadians(180)) {
+                return -1;
+            }
+
+            if (diffAngles < 0 && diffAngles > -Math.toRadians(180)) {
+                return -1;
+            }
+
+            if (diffAngles < -Math.toRadians(180)) {
+                return 1;
+            }
+
+            return 0;
+        }
+    */
+
+    /*
+     Calculates the angle between two vectors and checks whether it exceeds the given value (dAngle).
+     The first vector is defined by its ray angle (rayAngle)
+     The second vector is defined by its start and end points.
+     */
+    public static boolean angleBetweenRayAndPointLessThan(double rayAngle, Point2D_Double pointFrom, Point2D_Integer pointTo, double dAngle) {
+
+        if (pointFrom == null) throw new NullPointerException("angleBetweenRayAndPointLessThan: pointFrom is NULL!");
+        if (pointTo == null) throw new NullPointerException("angleBetweenRayAndPointLessThan: pointTo is NULL!");
+
+        // Point "O" - center of the object
+        double x0 =             pointFrom.x();
+        double y0 = Y_ORIENT  * pointFrom.y();
+
+        // Point "P" - destination point of rotation
+        int xp = pointTo.x();
+        int yp = Y_ORIENT  * pointTo.y();
+
+        // Distance to dest point less than 1 pixel
+        // We don't check exactly == 0 because we use type double that can give small deviation
+        if ((Math.abs(xp - x0) < 1) && (Math.abs(yp - y0) < 1)) {
+            return true;
+        }
+        /* Here we use the formulae of the angle between two vectors:
+                       cos (a1,b1) ^ (a2,b2) = (a1*a2 + b1*b2) / (|(a1,b1)| * |(a2,b2)|)
+                       where |(ai,bi)| is then length of the i-vector, that is sqrt(ai*ai + bi*bi)
+
+        We want to know when the angle between two vectors is less then the given value dAngle. Calculations:
+                       (a1,b1) ^ (a2,b2) < dAngle
+
+        f(x) = cos(x) is monotonically decreasing within [0; PI] and we consider only angles within [0; PI],
+        because we don't care about orientation (we just need to get the angle between two rays given by two vectors).
+        Taking into account the monotonic behaviour of f(x) = cos(x) in the interval [0; PI] we have this:
+                       cos (a1,b1) ^ (a2,b2) > cos(dAngle)
+                       (a1*a2 + b1*b2) / (|(a1,b1)| * |(a2,b2)|) > cos(dAngle)
+                       a1*a2 + b1*b2 > |(a1,b1)| * |(a2,b2)| * cos(dAngle)
+                       a1*a2 + b1*b2 > len(a1,b1) * len(a2,b2) * cos(dAngle)
+
+        We are free to choose arbitrary the length of the vector which represents the ray of the objects' orientation,
+        thus let us suppose that len(a1,b1) = 1, because a1 = cos(fi), b1 = sin(fi), therefore:
+                       a2 * cos(fi) + b2 * sin(fi) > len(a2,b2) * cos(dAngle)
+
+        Vector (a1,b1) represents the ray of the current objects' orientation (its length is 1)
+        a1 = cos(rayAngle), b1 = sin(rayAngle)
+        Vector (a2,b2) represents the ray from the center of the object towards destination rotation point "P"
+        a2 = xp - x0, b2 = yp - y0
+
+        */
+
+        // len(a2,b2)
+        double len = MathBugfixes.sqrt(sqrVal(xp - x0) + sqrVal(yp - y0));
+/*
+        LOG.debug("Len = " + len);
+        LOG.debug(
+            "Current angle between vectors: " +
+            Math.acos(
+                ((xp - x0) * Math.cos(rayAngle) + (yp - y0) * Math.sin(rayAngle)) / len
+            )
+        );
+        LOG.debug("a1 = " + 100*Math.cos(rayAngle) + ", b1 = " + Math.sin(rayAngle));
+        LOG.debug("a2 = " + (xp - x0) + ", b2=" + (yp - y0));
+        LOG.debug("rayAngle = " + Math.toDegrees(rayAngle));
+*/
+        return  (xp - x0) * Math.cos(rayAngle) +
+                (yp - y0) * Math.sin(rayAngle) > len * Math.cos(dAngle);
+    }
+
+
+    public static boolean angleBetweenRayAndPointSmallEnoughRegardingRotationSpeed(double rayAngle, Point2D_Double pointFrom, Point2D_Integer pointTo, double rotation_speed) {
+        // Sometimes it is better to turn one more time (even if the angle different is already less than given delta)
+        // For example if delta is 45°, we turned and now the angle between the target and our object is 40°.
+        // In such case it is better to do one more turn step and the angle will 40° - 45° = -5° which is more precise.
+
+        // Let imagine we are on the position where delta less then dFi (that is we are closer to the desired destAngle
+        // less than the rotation step). Then we can turn once again and we cross the destination ray.
+        // So, before we cross the destination ray the delta is fi1=abs(destAngle - currAngle)
+        // After we cross the delta will be fi2=abs(destAngle - currAngle - step)
+        // Both of them less than step, but we want to choose the one which absolute value is less.
+
+        // It is obvious that: fi1 + fi2 = step
+        // It means that fi1 <= step /2 or fi2 <= step /2
+        // So we COULD set the stopping criterion: angleBetweenRayAndPointLessThan(rayAngle, pointFrom, pointTo, rotation_speed * 0.5)
+        // However it is very risky since we are not in the perfect math world, but in computer
+        // Thus we must take some value which is "a little more than" 0.5, but enough more to cover calc errors.
+
+        // What is "close to, but not really more than" 0.5?
+        // 2/3, 3/5, 4/7, 5/9, 6/10, ... - this sequence approximates to 0.5
+        // the sequence formula: (n + 1) / 2n
+        // let's take for example n = 5, then K = 0.6 which is a little more than 0.5, but safe.
+        int N = 5;
+        double K = (N + 1) / (2.0 * N);
+        return angleBetweenRayAndPointLessThan(rayAngle, pointFrom, pointTo, K * rotation_speed);
+    }
+
 
     /* Tests if a given point belongs to the given section [A; B].
         Return value:
