@@ -1,13 +1,14 @@
 package com.company.gamecontent;
 
-import com.company.gamemath.cortegemath.point.Point3D_Integer;
-import com.company.gamethread.ParameterizedMutexManager;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.awt.*;
 import java.util.Arrays;
 import java.util.HashSet;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.company.gamemath.cortegemath.point.Point3D_Integer;
+import com.company.gamethread.ParameterizedMutexManager;
 
 public class Weapon implements Renderable {
     private static Logger LOG = LogManager.getLogger(Weapon.class.getName());

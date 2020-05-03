@@ -1,5 +1,8 @@
 package com.company.gamemath.cortegemath;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.company.gamemath.cortegemath.cortege.*;
 import com.company.gamemath.cortegemath.point.Point2D_Double;
 import com.company.gamemath.cortegemath.point.Point2D_Integer;
@@ -9,9 +12,6 @@ import com.company.gamemath.cortegemath.vector.Vector2D_Double;
 import com.company.gamemath.cortegemath.vector.Vector2D_Integer;
 import com.company.gamemath.cortegemath.vector.Vector3D_Double;
 import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class CortegeTest {
 

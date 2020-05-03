@@ -1,16 +1,15 @@
-// https://habr.com/post/145433/
 package com.company.gamegraphics;
 
-import com.company.gamegeom._3d.Parallelepiped;
-
-import com.company.gamethread.Main;
-
-import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import javax.imageio.ImageIO; // https://habr.com/post/145433/
+
+import com.company.gamegeom._3d.Parallelepiped;
+
+import static com.company.gamethread.M_Thread.terminateNoGiveUp;
 
 public class Sprite {
 //    private static Logger LOG = LogManager.getLogger(Sprite.class.getName());
@@ -45,7 +44,7 @@ public class Sprite {
             this.image = ImageIO.read(new File("./res/drawable/" + filename));
         } catch (IOException e) {
             // FIXME -> Main.terminateNoGiveUp()
-            Main.terminateNoGiveUp(e,
+            terminateNoGiveUp(e,
                     1000,
                     "Could not set Sprite: ./res/drawable/" + filename + " could not be read/found."
             );

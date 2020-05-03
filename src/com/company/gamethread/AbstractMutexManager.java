@@ -1,14 +1,16 @@
 package com.company.gamethread;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.lang.reflect.ParameterizedType;
 import java.util.ConcurrentModificationException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.NoSuchElementException;
 import java.util.function.BiFunction;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import static com.company.gamethread.M_Thread.terminateNoGiveUp;
 
 // TODO:
 // 1. Remember threadId of each D, V, C and check if it matches and if there is only one when a new element is added
@@ -71,7 +73,7 @@ public abstract class AbstractMutexManager <TypeKey, TypeValue> extends Concurre
                 // Even more. When thread A asks thread B it uses not the same key when thread B asks thread A.
                 TypeValue val = (TypeValue) super.get(key); // class cast exception?
                 if (val != value) {
-                    Main.terminateNoGiveUp(null,
+                    terminateNoGiveUp(null,
                             1000,
                             "Error: insert(" + key + "," + value + "): conflict, value already = " + val
                     );
@@ -84,7 +86,7 @@ public abstract class AbstractMutexManager <TypeKey, TypeValue> extends Concurre
                     super.put(key, value);
                 } catch (ConcurrentModificationException e) {
                     // TODO: there is no sense anymore in this exception, because we already use ConcurrentHashMap
-                    Main.terminateNoGiveUp(null,
+                    terminateNoGiveUp(null,
                             1000,
                             "Error: ConcurrentModificationException on writing to hash[" + key + "]"
                     );
@@ -115,7 +117,7 @@ public abstract class AbstractMutexManager <TypeKey, TypeValue> extends Concurre
                 if (TypeV.isInstance(value)) {
                     return (TypeValue)value;
                 } else {
-                    Main.terminateNoGiveUp(null,
+                    terminateNoGiveUp(null,
                             1000,
                             "Error: Wrong map element type: expected " + TypeV.getClass().toString() + ", got " + value.getClass() + ".");
                     return null;

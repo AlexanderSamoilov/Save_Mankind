@@ -1,21 +1,25 @@
 package com.company.gamecontrollers;
 
-import com.company.gamecontent.GameMap;
-import com.company.gamemath.cortegemath.point.Point3D_Integer;
-import com.company.gamethread.C_Thread;
-import com.company.gamethread.Main;
-
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.company.gamecontent.GameMap;
+import com.company.gamemath.cortegemath.point.Point3D_Integer;
+import com.company.gamethread.C_Thread;
+import com.company.gamethread.M_Thread;
 
 // TODO If we not releasing controller for Enemy, than this class must be static
 public class MouseController extends MouseAdapter {
     private static Logger LOG = LogManager.getLogger(MouseController.class.getName());
+    private static final MouseController instance = new MouseController();
+    public static synchronized MouseController getInstance() {
+        return instance;
+    }
 
     private final int NUM_BUTTONS = 4;
 
@@ -80,10 +84,10 @@ public class MouseController extends MouseAdapter {
 //
 //                // Selection of units by rect-selection
 ////                GameMap.getInstance().select(rectX, rectY, rectWidth, rectHeight);
-//                GameMap.getInstance().select(Main.getMouseRect().getRect());
+//                GameMap.getInstance().select(Main.mouseRectangle.getRect());
 //
 ////                // Remove previous rect-selection
-////                Main.getMouseRect().redefineRect(-1, -1, -1, -1);
+////                Main.mouseRectangle.redefineRect(-1, -1, -1, -1);
 ////
 ////                // Drop mouse drag modifier
 ////                buttons[NO_BUTTON] = false;
@@ -113,14 +117,14 @@ public class MouseController extends MouseAdapter {
             */
             if (!hasBeenDragged()) {
                 // TODO This idea is temporary
-                Main.suspendAll();
+                M_Thread.suspendAll();
 
                 // Point selection of unit by rect-selection
                 GameMap.getInstance().select(new Rectangle(e.getX(), e.getY(), 1, 1));
                 LOG.debug("released_press(" + e.getButton() + "): x=" + x + ", y=" + y);
             } else {
                 // Selection of units by rect-selection
-                GameMap.getInstance().select(Main.getMouseRect().getRect());
+                GameMap.getInstance().select(MainWindow.mouseRectangle.getRect());
                 LOG.debug("released_drag(" + e.getButton() + "): x=" + x + ", y=" + y);
             }
 
@@ -130,12 +134,12 @@ public class MouseController extends MouseAdapter {
         }
 
         // Remove previous rect-selection
-        Main.getMouseRect().redefineRect(-1, -1, -1, -1);
+        MainWindow.mouseRectangle.redefineRect(-1, -1, -1, -1);
 
         // Drop mouse drag modifier
         this.buttons[NO_BUTTON] = false;
 
-        Main.resumeAll();
+        M_Thread.resumeAll();
 
         this.last_x = x;
         this.last_y = y;
@@ -184,7 +188,7 @@ public class MouseController extends MouseAdapter {
             // As a result, any other thread that is also trying to call System.out.println gets blocked.
             // If the current thread which calls suspend() is trying to System.out.println then it results to deadlock.
             // https://stackoverflow.com/questions/36631153/deadlock-with-system-out-println-and-a-suspended-thread
-            Main.suspendAll();
+            M_Thread.suspendAll();
 
             // Detect which of two points (last_x,last_y) and (e.getX(), e.getY())
             // is left-top and which is right-bottom
@@ -195,7 +199,7 @@ public class MouseController extends MouseAdapter {
 
             // How it works without it?! how the lower layer is recovered after rect painting?
 //            Main.getPanelUnter().repaint(0);
-            Main.getMouseRect().redefineRect(rectX, rectY, rectWidth, rectHeight);
+            MainWindow.mouseRectangle.redefineRect(rectX, rectY, rectWidth, rectHeight);
 
             LOG.trace("repainted.");
 

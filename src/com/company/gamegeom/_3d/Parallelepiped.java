@@ -1,13 +1,13 @@
 package com.company.gamegeom._3d;
 
+import java.awt.*;
+
 import com.company.gamecontent.Centerable;
 import com.company.gamemath.cortegemath.point.Point3D_Double;
 import com.company.gamemath.cortegemath.point.Point3D_Integer;
 import com.company.gamemath.cortegemath.vector.Vector3D_Double;
 import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
 import com.company.gamegraphics.GraphBugfixes;
-
-import java.awt.*;
 
 public class Parallelepiped extends Figure_3D implements Centerable {
 

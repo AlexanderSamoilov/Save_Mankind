@@ -1,13 +1,14 @@
 package com.company.gamemath.cortegemath.cortege;
 
-import com.company.gamethread.Main;
-import com.company.gametools.MathTools;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.company.gametools.MathTools;
 import static com.company.gametools.GenericTools.castToGeneric;
 import static com.company.gametools.MathTools.sqrVal;
+import static com.company.gamethread.M_Thread.terminateNoGiveUp;
 
 /* TODO:
    1) Support Long.class as well. Make distSqrVal(), sumSqr() and other functions return Long instead of Integer.
@@ -51,7 +52,7 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
         try {
             v_res = (E) obj.getClass().getMethod("clone").invoke(obj);
         } catch (Exception e) {
-            Main.terminateNoGiveUp(e,1000, e.getMessage() + " during invoking clone() for " + obj.getClass());
+            terminateNoGiveUp(e,1000, e.getMessage() + " during invoking clone() for " + obj.getClass());
         }
         return v_res;
     }

@@ -1,9 +1,9 @@
 package com.company.gamelogger;
 
-import org.apache.logging.log4j.Level;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import org.apache.logging.log4j.Level;
 
 public class LogOptions {
     /**

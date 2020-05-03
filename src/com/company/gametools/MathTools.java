@@ -1,16 +1,17 @@
 package com.company.gametools;
 
+import java.util.Random;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.company.gamemath.cortegemath.cortege.Cortege3D_Integer;
 import com.company.gamemath.cortegemath.point.Point2D_Double;
 import com.company.gamemath.cortegemath.point.Point2D_Integer;
 import com.company.gamemath.cortegemath.point.Point3D_Integer;
-import com.company.gamethread.Main;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-import java.util.Random;
-
-import static com.company.gamecontent.Restrictions.Y_ORIENT;
+import static com.company.gamecontent.Constants.Y_ORIENT;
+import static com.company.gamethread.M_Thread.terminateNoGiveUp;
 
 public abstract class MathTools {
 
@@ -280,7 +281,7 @@ public abstract class MathTools {
         // Validation. We are not supposed that the section turns to a point.
         // Thus we don't just return here smth, but exit the program with a fatal error.
         if ((A.x() == B.x()) && (A.y() == B.y())) {
-            Main.terminateNoGiveUp(null,1000, "Wrong data: section [A; B] is a point.");
+            terminateNoGiveUp(null,1000, "Wrong data: section [A; B] is a point.");
         }
 
         if ((A.x() == p.x()) && (A.y() == p.y())) return 0; // belongs to the end A
@@ -312,11 +313,11 @@ public abstract class MathTools {
         // We call this function to check intersection of a line with the edge of another shape.
         // This edge must never turn to a point. Thus we don't just return here smth, but exit the program with a fatal error.
         if ((p1.x() == p2.x()) && (p1.y() == p2.y())) {
-            Main.terminateNoGiveUp(null,1000, "Wrong data: section [1; 2] is a point!");
+            terminateNoGiveUp(null,1000, "Wrong data: section [1; 2] is a point!");
             // TODO: return anyway the result if the point belongs to another section
         }
         if ((p3.x() == p4.x()) && (p3.y() == p4.y())) {
-            Main.terminateNoGiveUp(null,1000, "Wrong data: section [3; 4] is a point!");
+            terminateNoGiveUp(null,1000, "Wrong data: section [3; 4] is a point!");
             // TODO: return anyway the result if the point belongs to another section
         }
 

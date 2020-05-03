@@ -1,13 +1,14 @@
 package com.company.gamegeom._2d;
 
-import com.company.gamegraphics.GraphBugfixes;
-import com.company.gamethread.Main;
+import java.awt.*;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.awt.*;
+import com.company.gamegraphics.GraphBugfixes;
 
-import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
+import static com.company.gamecontent.Constants.BLOCK_SIZE;
+import static com.company.gamethread.M_Thread.terminateNoGiveUp;
 
 public class GridMatrixVertical extends GridFigure_2D {
     private static Logger LOG = LogManager.getLogger(GridMatrixVertical.class.getName());
@@ -29,7 +30,7 @@ public class GridMatrixVertical extends GridFigure_2D {
     public GridMatrixVertical(ParallelogramVertical pgmVect) {
 
         // edge case: width 0 or negative
-        if (pgmVect.width < 1) Main.terminateNoGiveUp(null,1000,
+        if (pgmVect.width < 1) terminateNoGiveUp(null,1000,
                 "GridMatrix: horizontal parallelogram with width zero: (" +
                         pgmVect.loc.x() + ", " + pgmVect.loc.y() + ", " + pgmVect.width + ", " + pgmVect.height + ", " + pgmVect.shift);
 

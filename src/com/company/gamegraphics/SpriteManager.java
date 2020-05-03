@@ -1,8 +1,8 @@
 package com.company.gamegraphics;
 
-import com.company.gametools.ResourceManager;
-
 import java.awt.image.BufferedImage;
+
+import com.company.gametools.ResourceManager;
 
 // TODO Delete Dis
 public class SpriteManager extends ResourceManager {

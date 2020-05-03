@@ -1,26 +1,23 @@
 package com.company.gamecontent;
 
-import com.company.gamegeom._2d.GridRectangle;
-import com.company.gamegeom._3d.ParallelepipedOfBlocks;
-
-import com.company.gamecontrollers.MouseController;
-import com.company.gamemath.cortegemath.point.Point2D_Integer;
-import com.company.gamemath.cortegemath.point.Point3D_Integer;
-import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
-import com.company.gamethread.Main;
-import com.company.gamethread.ParameterizedMutexManager;
-import com.company.gamethread.V_Thread;
-
 import java.awt.*;
 import java.util.Arrays;
-import java.util.ConcurrentModificationException;
-import java.util.HashMap;
 import java.util.HashSet;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
-import static com.company.gamecontent.Restrictions.INTERSECTION_STRATEGY_SEVERITY;
+import com.company.gamegeom._2d.GridRectangle;
+import com.company.gamegeom._3d.ParallelepipedOfBlocks;
+import com.company.gamecontrollers.MouseController;
+import com.company.gamemath.cortegemath.point.Point2D_Integer;
+import com.company.gamemath.cortegemath.point.Point3D_Integer;
+import com.company.gamethread.ParameterizedMutexManager;
+import com.company.gametools.Tools;
+
+import static com.company.gamethread.M_Thread.terminateNoGiveUp;
+import static com.company.gamecontent.Constants.BLOCK_SIZE;
+import static com.company.gamecontent.Constants.INTERSECTION_STRATEGY_SEVERITY;
 
 public class GameMap extends ParallelepipedOfBlocks implements Renderable {
 
@@ -46,7 +43,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
                 new Point3D_Integer(0, 0, 0),
                 GameMapGenerator.readMapDimensionsFromConfig() // static computation before super(): https://stackoverflow.com/a/17769207/4807875
         );
-        Main.printStackTrace(null); // DEBUG
+        Tools.printStackTrace(null); // DEBUG
         init();
     }
 
@@ -72,7 +69,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
                 } catch (Exception e) {
                     LOG.error("Block (" + x + ", " + y + ")");
                     LOG.error("Map size: " + getDim().x() + "x" + getDim().y());
-                    Main.terminateNoGiveUp(e,
+                    terminateNoGiveUp(e,
                         1000,
                         getClass() + ": Map initialization failed with " + e.getClass().getSimpleName()
                     );
@@ -95,7 +92,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
 
         // Prevent duplicated call of the init() method.
         if (initialized) {
-            Main.terminateNoGiveUp(null,
+            terminateNoGiveUp(null,
                 1000,
                 getClass() + " init error. Not allowed to initialize the map twice!"
             );
@@ -271,7 +268,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
 
     public void validateBlockCoordinates(int grid_x, int grid_y) {
         if (! getAbsBottomRect().contains(grid_x, grid_y)) {
-            Main.terminateNoGiveUp(null,
+            terminateNoGiveUp(null,
                     1000, "Block (" + grid_x + "," + grid_y +
                     " is outside of map " + getDim().x() + " x " + getDim().y()
             );

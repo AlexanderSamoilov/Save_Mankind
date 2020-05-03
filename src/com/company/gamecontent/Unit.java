@@ -5,22 +5,21 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.company.gamemath.cortegemath.cortege.Cortege3D_Integer;
 import com.company.gamemath.cortegemath.point.Point3D_Integer;
 import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
 import com.company.gamegeom._2d.GridRectangle;
-
 import com.company.gamegraphics.Sprite;
 import com.company.gamethread.ParameterizedMutexManager;
-
 import com.company.gametools.MathBugfixes;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
-import static com.company.gamecontent.Restrictions.INTERSECTION_STRATEGY_SEVERITY;
+import static com.company.gamecontent.Constants.BLOCK_SIZE;
+import static com.company.gamecontent.Constants.INTERSECTION_STRATEGY_SEVERITY;
 import static com.company.gametools.MathTools.in_range;
-import static com.company.gamethread.Main.terminateNoGiveUp;
+import static com.company.gamethread.M_Thread.terminateNoGiveUp;
 
 public class Unit extends GameObject implements Shootable {
     private static Logger LOG = LogManager.getLogger(Unit.class.getName());
@@ -84,7 +83,7 @@ public class Unit extends GameObject implements Shootable {
         valid = valid && in_range(
                 0,
                 r * BLOCK_SIZE,
-                Restrictions.MAX_DETECT_RADIUS_ABS,
+                Constants.MAX_DETECT_RADIUS_ABS,
                 false
         );
 

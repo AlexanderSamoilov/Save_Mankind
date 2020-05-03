@@ -1,7 +1,7 @@
 package com.company.gamethread;
 
 // Singleton
-public class D_Thread extends Main.ThreadPattern {
+public class D_Thread extends ThreadTemplate {
 
     private static final D_Thread instance = new D_Thread("D-Thread");
 

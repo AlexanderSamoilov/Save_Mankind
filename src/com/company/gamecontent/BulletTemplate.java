@@ -1,12 +1,13 @@
 package com.company.gamecontent;
 
-import com.company.gamethread.ParameterizedMutexManager;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.awt.*;
 import java.util.Arrays;
 import java.util.HashSet;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.company.gamethread.ParameterizedMutexManager;
 
 // TODO: Introduce global list of bullet models and disallow two different models with same "description"
 public class BulletTemplate {

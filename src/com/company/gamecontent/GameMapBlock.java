@@ -1,19 +1,19 @@
 package com.company.gamecontent;
 
-import com.company.gamegeom._3d.Parallelepiped;
-import com.company.gamegeom._3d.ParallelepipedOfBlocks;
-import com.company.gamemath.cortegemath.point.Point2D_Integer;
-import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
-import com.company.gamethread.ParameterizedMutexManager;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.awt.*;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.company.gamegeom._3d.ParallelepipedOfBlocks;
+import com.company.gamemath.cortegemath.point.Point2D_Integer;
+import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
+import com.company.gamethread.ParameterizedMutexManager;
+
+import static com.company.gamecontent.Constants.BLOCK_SIZE;
 
 public class GameMapBlock extends ParallelepipedOfBlocks implements Renderable {
     private static Logger LOG = LogManager.getLogger(GameMapBlock.class.getName());
@@ -32,7 +32,7 @@ public class GameMapBlock extends ParallelepipedOfBlocks implements Renderable {
 
         // TODO: currently everything is visible for everybody - the logic is to be designed
         this.visible = new HashMap<Integer, Boolean>();
-        for (int k = 0; k <= Restrictions.MAX_PLAYERS - 1; k++) {
+        for (int k = 0; k <= Constants.MAX_PLAYERS - 1; k++) {
             this.visible.put(k, true);
         }
     }

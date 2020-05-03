@@ -1,14 +1,16 @@
 package com.company.gamecontent;
 
-import com.company.gamethread.Main;
-import com.company.gamethread.ParameterizedMutexManager;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.HashSet;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.company.gamethread.ParameterizedMutexManager;
+
+import static com.company.gamethread.M_Thread.terminateNoGiveUp;
 
 public class Player {
     private static Logger LOG = LogManager.getLogger(Player.class.getName());
@@ -51,9 +53,9 @@ public class Player {
 
         // 2 - child class specific parameters validation
         maxId ++;
-        if (maxId + 1 > Restrictions.MAX_PLAYERS) {
+        if (maxId + 1 > Constants.MAX_PLAYERS) {
             throw new IllegalArgumentException("Failed to initialize " + getClass() +
-                                               ". Not allowed to create more than " + Restrictions.MAX_PLAYERS + " players!");
+                                               ". Not allowed to create more than " + Constants.MAX_PLAYERS + " players!");
         }
 
         this.id = maxId;
@@ -64,7 +66,7 @@ public class Player {
         }
 
         if (Player.players == null) {
-            Player.players = new Player[Restrictions.MAX_PLAYERS];
+            Player.players = new Player[Constants.MAX_PLAYERS];
         }
 
         this.race = race;
@@ -73,7 +75,7 @@ public class Player {
         int bSize = (buildings == null) ? 0 : buildings.size();
         int uSize = (units == null) ? 0 : units.size();
 
-        if ((bSize + uSize) > Restrictions.MAX_PLAYER_OBJECTS) {
+        if ((bSize + uSize) > Constants.MAX_PLAYER_OBJECTS) {
             throw new IllegalArgumentException("Failed to initialize " + getClass() +
                     ". Some of parameters are beyond the restricted boundaries."
             );
@@ -157,7 +159,7 @@ public class Player {
 
         if (!buildings.contains(building)) {
             /* DEBUG */
-            Main.terminateNoGiveUp(null,
+            terminateNoGiveUp(null,
                     1000,
                     "Critical error: The size of the buildings collection for the Player #" +
                             id + " after the removal of the Unit #" + building
@@ -173,7 +175,7 @@ public class Player {
 
         if (!units.contains(unit)) {
             /* DEBUG */
-            Main.terminateNoGiveUp(null,
+            terminateNoGiveUp(null,
                     1000,
                     "Critical error: The size of the units collection for the Player #" +
                             id + " after the removal of the Unit #" + unit

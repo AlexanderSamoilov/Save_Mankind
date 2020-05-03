@@ -1,5 +1,13 @@
 package com.company.gamecontent;
 
+import java.awt.*;
+import java.util.HashMap;
+import java.util.HashSet;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.company.gamecontrollers.MainWindow;
 import com.company.gamegeom._2d.GridMatrixHorizontal;
 import com.company.gamegeom._2d.GridMatrixVertical;
 import com.company.gamegeom._2d.ParallelogramHorizontal;
@@ -12,18 +20,11 @@ import com.company.gamemath.cortegemath.point.Point2D_Integer;
 import com.company.gamemath.cortegemath.point.Point3D_Integer;
 import com.company.gamemath.cortegemath.vector.Vector2D_Integer;
 import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
-import com.company.gamethread.Main;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-import java.awt.*;
-import java.util.HashMap;
-import java.util.HashSet;
-
-import static com.company.gamecontent.Restrictions.INTERSECTION_STRATEGY_SEVERITY;
-import static com.company.gamethread.Main.terminateNoGiveUp;
+import static com.company.gamecontent.Constants.INTERSECTION_STRATEGY_SEVERITY;
 import static com.company.gametools.MathTools.getNextPointOnRay;
 import static com.company.gametools.MathTools.sectionContains;
+import static com.company.gamethread.M_Thread.terminateNoGiveUp;
 
 public abstract class UnitMovementAlgorithms {
     private static Logger LOG = LogManager.getLogger(UnitMovementAlgorithms.class.getName());
@@ -39,7 +40,7 @@ public abstract class UnitMovementAlgorithms {
         // pgmHoriz - parallelogram represented by the movement of the top/bottom edge
         // pgmVert - parallelogram represented by the movement of the right/left edge
 
-        Graphics currentGraphics = Main.getFrame().getRootPane().getGraphics(); // for DEBUG
+        Graphics currentGraphics = MainWindow.frame.getRootPane().getGraphics(); // for DEBUG
         ParallelogramHorizontal pgmHoriz = null;
         ParallelogramVertical pgmVert = null;
         GridMatrixHorizontal pgmHorizOccupiedBlocks = null;
@@ -323,7 +324,9 @@ public abstract class UnitMovementAlgorithms {
             if ((dv.x() < 0) && (dv.y() > 0)) frontPointMiddlePosOpt = go_top_right;
 
             // validation
-            if ((dv.x() == 0) || (dv.y() == 0)) terminateNoGiveUp(null,1000, "Impossible: dx or dy = 0 on step 4c.");
+            if ((dv.x() == 0) || (dv.y() == 0)) {
+                terminateNoGiveUp(null,1000, "Impossible: dx or dy = 0 on step 4c.");
+            }
 
             if (frontPointMiddlePos == null) { // first time only
                 frontPointMiddlePos = frontPointMiddlePosOpt.clone();
@@ -463,7 +466,7 @@ public abstract class UnitMovementAlgorithms {
         Rectangle new_rect = go.getAbsBottomRect(); // current rectangle position
         new_rect.translate(dv.x(), dv.y()); // next rectangle position
         if (GameMap.getInstance().occupied(new_rect, go)) {
-            Main.terminateNoGiveUp(null,1000, "Objects overlapping has been detected! The algorithm has a bug!");
+            terminateNoGiveUp(null,1000, "Objects overlapping has been detected! The algorithm has a bug!");
             return new Vector3D_Integer(0, 0, 0);
         }
 

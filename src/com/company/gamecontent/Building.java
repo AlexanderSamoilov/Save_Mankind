@@ -1,18 +1,19 @@
 package com.company.gamecontent;
 
-import com.company.gamemath.cortegemath.point.Point3D_Integer;
-import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
-import com.company.gamegraphics.Sprite;
-import com.company.gamethread.ParameterizedMutexManager;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.company.gamemath.cortegemath.point.Point3D_Integer;
+import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
+import com.company.gamegraphics.Sprite;
+import com.company.gamethread.ParameterizedMutexManager;
+
 import static com.company.gametools.MathTools.in_range;
-import static com.company.gamethread.Main.terminateNoGiveUp;
+import static com.company.gamethread.M_Thread.terminateNoGiveUp;
 
 public class Building extends GameObject {
     private static Logger LOG = LogManager.getLogger(Building.class.getName());
@@ -31,11 +32,11 @@ public class Building extends GameObject {
         // 2 - child class specific parameters validation
         boolean valid = true;
         valid = valid && in_range(
-                0, energyConsumption, Restrictions.MAX_ENERGY_CONSUMPTION, false
+                0, energyConsumption, Constants.MAX_ENERGY_CONSUMPTION, false
         );
 
         valid = valid && in_range(
-                0, upgradeTime, Restrictions.MAX_INITIAL_UPGRADE_TIME, false
+                0, upgradeTime, Constants.MAX_INITIAL_UPGRADE_TIME, false
         );
 
         if (!valid) {
@@ -57,7 +58,7 @@ public class Building extends GameObject {
     public int upgrade() {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
 
-        if (level >= Restrictions.MAX_UPGRADE_LEVEL) {
+        if (level >= Constants.MAX_UPGRADE_LEVEL) {
             return level; // return current level - impossible to upgrade more
         }
 

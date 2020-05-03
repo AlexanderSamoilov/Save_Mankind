@@ -1,11 +1,10 @@
 package com.company.gamegeom._2d;
 
-import com.company.gamecontent.Centerable;
-import com.company.gamegraphics.GraphBugfixes;
-
 import java.awt.*;
 
-import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
+import com.company.gamegraphics.GraphBugfixes;
+
+import static com.company.gamecontent.Constants.BLOCK_SIZE;
 
 public class GridRectangle extends GridFigure_2D /*implements Centerable*/ {
     public final int left;

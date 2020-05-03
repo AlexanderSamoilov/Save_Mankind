@@ -4,7 +4,7 @@ import com.company.gamegeom._2d.GridRectangle;
 import com.company.gamemath.cortegemath.point.Point3D_Integer;
 import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
 
-import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
+import static com.company.gamecontent.Constants.BLOCK_SIZE;
 
 public class ParallelepipedOfBlocks extends Parallelepiped {
 

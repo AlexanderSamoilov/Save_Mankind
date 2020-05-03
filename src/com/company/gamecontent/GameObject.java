@@ -1,28 +1,25 @@
 package com.company.gamecontent;
 
-import com.company.gamegeom._3d.ParallelepipedOfBlocks;
-import com.company.gamemath.cortegemath.point.Point2D_Integer;
-import com.company.gamemath.cortegemath.point.Point3D_Integer;
-import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
-
-import com.company.gamegraphics.GraphBugfixes;
-import com.company.gamegraphics.GraphExtensions;
-import com.company.gamegraphics.Sprite;
-
-import com.company.gamethread.Main;
-import com.company.gamethread.ParameterizedMutexManager;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.awt.*;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import static com.company.gamecontent.Restrictions.*;
-import static com.company.gamethread.Main.terminateNoGiveUp;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.company.gamegeom._3d.ParallelepipedOfBlocks;
+import com.company.gamemath.cortegemath.point.Point2D_Integer;
+import com.company.gamemath.cortegemath.point.Point3D_Integer;
+import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
+import com.company.gamegraphics.GraphBugfixes;
+import com.company.gamegraphics.GraphExtensions;
+import com.company.gamegraphics.Sprite;
+import com.company.gamethread.ParameterizedMutexManager;
+
+import static com.company.gamecontent.Constants.*;
 import static com.company.gametools.MathTools.*;
+import static com.company.gamethread.M_Thread.terminateNoGiveUp;
 
 // For details read the DOC "Data Structure"
 public class GameObject extends ParallelepipedOfBlocks implements Moveable, Rotatable, Renderable, Selectable {
@@ -103,9 +100,9 @@ public class GameObject extends ParallelepipedOfBlocks implements Moveable, Rota
         valid = valid && (preMoveAngle <= MAX_PRE_MOVE_ANGLE);
 
         // Check object dimensions
-        valid = valid && in_range(0, dim.x(), Restrictions.MAX_OBJECT_SIZE_BLOCKS + 1, true);
-        valid = valid && in_range(0, dim.y(), Restrictions.MAX_OBJECT_SIZE_BLOCKS + 1, true);
-        valid = valid && in_range(0, dim.z(), Restrictions.MAX_OBJECT_SIZE_BLOCKS + 1, true);
+        valid = valid && in_range(0, dim.x(), Constants.MAX_OBJECT_SIZE_BLOCKS + 1, true);
+        valid = valid && in_range(0, dim.y(), Constants.MAX_OBJECT_SIZE_BLOCKS + 1, true);
+        valid = valid && in_range(0, dim.z(), Constants.MAX_OBJECT_SIZE_BLOCKS + 1, true);
 
         // Check that we don't create the object overlapped with another object
         // In order to use the function occupiedByAnotherObject for still not completely created class instance

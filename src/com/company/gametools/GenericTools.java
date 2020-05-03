@@ -1,12 +1,13 @@
 package com.company.gametools;
 
-import com.company.gamethread.Main;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import static com.company.gamethread.M_Thread.terminateNoGiveUp;
 
 public abstract class GenericTools {
 
@@ -41,7 +42,7 @@ public abstract class GenericTools {
             Object[] args = {data};
             cloned = ctor.newInstance(args);
         } catch (NoSuchMethodException | SecurityException | IllegalArgumentException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
-            Main.terminateNoGiveUp(e,1000, "Generic constructor of type " + superType + " failed with " + e);
+            terminateNoGiveUp(e,1000, "Generic constructor of type " + superType + " failed with " + e);
             return null;
         }
 

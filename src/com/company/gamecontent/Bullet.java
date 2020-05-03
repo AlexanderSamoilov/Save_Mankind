@@ -1,5 +1,12 @@
 package com.company.gamecontent;
 
+import java.awt.*;
+import java.util.Arrays;
+import java.util.HashSet;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.company.gamegeom._3d.Parallelepiped;
 import com.company.gamemath.cortegemath.point.Point2D_Integer;
 import com.company.gamemath.cortegemath.point.Point3D_Integer;
@@ -8,14 +15,8 @@ import com.company.gamegraphics.GraphExtensions;
 import com.company.gamethread.ParameterizedMutexManager;
 import com.company.gametools.MathBugfixes;
 import com.company.gametools.MathTools;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-import java.awt.*;
-import java.util.Arrays;
-import java.util.HashSet;
-
-import static com.company.gamecontent.Restrictions.BLOCK_SIZE;
+import static com.company.gamecontent.Constants.BLOCK_SIZE;
 
 public class Bullet extends Parallelepiped implements Moveable, Renderable {
     private static Logger LOG = LogManager.getLogger(Bullet.class.getName());

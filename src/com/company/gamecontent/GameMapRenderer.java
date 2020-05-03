@@ -1,24 +1,25 @@
 package com.company.gamecontent;
 
-import com.company.gamethread.ParameterizedMutexManager;
-import com.company.gamethread.V_Thread;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.awt.*;
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.HashSet;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.company.gamethread.ParameterizedMutexManager;
+import com.company.gamethread.V_Thread;
+
 public abstract class GameMapRenderer {
     private static Logger LOG = LogManager.getLogger(GameMapRenderer.class.getName());
 
-    public static void render(Graphics g, GameMap map) {
+    public static void render(Graphics g) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
 
-        renderBlocks(g, map);
-        renderObjects(g, map);
-        renderBullets(g, map);
+        renderBlocks(g, GameMap.getInstance());
+        renderObjects(g, GameMap.getInstance());
+        renderBullets(g, GameMap.getInstance());
     }
 
     private static void renderBlocks(Graphics g, GameMap map) {

@@ -1,14 +1,15 @@
 package com.company.gamethread;
 
-import com.company.gamecontent.*;
-
 import java.util.HashSet;
 import java.util.concurrent.Semaphore;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.company.gamecontent.*;
+
 // Singleton
-public class C_Thread extends Main.ThreadPattern {
+public class C_Thread extends ThreadTemplate {
     private static Logger LOG = LogManager.getLogger(C_Thread.class.getName());
 
     private static final C_Thread instance = new C_Thread("C-Thread");
@@ -28,7 +29,7 @@ public class C_Thread extends Main.ThreadPattern {
         } catch (InterruptedException e) {
             // It is naturally to have this exception while the thread is dying
             // Don't report about it in case of total termination
-            if (Main.SIGNAL_TERM_GENERAL != true) throw(e);
+            if (M_Thread.SIGNAL_TERM_GENERAL != true) throw(e);
         }
 
         LOG.trace("-> " + super.getName() + " is calculating. Permits: " + String.valueOf(sem.availablePermits()));
@@ -61,7 +62,7 @@ public class C_Thread extends Main.ThreadPattern {
         } catch (Exception e) {
             // It is naturally to have this exception while the thread is dying
             // Don't report about it in case of total termination
-            if (Main.SIGNAL_TERM_GENERAL != true) throw(e);
+            if (M_Thread.SIGNAL_TERM_GENERAL != true) throw(e);
         }
     }
 

@@ -1,10 +1,10 @@
 package com.company.gamecontent;
 
-import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
-
 import java.lang.Math;
 
-public abstract class Restrictions {
+import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
+
+public abstract class Constants {
 
     public static final int ROTATE_MOD = 1; // 0 - angle mode, not 0 - ray mode
 
@@ -22,6 +22,7 @@ public abstract class Restrictions {
     // -1 for typical game map (Y axe direction to south)
     public static final int Y_ORIENT = -1; // Y axe is oriented to south
 
+    public static final int TIME_QUANT = 80;
     public static final int BLOCK_SIZE = 64;
 
     // 0 - multiple objects on the same block are allowed (even if they overlap)

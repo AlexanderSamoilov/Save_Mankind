@@ -1,10 +1,11 @@
 package com.company.gamecontent;
 
-import com.company.gamegraphics.Sprite;
+import java.util.HashMap;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.HashMap;
+import com.company.gamegraphics.Sprite;
 
 /*
   Singleton. Contains the list of landscape blocks templates.

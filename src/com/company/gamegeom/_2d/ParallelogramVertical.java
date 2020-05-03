@@ -1,14 +1,14 @@
 package com.company.gamegeom._2d;
 
-import com.company.gamemath.cortegemath.point.Point2D_Integer;
-import com.company.gamethread.Main;
-import com.company.gametools.MathTools;
+import java.awt.*;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.awt.*;
+import com.company.gamemath.cortegemath.point.Point2D_Integer;
+import com.company.gametools.MathTools;
 
-import static java.lang.Thread.sleep;
+import static com.company.gamethread.M_Thread.terminateNoGiveUp;
 
 public class ParallelogramVertical extends Figure_2D /*implements Centerable*/ {
     private static Logger LOG = LogManager.getLogger(ParallelogramVertical.class.getName());
@@ -85,7 +85,7 @@ public class ParallelogramVertical extends Figure_2D /*implements Centerable*/ {
         // We call this function to check intersection of a parallelogram interior with a section [A; B].
         // This section must never turn to a point. Thus we don't just return here smth, but exit the program with a fatal error.
         if ((A.x() == B.x()) && (A.y() == B.y())) {
-            Main.terminateNoGiveUp(null,1000, "Wrong data: section [A; B] is a point!");
+            terminateNoGiveUp(null,1000, "Wrong data: section [A; B] is a point!");
             return contains(A);
         }
 
@@ -130,7 +130,7 @@ public class ParallelogramVertical extends Figure_2D /*implements Centerable*/ {
                 LOG.debug("L=" + bottom_left + ", A=" + A + ", R=" + bottom_right + ", sectionContains=" + MathTools.sectionContains(bottom_left, A, bottom_right));
                 LOG.debug("L=" + top_left + ", A=" + A + ", R=" + bottom_left + ", sectionContains=" + MathTools.sectionContains(top_left, A, bottom_left));
                 LOG.debug("L=" + top_right + ", A=" + A + ", R=" + bottom_right + ", sectionContains=" + MathTools.sectionContains(top_right, A, bottom_right));
-                Main.terminateNoGiveUp(null,1000, "Discrepancy!! .contains" + A + " is 0, but .sectionContains says that no one edges contains A.");
+                terminateNoGiveUp(null,1000, "Discrepancy!! .contains" + A + " is 0, but .sectionContains says that no one edges contains A.");
             }
 
             Boolean [] edgesContainingB = new Boolean[] {
@@ -148,7 +148,7 @@ public class ParallelogramVertical extends Figure_2D /*implements Centerable*/ {
                 LOG.debug("L=" + bottom_left + ", B=" + B + ", R=" + bottom_right + ", sectionContains=" + MathTools.sectionContains(bottom_left, B, bottom_right));
                 LOG.debug("L=" + top_left+ ", B=" + B + ", R=" + bottom_left + ", sectionContains=" + MathTools.sectionContains(top_left, B, bottom_left));
                 LOG.debug("L=" + top_right + ", B=" + B + ", R=" + bottom_right + ", sectionContains=" + MathTools.sectionContains(top_right, B, bottom_right));
-                Main.terminateNoGiveUp(null,1000, "Discrepancy!! .contains" + B + " is 0, but .sectionContains says that no one edges contains B.");
+                terminateNoGiveUp(null,1000, "Discrepancy!! .contains" + B + " is 0, but .sectionContains says that no one edges contains B.");
             }
 
             if (edgesContainingA[0] && edgesContainingB[0]) return 0; // A and B lay on the top edge

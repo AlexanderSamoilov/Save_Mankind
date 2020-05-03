@@ -1,11 +1,14 @@
 package com.company.gamethread;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.util.ConcurrentModificationException;
 import java.util.HashSet;
 import java.util.concurrent.Semaphore;
+
+import com.company.Main;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.company.gamecontrollers.MainWindow;
 
 // Singleton
 public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <TypeKey, TypeValue> {
@@ -20,7 +23,7 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
         Long threadIdB = null;
         switch (threadType) {
             case "M":
-                threadIdB = Main.getThreadId();
+                threadIdB = M_Thread.getThreadId();
                 break;
             case "D":
                 threadIdB = D_Thread.getInstance().getId();
@@ -32,14 +35,14 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
                 threadIdB = C_Thread.getInstance().getId();
                 break;
             default:
-                Main.terminateNoGiveUp(null,
+                M_Thread.terminateNoGiveUp(null,
                         1000,
                         "Error: threads of type " + threadType + " are not supported."
                 );
         }
 
         if (threadIdA == threadIdB) {
-            Main.terminateNoGiveUp(null,1000, "An attempt to block the own thread was detected!");
+            M_Thread.terminateNoGiveUp(null,1000, "An attempt to block the own thread was detected!");
         }
 
         Long threadIdLess = Math.min(threadIdA, threadIdB);
@@ -82,7 +85,7 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
                 } catch (Exception e) {
                     errCounter ++;
                     if (errCounter > 100) {
-                        Main.terminateNoGiveUp(e,1000, "Got exception too much times!");
+                        M_Thread.terminateNoGiveUp(e,1000, "Got exception too much times!");
                         // TODO: move to a func
                         for (StackTraceElement stackTraceElement : e.getStackTrace()) {
                             LOG.error(stackTraceElement.toString());
@@ -104,7 +107,7 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
 
             if (insertionRes instanceof  Semaphore) {
                 if (((Semaphore) insertionRes).availablePermits() > 1) {
-                    Main.terminateNoGiveUp(null,1000, "Semaphores permits number more than 1!");
+                    M_Thread.terminateNoGiveUp(null,1000, "Semaphores permits number more than 1!");
                 }
             }
             return insertionRes;
@@ -123,14 +126,14 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
 
     // quasi-unique thread string name (unique for all except "U" that means "other" or "unknown")
     public String getThreadType() {
-        long EDT_Thread_ID = Main.getEDTId();
+        long EDT_Thread_ID = MainWindow.getEDTId();
         // TODO: reactive this "if" after introduction of drawing routines which run before initMap() and initObjects()
         // (for example, drawing of the main game menu)
         // if (EDT_Thread_ID == -1) Main.terminateNoGiveUp(1000, "EDT thread ID must be defined first!");
 
         Long threadId = Thread.currentThread().getId(); // calculate threadId of the calling thread
 
-        if      (threadId == Main.getThreadId())             { return "M"; }
+        if      (threadId == M_Thread.getThreadId())         { return "M"; }
         else if (threadId == D_Thread.getInstance().getId()) { return "D"; }
         else if (threadId == C_Thread.getInstance().getId()) { return "C"; }
         else if (threadId == V_Thread.getInstance().getId()) { return "V"; }
