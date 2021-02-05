@@ -1,0 +1,22 @@
+Obligatory rules:
+ - [YES] Use non-static methods in singletons except getInstance() - must be static by definition (chicken-egg case).
+ - [YES] Use <Class>.variable, no getters.
+ - [ONLY for constants] Use "import static" instead of <Class>.staticMethod().
+ - [YES] Import order: our, external, static.
+ - [YES] Newline before comment.
+ - [YES] Newline between functions/blocks.
+ - [NO]  Newline at the beginning of function/block.
+ - [NO]  One-line functions/blocks.
+ - [YES] Use explicit "this." when accessing class parameters inside the class.
+ - [120] MAX line length.
+ - [YES] DOCSTRING.
+ - [???] All methods of Main.java are static. https://stackoverflow.com/questions/8117781/does-every-method-in-main-class-have-to-be-static
+ - [???] All methods of "utility-classes" are static.
+ - [???] All methods of singletons are synchronized:
+         https://stackoverflow.com/questions/38277685/should-the-singleton-methods-be-synchronized
+         https://www.quora.com/Is-it-necessary-to-make-a-singletons-methods-synchronized-if-said-singleton-is-only-accessible-via-a-static-synchronized-method
+         https://www.geeksforgeeks.org/java-singleton-design-pattern-practices-examples/
+
+Optional rules:
+ - [YES] Don't produce new yellow IDE warnings, unless it is an IDE bug or controversial behavior.
+ - [YES] Don't produce new TODOs.
