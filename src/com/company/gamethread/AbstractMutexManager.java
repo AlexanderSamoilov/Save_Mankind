@@ -63,20 +63,13 @@ public abstract class AbstractMutexManager <TypeKey, TypeValue> extends Concurre
 
 
         // Careful about types: https://stackoverflow.com/questions/33765010/put-an-object-of-the-wrong-type-in-a-map.
-        protected TypeValue insert(TypeKey key, TypeValue value) {
+        protected void insert(TypeKey key, TypeValue value) {
 
             if (super.containsKey(key)) {
                 // NOTE: may be it has been just created in a sibling thread, but the value still was not assigned?
-                // No, because we organized key names so that neither two threads can build the same hash key
-                // Even more. When thread A asks thread B it uses not the same key when thread B asks thread A.
                 TypeValue val = (TypeValue) super.get(key); // class cast exception?
                 if (val != value) {
-                    Main.terminateNoGiveUp(null,
-                            1000,
-                            "Error: insert(" + key + "," + value + "): conflict, value already = " + val
-                    );
-                } else {
-                    return val;
+                    LOG.warn("Error: insert(" + key + "," + value + "): conflict, value already = " + val);
                 }
             } else {
                 try {
@@ -90,8 +83,6 @@ public abstract class AbstractMutexManager <TypeKey, TypeValue> extends Concurre
                     );
                 }
             }
-
-            return value;
         }
 
         /* Implement this function if we allow to respawn threads */

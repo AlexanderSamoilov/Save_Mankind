@@ -54,8 +54,11 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
             // However I am not 100% sure that this implementation is perfect.
             //return super.insert((TypeKey)key, (TypeValue)(super.TypeV.getConstructor(TypeV).));
 
+            // TODO: Potential memory leak.
+            // When both threads enter to this "else" at the same time (rarely happens)
+            // the "s" semaphore is created, but not assigned inside insert().
             Semaphore s = new Semaphore(1);
-            LOG.trace(insert((TypeKey)key, (TypeValue)(s)).toString());
+            insert((TypeKey)key, (TypeValue)(s));
             // This try-catch is for debugging thread-safety violations
             try {
                 LOG.trace("GET: " + obtain((TypeKey) key).toString());
@@ -75,7 +78,8 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
             int errCounter = 0;
             while (!concurrentAccessOK && insertionRes == null) {
                 try {
-                    insertionRes = insert((TypeKey) key, (TypeValue) (s));
+                    insert((TypeKey) key, (TypeValue) (s));
+                    insertionRes = obtain((TypeKey) key);
                 } catch (ConcurrentModificationException e) {
                     // just keep trying
                     continue;
