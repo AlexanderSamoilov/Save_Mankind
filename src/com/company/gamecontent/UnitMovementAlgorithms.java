@@ -1,3 +1,14 @@
+/* ************************* *
+ * U T I L I T Y   C L A S S *
+ * ************************* */
+
+/*
+   We use "utility class" ("abstract final" class) simulation as "empty enum"
+   described on https://stackoverflow.com/questions/9618583/java-final-abstract-class.
+   Empty enum constants list (;) makes impossible to use its non-static methods:
+   https://stackoverflow.com/questions/61972971/non-static-enum-methods-what-is-the-purpose-and-how-to-call-them.
+ */
+
 package com.company.gamecontent;
 
 import java.awt.*;
@@ -21,12 +32,14 @@ import com.company.gamemath.cortegemath.point.Point3D_Integer;
 import com.company.gamemath.cortegemath.vector.Vector2D_Integer;
 import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
 
-import static com.company.gamecontent.Constants.INTERSECTION_STRATEGY_SEVERITY;
-import static com.company.gametools.MathTools.getNextPointOnRay;
+import static com.company.gametools.MathTools.calcNextPointOnRay;
 import static com.company.gametools.MathTools.sectionContains;
 import static com.company.gamethread.M_Thread.terminateNoGiveUp;
+import static com.company.gamecontent.Constants.INTERSECTION_STRATEGY_SEVERITY;
 
-public abstract class UnitMovementAlgorithms {
+public enum UnitMovementAlgorithms {
+    ; // utility class
+
     private static Logger LOG = LogManager.getLogger(UnitMovementAlgorithms.class.getName());
 
     // ALGORITHM FOR ANALYSING OF IMPEDIMENTS ON THE WAY OF THE OBJECT WITH RECTANGLE SHAPE
@@ -40,7 +53,7 @@ public abstract class UnitMovementAlgorithms {
         // pgmHoriz - parallelogram represented by the movement of the top/bottom edge
         // pgmVert - parallelogram represented by the movement of the right/left edge
 
-        Graphics currentGraphics = MainWindow.frame.getRootPane().getGraphics(); // for DEBUG
+        Graphics currentGraphics = MainWindow.getInstance().frame.getRootPane().getGraphics(); // DEBUG
         ParallelogramHorizontal pgmHoriz = null;
         ParallelogramVertical pgmVert = null;
         GridMatrixHorizontal pgmHorizOccupiedBlocks = null;
@@ -50,15 +63,43 @@ public abstract class UnitMovementAlgorithms {
         new_rect.translate(dv.x(), dv.y()); // translocated rectangle
 
         if (dv.y() != 0) { // a)
-            if (dv.y() < 0) pgmHoriz = new ParallelogramHorizontal(new Point2D_Integer(new_rect.x, new_rect.y), new_rect.width, go.getAbsLoc().y() - new_rect.y + 1, -dv.x());
-            if (dv.y() > 0) pgmHoriz = new ParallelogramHorizontal(new Point2D_Integer(go.getAbsLoc().x(), go.getAbsLoc().y() + go.getAbsDim().y() - 1), new_rect.width, new_rect.y - go.getAbsLoc().y() + 1, dv.x());
+            if (dv.y() < 0) {
+                pgmHoriz = new ParallelogramHorizontal(
+                    new Point2D_Integer(new_rect.x, new_rect.y),
+                    new_rect.width,
+                    go.loc.y() - new_rect.y + 1,
+                    -dv.x()
+                );
+            }
+            /*if (dv.y() > 0)*/ else {
+                pgmHoriz = new ParallelogramHorizontal(
+                    new Point2D_Integer(go.loc.x(), go.loc.y() + go.dim.y() - 1),
+                    new_rect.width,
+                    new_rect.y - go.loc.y() + 1,
+                    dv.x()
+                );
+            }
             pgmHorizOccupiedBlocks = new GridMatrixHorizontal(pgmHoriz);
             pgmHoriz.render(currentGraphics); // DEBUG (draw parallelogram)
             pgmHorizOccupiedBlocks.render(currentGraphics); // DEBUG (draw occupied blocks)
         }
         if (dv.x() != 0) { // b)
-            if (dv.x() < 0) pgmVert = new ParallelogramVertical(new Point2D_Integer(new_rect.x, new_rect.y), go.getAbsLoc().x() - new_rect.x + 1, new_rect.height, -dv.y());
-            if (dv.x() > 0) pgmVert = new ParallelogramVertical(new Point2D_Integer(go.getAbsLoc().x() + go.getAbsDim().x() - 1, go.getAbsLoc().y()), new_rect.x - go.getAbsLoc().x() + 1, new_rect.height, dv.y());
+            if (dv.x() < 0) {
+                pgmVert = new ParallelogramVertical(
+                    new Point2D_Integer(new_rect.x, new_rect.y),
+                    go.loc.x() - new_rect.x + 1,
+                    new_rect.height,
+                    -dv.y()
+                );
+            }
+            /* if (dv.x() > 0) */ else {
+                pgmVert = new ParallelogramVertical(
+                    new Point2D_Integer(go.loc.x() + go.dim.x() - 1, go.loc.y()),
+                    new_rect.x - go.loc.x() + 1,
+                    new_rect.height,
+                    dv.y()
+                );
+            }
             pgmVertOccupiedBlocks = new GridMatrixVertical(pgmVert);
             pgmVert.render(currentGraphics); // DEBUG (draw parallelogram)
             pgmVertOccupiedBlocks.render(currentGraphics); // DEBUG (draw occupied blocks)
@@ -67,7 +108,7 @@ public abstract class UnitMovementAlgorithms {
         // Step 2. Iterate through all blocks obtained on the step 1 checking the map regarding which game objects
         // are located on each block which is being iterated. Store all such blocks to a list/hash with no repetition.
         // Exclude the current game object (unit) itself.
-        HashSet<Rectangle> affectedObjects = new HashSet<Rectangle>();
+        HashSet<Rectangle> affectedObjects = new HashSet<>(); // HashSet<Rectangle>
 
         // Checking blocks occupied by the horizontal parallelogram:
         if (dv.y() != 0) { // a)
@@ -125,9 +166,9 @@ public abstract class UnitMovementAlgorithms {
            c) All of them whose left-bottom(if dx > 0, dy > 0)/right-bottom(if dx < 0, dy > 0)/
            right-top(if dx < 0, dy < 0)/left-top(if dx > 0, dy < 0) vertex belongs to the terminating section between parallelograms.
          */
-        HashSet<Rectangle> suspectedObjectsA = new HashSet<Rectangle>();
-        HashSet<Rectangle> suspectedObjectsB = new HashSet<Rectangle>();
-        HashSet<Rectangle> suspectedObjectsC = new HashSet<Rectangle>();
+        HashSet<Rectangle> suspectedObjectsA = new HashSet<>(); // HashSet<Rectangle>
+        HashSet<Rectangle> suspectedObjectsB = new HashSet<>(); // HashSet<Rectangle>
+        HashSet<Rectangle> suspectedObjectsC = new HashSet<>(); // HashSet<Rectangle>
 
         /* frontPointStartPos corresponds to the direction where the current object is going to move
            Depending on the direction we choose the corresponding edge or vertex.
@@ -142,9 +183,9 @@ public abstract class UnitMovementAlgorithms {
          */
 
         Integer frontPointStartPos_x = null, frontPointStartPos_y = null;
-        if (dv.x() < 0) frontPointStartPos_x = go.getAbsLoc().x(); // left of the current object
+        if (dv.x() < 0) frontPointStartPos_x = go.loc.x(); // left of the current object
         if (dv.x() > 0) frontPointStartPos_x = go.getAbsRight(); // right of the current object
-        if (dv.y() < 0) frontPointStartPos_y = go.getAbsLoc().y(); // top of the current object
+        if (dv.y() < 0) frontPointStartPos_y = go.loc.y(); // top of the current object
         if (dv.y() > 0) frontPointStartPos_y = go.getAbsBottom(); // bottom of the current object
         Point2D_Integer frontPointStartPos = new Point2D_Integer(frontPointStartPos_x, frontPointStartPos_y);
 
@@ -300,7 +341,7 @@ public abstract class UnitMovementAlgorithms {
         Point2D_Integer frontPointMiddlePos = null;
         Point2D_Integer frontPointMiddlePosOpt = null;
         Long distSqrValMin = null;
-        Long distSqrValCurr = -1L;
+        Long distSqrValCurr; // = -1L;
         if (suspectedObjectsC.size() > 0) opt_point_C_found = 1;
 
         // TODO: "new" on each loop iteration - wasting of memory
@@ -312,7 +353,7 @@ public abstract class UnitMovementAlgorithms {
             Point2D_Integer go_bottom_left = new Point2D_Integer(rect.x, rect.y + rect.height - 1);
             Point2D_Integer go_bottom_right = new Point2D_Integer(rect.x + rect.width - 1, rect.y + rect.height - 1);
 
-            // TODO: it is known outside of the looop about signs of dx, dy
+            // TODO: it is known outside of the loop about signs of dx, dy
             // It is possible to avoid these 4 if-else here?
             // UP-RIGHT
             if ((dv.x() > 0) && (dv.y() < 0)) frontPointMiddlePosOpt = go_bottom_left;
@@ -352,7 +393,7 @@ public abstract class UnitMovementAlgorithms {
         LOG.debug("a_num=" + suspectedObjectsA.size() + ", b_num=" + suspectedObjectsB.size() + ", c_num=" + suspectedObjectsC.size());
         LOG.debug("a=" + opt_line_A_found + ", b=" + opt_line_B_found + ", c=" + opt_point_C_found);
 
-        HashMap<Integer, Vector2D_Integer> opt_points = new HashMap<Integer, Vector2D_Integer>();
+        HashMap<Integer, Vector2D_Integer> opt_points = new HashMap<>(); // HashMap<Integer, Vector2D_Integer>
 
         // a (dy != 0)
         if (opt_line_A_found != 0) {
@@ -385,7 +426,7 @@ public abstract class UnitMovementAlgorithms {
 
         int i_opt = 0;
         if (num_opt_points > 0) {
-            distSqrValCurr = -1L;
+            // distSqrValCurr = -1L;
             // TODO: Strange...if I don't use type cast then it complains that class Cortege is not public
             // It seems that it tries to call sumSqr on class Cortege, because it does not see that
             // opt_points must contain only elements of type Point2D_Integer.
@@ -420,24 +461,30 @@ public abstract class UnitMovementAlgorithms {
         return dv_opt;
     }
 
+    /*
+     EXPLANATION:
+     Why do we need impediments check algorithm instead of just checking GameMap.getInstance().occupied()?
+     Even if GameMap.getInstance().occupied() for the destination position is TRUE, we move till the impediment.
+     This is why it is not correct just to stop movement if occupied() is true.
+     Instead we move the unit, but till the impediment "back to back".
+     */
     public static void recalcWayTillFirstImpediment(GameObject go, Vector3D_Integer dv) {
-        // NOTE: Even if GameMap.getInstance().occupied() == true we move up to the impediment
-        // This is why it is not correct just to stop movement if occupied() is true.
-        // Instead we move the unit, but up to the impediment "back to back".
-        if (INTERSECTION_STRATEGY_SEVERITY > 0) {
-            // Check if there are impediments on the way to the destination point.
-            // If they are, move along the vector (dv) towards destination point until the first impediment.
-            Vector3D_Integer dv_opt = calcWayTillFirstImpediment(go, dv);
-            if (dv_opt != null) {
-                dv.assign(dv_opt);
-            }
+        if (INTERSECTION_STRATEGY_SEVERITY <= 0) {
+            return;
+        }
+
+        // Check if there are impediments on the way to the destination point.
+        // If they are, move along the vector (dv) towards destination point until the first impediment.
+        Vector3D_Integer dv_opt = calcWayTillFirstImpediment(go, dv);
+        if (dv_opt != null) {
+            dv.assign(dv_opt);
         }
     }
 
-    public static Vector3D_Integer getNextMovementPositionVector(GameObject go, Point3D_Integer currentDestPoint) {
+    public static Vector3D_Integer calcNextMovementPositionVector(GameObject go, Point3D_Integer currentDestPoint) {
 
         // new_center: "planned" new position of the unit center
-        Point3D_Integer new_center = getNextPointOnRay(go.getAbsCenterInteger(), currentDestPoint, go.speed);
+        Point3D_Integer new_center = calcNextPointOnRay(go.getAbsCenterInteger(), currentDestPoint, go.speed);
         LOG.trace("old_center=" + go.getAbsCenterInteger() + ", new_center=" + new_center);
 
         // dv: translation vector of the unit center from old to new position
@@ -445,15 +492,15 @@ public abstract class UnitMovementAlgorithms {
         LOG.trace("dv=" + dv);
 
         // new_loc: "planned" new position of the left-top unit corner
-        Point3D_Integer new_loc = go.getAbsLoc().plusClone(dv);
-        LOG.debug("move?: " + go.getAbsLoc() + " -> " + new_loc + ", speed=" + go.speed);
+        Point3D_Integer new_loc = go.loc.plusClone(dv);
+        LOG.debug("move?: " + go.loc + " -> " + new_loc + ", speed=" + go.speed);
 
         // prevent movement outside map borders
         // TODO: include map borders into recalcWayTillFirstImpediment and remove this block?
         // (map is also a kind of impediment, just big)
         if (! GameMap.getInstance().contains(
                 // new_x, new_y, new_z - absolute coordinates, not aliquot to the grid vertices
-                new ParallelepipedOfBlocks(new_loc, go.getDim()))
+                new ParallelepipedOfBlocks(new_loc, go.dimInBlocks))
         ) {
             LOG.debug("prevent movement outside the map");
             return new Vector3D_Integer(0, 0, 0);

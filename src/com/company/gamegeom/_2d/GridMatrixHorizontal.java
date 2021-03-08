@@ -45,7 +45,7 @@ public class GridMatrixHorizontal extends GridFigure_2D {
             int left_x = Math.min(pgmHoriz.loc.x(), pgmHoriz.loc.x() + pgmHoriz.shift);
             int right_x = Math.max(pgmHoriz.loc.x() + pgmHoriz.width - 1, pgmHoriz.loc.x() + pgmHoriz.width - 1 + pgmHoriz.shift);
 
-            // TODO: make the types convertable (inherit GridRectangle from GridMatrixHorizontal?)
+            // TODO: make the types convertible (inherit GridRectangle from GridMatrixHorizontal?)
                 /*return GridRectangle(
                         new Rectangle(left_x, pgmHoriz.y, right_x - left_x + 1, 1));
                  */
@@ -57,7 +57,7 @@ public class GridMatrixHorizontal extends GridFigure_2D {
 
         // edge case: parallelogram turns to a rectangle
         if (pgmHoriz.shift == 0) {
-            // TODO: make the types convertable (inherit GridRectangle from GridMatrixHorizontal?)
+            // TODO: make the types convertible (inherit GridRectangle from GridMatrixHorizontal?)
                 /*return GridRectangle(
                         new Rectangle(pgmHoriz.x, pgmHoriz.y, pgmHoriz.width, pgmHoriz.height));
                  */

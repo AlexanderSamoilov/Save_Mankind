@@ -1,7 +1,9 @@
 package com.company.gamemath.cortegemath.cortege;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
+import com.company.gametools.Tools;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -35,10 +37,9 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
     protected T[] data = null;
 
 
-    /************************************************
-     * CONSTRUCTORS                                 *
-     ************************************************/
-
+    /* *********************** *
+     * C O N S T R U C T O R S *
+     * *********************** */
 
     /*public Cortege<E,T> clone() {
         //return new Cortege<T>(type(), this.data); - for non-abstract implementation
@@ -46,7 +47,7 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
     }*/
 
     // https://stackoverflow.com/questions/803971/cloning-with-generics
-    public static <E extends Cortege<E,?>> E cloneGeneric(E obj) {
+    /* */ private static <E extends Cortege<E,?>> E cloneGeneric(E obj) {
 
         E v_res = null;
         try {
@@ -63,22 +64,23 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
         this.type = type; // avoid "type erasure"
         if ((data != null) && (data.length > 0)) {
             // data = new T[data.length]; - is not allowed due to type erasure, but ...
-            ArrayList<T> tmpArrayList = new ArrayList<T>(data.length);
-            for (int i = 0; i <= data.length - 1; i++) {
+            ArrayList<T> tmpArrayList = new ArrayList<>(data.length); // ArrayList<T>
+            /*for (int i = 0; i <= data.length - 1; i++) {
                 tmpArrayList.add(data[i]);
-            }
+            }*/
+            tmpArrayList.addAll(Arrays.asList(data));
             this.data = tmpArrayList.toArray(data); // go to the hell, type erasure !!
         }
     }
 
     // Stupid Java rule that super() and this() must be first statement.
-    // But I need to check "smth" before calling it!
+    // But I need to check "something" before calling it!
     // I overcome it this way: the static method which returns self object, but does "smth" before.
     // Drawback: unlike the upper method we cannot easily determine the real caller class here,
     // because .getClass() can be called only after this(). It is possible to get it by parsing the call stack,
     // but for current case it is not so important, because the call stack will be displayed anyway,
     // because we do throw a NullPointerException
-    public static Cortege checkNull(Cortege c) {
+    private static Cortege checkNull(Cortege c) {
         if (c == null) throw new NullPointerException(Cortege.class.getSimpleName() + "(null) is not allowed.");
         return c;
     }
@@ -91,17 +93,16 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
     }
 
 
-    /************************************************
-     * ARIPHMETICAL METHODS                         *
-     ************************************************/
-
+    /* *********************************** *
+     * A R I T H M E T I C   M E T H O D S *
+     * *********************************** */
 
     /*** UNARY OPERATORS AND METHODS ***/
 
-    /* Group 1 - Self unary operators (modify itself and return itself) */
+    /* Group 0 - Self unary void operators (just modify itself) */
 
     // =
-    protected void _assign(Cortege<?,T> c) {
+    private void _assign(Cortege<?,T> c) {
         if (c == null) { LOG.warn("_assign: c=null"); return; } // no effect
         if (c.size() == 0) { LOG.warn("_assign: c has zero size"); return; } // no effect
         if (this.size() != c.size()) throw new IllegalArgumentException(
@@ -118,9 +119,10 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
 
         LOG.trace("_assign: c=" + c);
 
-        for (int i = 0; i <= c.size() - 1; i++) {
+        /*for (int i = 0; i <= c.size() - 1; i++) {
             this.data[i] = c.data[i];
-        }
+        }*/
+        Tools.arrayCopyFull(c.data, this.data);
     }
 
     /* TODO: In 4 next operators (+ - * /) we round up to an integer value with "intValue()"
@@ -129,7 +131,7 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
      */
 
     // +=
-    protected void _plus(Cortege<?,?> c) {
+    /*protected*/ void _plus(Cortege<?,?> c) {
         if (c == null) { LOG.warn("_plus: c=null"); return; } // no effect
         if (c.size() == 0) { LOG.warn("_plus: c has zero size"); return; } // no effect
         if (this.size() != c.size()) throw new IllegalArgumentException(
@@ -162,7 +164,7 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
 
     // -=
     //public void _minus(Cortege<?,?> c) { _plus(mult((E)c, -1)); }
-    protected void _minus(Cortege<?,?> c) {
+    /*protected*/ void _minus(Cortege<?,?> c) {
         if (c == null) { LOG.warn("_minus: c=null"); return; } // no effect
         if (c.size() == 0) { LOG.warn("_minus: c has zero size"); return; } // no effect
         if (this.size() != c.size()) throw new IllegalArgumentException(
@@ -195,7 +197,7 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
     // *=
     // TODO: check what happened if the multiplication result more than MAX_INT
     // Idea: forbid at all +=, -=, *=, /= and all "self-methods"? Or check what happens with a normal Integer in such case.
-    protected void _mult(Number num) {
+    /*protected*/ void _mult(Number num) {
         if (num == null) { LOG.warn("_mult: num=null"); return; } // no effect
         if (this.size() == 0) { LOG.warn("_mult: the " + this.getClass().getSimpleName() + " has zero size"); return; } // no effect
         if (num.doubleValue() == 1.0) return; // no effect
@@ -226,7 +228,7 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
     }
 
     // /=
-    protected void _div(Number num) {
+    /*protected*/ void _div(Number num) {
         if (num == null) { LOG.warn("_div: num=null"); return; } // no effect
         if (this.size() == 0) { LOG.warn("_div: the " + this.getClass().getSimpleName() + " has zero size"); return; } // no effect
         if (num.doubleValue() == 1.0) return; // no effect
@@ -256,8 +258,8 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
         }
     }
 
+    /* Group 1 - Self unary operators (modify itself and return itself) */
 
-    /* Change and return */
     public <R extends E> R assign(Cortege<?,T> c) {
         this._assign(c);
         return (R)this;
@@ -279,15 +281,15 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
         return (R)this;
     }
 
-    /* Group 2 - Non-self unary operators. Clone itself, modify the clone and return modified clone as a result */
+    /* Group 2 - Non-self unary operators. Clone itself, modify the clone and return modified clone (except ==, ~) */
 
-    /* Due to idiotical "type erasure" I cannot implement in the base class such polymorphic operators which return
+    /* Due to idiotic "type erasure" I cannot implement in the base class such polymorphic operators which return
        the corresponding child class type. See the class-specific implementations in the corresponding derived classes.
      */
 
     // +
     //public <E extends Cortege<E,?>, R extends Cortege<?,?>> R plus1(Cortege<?,?> c) {
-    protected <R extends Cortege<?,?>> R _plusClone(Cortege<?,?> c) {
+    /*protected*/ <R extends Cortege<?,?>> R _plusClone(Cortege<?,?> c) {
         //return (E)plus2(this, c);
         R v_res = (R)cloneGeneric((E)this);
         v_res._plus(c);
@@ -296,7 +298,7 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
 
     // -
     //public <E extends Cortege<E,?>, R extends Cortege<?,?>> R minus1(Cortege<?,?> c) {
-    protected <R extends Cortege<?,?>> R _minusClone(Cortege<?,?> c) {
+    /*protected*/ <R extends Cortege<?,?>> R _minusClone(Cortege<?,?> c) {
         //return (E)minus2(this, c);
         R v_res = (R)cloneGeneric((E)this);
         v_res._minus(c);
@@ -305,7 +307,7 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
 
     // * (returns Number)
     //public <E extends Cortege<E,?>, R extends Cortege<?,?>> R mult1A(Number num) {
-    protected <R extends Cortege<?,?>> R _multClone(Number num) {
+    /*protected*/ <R extends Cortege<?,?>> R _multClone(Number num) {
         //return (E)mult2(this, num);
         R v_res = (R)cloneGeneric((E)this);
         v_res._mult(num);
@@ -314,7 +316,7 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
 
     // * (returns Double)
     //public <E extends Cortege<E,Double>, R extends Cortege<?,Double>> R multDouble1(Double num) {
-    protected <R extends Cortege<?,Double>> R _multToDoubleClone(Double num) {
+    /*protected*/ <R extends Cortege<?,Double>> R _multToDoubleClone(Double num) {
         //return (E)mult2(this, num);
         R v_res = (R)cloneGeneric((E)this);
         v_res._mult(num);
@@ -323,7 +325,7 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
 
     // / (returns Double)
     //public <E extends Cortege<E,?>, R extends Cortege<?,Double>> R div1A(Number num) {
-    protected <R extends Cortege<?,Double>> R _divClone(Number num) {
+    /*protected*/ <R extends Cortege<?,Double>> R _divClone(Number num) {
         //return (E)div(this, num);
         R v_res = (R)cloneGeneric((E)this);
         v_res._div(num);
@@ -332,7 +334,7 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
 
     // / (returns Integer)
     //public <E extends Cortege<E,?>, R extends Cortege<?,Integer>> R divInt1A(Number num) {
-    protected <R extends Cortege<?,Integer>> R _divIntClone(Number num) {
+    /*protected*/ <R extends Cortege<?,Integer>> R _divIntClone(Number num) {
         //return (E)div(this, num);
         R v_res = (R)cloneGeneric((E)this);
         v_res._div(num);
@@ -356,7 +358,7 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
     }
 
     // ~
-    public boolean eqDouble(Cortege<?,?> c, double eps) {
+    private boolean eqDouble(Cortege<?,?> c, double eps) {
         if ((c == null) || (this.size() != c.size())) return false;
         typeCheck(this, c);
 
@@ -375,33 +377,40 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
     public Boolean isNullCortege() {
         boolean isNulled = true;
         for (int i = 0; (i <= this.size() - 1) && (isNulled); i++) {
-            isNulled = isNulled && (this.data[i] == null);
+            isNulled = (this.data[i] == null);
         }
         return isNulled;
+    }
+
+    public Boolean hasNullCoordinates() {
+        boolean hasNulls = false;
+        for (int i = 0; (i <= this.size() - 1) && (!hasNulls); i++) {
+            hasNulls = (this.data[i] == null);
+        }
+        return hasNulls;
     }
 
     // == (0, 0, ..., 0)
     public Boolean isZeroCortege() {
         boolean isZero = true;
         for (int i = 0; (i <= this.size() - 1) && (isZero); i++) {
-            isZero = isZero && (this.data[i] != null) && (this.data[i].doubleValue() == 0);
+            isZero = (this.data[i] != null) && (this.data[i].doubleValue() == 0);
         }
         return isZero;
     }
 
-
     /* Group 3 - Binary operators and methods. Always static, are applied on two objects and
        return another 3rd object or a variable (boolean or numeric) as a calculation result. */
 
-    // ==
+    // a == b (not needed so far)
 
     // a + b
-    protected static <R extends Cortege<?,?>> R _plus2(Cortege<?,?> c1, Cortege<?,?> c2) {
+    /*protected*/ static <R extends Cortege<?,?>> R _plus2(Cortege<?,?> c1, Cortege<?,?> c2) {
         if ((c1 == null) && (c2 == null)) return null;
         if ((c1 == null) || (c2 == null) || (c1.size() != c2.size())) throw new IllegalArgumentException(
-                c1.getClass().getSimpleName() + "[" + (c1 == null ? "null" : c1.size()) + "] + " +
-                c2.getClass().getSimpleName() + "[" + (c2 == null ? "null" : c2.size()) +
-                "]: different size!"
+            (c1 == null ? "null" : c1.getClass().getSimpleName()) + "[" + (c1 == null ? "null" : c1.size()) + "] + " +
+            (c2 == null ? "null" : c2.getClass().getSimpleName()) + "[" + (c2 == null ? "null" : c2.size()) +
+            "]: different size!"
         );
         if ((c1.size() == 0) && (c2.size() == 0)) return null;
         //typeCheck(c1, c2);
@@ -411,12 +420,12 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
     }
 
     // a - b
-    protected static <R extends Cortege<?,?>> R _minus2(Cortege<?,?> c1, Cortege<?,?> c2) {
+    /*protected*/ static <R extends Cortege<?,?>> R _minus2(Cortege<?,?> c1, Cortege<?,?> c2) {
         if ((c1 == null) && (c2 == null)) return null;
         if ((c1 == null) || (c2 == null) || (c1.size() != c2.size())) throw new IllegalArgumentException(
-                c1.getClass().getSimpleName() + "[" + (c1 == null ? "null" : c1.size()) + "] + " +
-                c2.getClass().getSimpleName() + "[" + (c2 == null ? "null" : c2.size()) +
-                "]: different size!"
+            (c1 == null ? "null" : c1.getClass().getSimpleName()) + "[" + (c1 == null ? "null" : c1.size()) + "] + " +
+            (c2 == null ? "null" : c2.getClass().getSimpleName()) + "[" + (c2 == null ? "null" : c2.size()) +
+             "]: different size!"
         );
         if ((c1.size() == 0) && (c2.size() == 0)) return null;
         //typeCheck(c1, c2);
@@ -428,7 +437,7 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
     // a * num (num - Integer)
     // TODO: Do not implement via .mult !! Better do the same as in the sqr() and return Cortege<?>.
     //public static <E extends Cortege> E mult(E c, Integer num) {
-    protected static <R extends Cortege<?,?>> R _mult2(Cortege<?,?> c, Integer num) {
+    /*protected*/ static <R extends Cortege<?,?>> R _mult2(Cortege<?,?> c, Integer num) {
         if ((c == null) || (c.size() == 0)) return null;
         if (num == null) throw new NullPointerException("Multiplier num is NULL!");
 
@@ -439,7 +448,7 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
 
     // a * num (num - Double => returns Double)
     //public static <E extends Cortege<E, Double>> E multDouble(Cortege<?,?> c, Double num) {
-    protected static <R extends Cortege<?, Double>> R _multToDouble2(Cortege<?,?> c, Double num) {
+    /*protected*/ static <R extends Cortege<?, Double>> R _multToDouble2(Cortege<?,?> c, Double num) {
         if ((c == null) || (c.size() == 0)) return null;
         if (num == null) throw new NullPointerException("Multiplier num is NULL!");
 
@@ -449,7 +458,7 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
 
     // a / num (returns Double)
     //public static <E extends Cortege<E,Double>> E div(Cortege<?,?> c, Double num) {
-    protected static <R extends Cortege<?,Double>> R _div2(Cortege<?,?> c, Double num) {
+    /*protected*/ static <R extends Cortege<?,Double>> R _div2(Cortege<?,?> c, Double num) {
         if ((c == null) || (c.size() == 0)) return null;
         if (num == null) throw new NullPointerException("Divider num is NULL!");
 
@@ -459,7 +468,7 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
 
     // a / num (returns Integer)
     //public static <E extends Cortege<E,Integer>> E divInt(Cortege<?,?> c, Number num) {
-    protected static <R extends Cortege<?,Integer>> R _divInt2(Cortege<?,?> c, Number num) {
+    /*protected*/ static <R extends Cortege<?,Integer>> R _divInt2(Cortege<?,?> c, Number num) {
         if ((c == null) || (c.size() == 0)) return null;
         if (num == null) throw new NullPointerException("Divider num is NULL!");
 
@@ -471,7 +480,7 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
     // TODO: check what happened if the multiplication result more than MAX_INT
 
     //public static <R extends Cortege<R,T>, T extends  Number> T sumSqr(R c) {
-    public static Number sumSqr(Cortege <?,?> c) {
+    private static Number sumSqr(Cortege <?,?> c) {
         if ((c == null) || (c.size() == 0)) return null;
 
         //T v_res;
@@ -502,18 +511,17 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
 
     // SUM(i) ((Ai - Bi) ^ 2)
     //public static <R extends Cortege<R,T>, T extends Number> T distSqrVal(Cortege<R,T> c1, Cortege<R,T> c2) {
-    public static Number _distSqrVal(Cortege<?,?> c1, Cortege<?,?> c2) {
+    private static Number _distSqrVal(Cortege<?,?> c1, Cortege<?,?> c2) {
         if ((c1 == null) && (c2 == null)) return null;
         if ((c1 == null) || (c2 == null) || (c1.size() != c2.size())) throw new IllegalArgumentException(
-                c1.getClass().getSimpleName() + "[" + (c1 == null ? "null" : c1.size()) + "] + " +
-                c2.getClass().getSimpleName() + "[" + (c2 == null ? "null" : c2.size()) +
-                "]: different size!"
+            (c1 == null ? "null" : c1.getClass().getSimpleName()) + "[" + (c1 == null ? "null" : c1.size()) + "] + " +
+            (c2 == null ? "null" : c2.getClass().getSimpleName()) + "[" + (c2 == null ? "null" : c2.size()) +
+            "]: different size!"
         );
         if ((c1.size() == 0) && (c2.size() == 0)) return null;
 
         LOG.trace("distSqrVal: c1=" + c1 + ", c2=" + c2);
 
-        Number res;
         if (
                 (c1.type() != Integer.class) && (c1.type() != Double.class) ||
                 (c2.type() != Integer.class) && (c2.type() != Double.class)
@@ -561,15 +569,15 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
     }
 
 
-    /************************************************
-     * HELPER METHODS (NON-ARITHMETICAL)            *
-     ************************************************/
+    /* *************************************************************** *
+     * H E L P E R   M E T H O D S   (N O N - A R I T H M E T I C A L) *
+     * *************************************************************** */
 
-    public Integer size() {
-        return (this.data == null) ? 0 : this.data.length;
+    public int size() {
+        return Tools.getArraySize(this.data);
     }
 
-    public static void typeCheck(Cortege<?,?> c1, Cortege<?,?> c2) {
+    private static void typeCheck(Cortege<?,?> c1, Cortege<?,?> c2) {
         if (c1.type() != c2.type()) throw new IllegalArgumentException(
                 c1.getClass().getSimpleName() + "<" + c1.type().getSimpleName() + "> + " +
                 c2.getClass().getSimpleName() + "<" + c2.type().getSimpleName() +
@@ -580,23 +588,23 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
     public String toString() {
         if (this.size() == 0) return "(null)";
 
-        String str = "";
+        StringBuilder str = new StringBuilder();
         for (int i = 0; i <= this.size() - 1; i++) {
-            if (i > 0) str += ",";
-            str += this.data[i];
+            if (i > 0) str.append(",");
+            str.append(this.data[i]);
         }
         return "(" + str + ")";
     }
 
-    public String toDebugString() {
+    private String toDebugString() {
         if (this.size() == 0) return "(null)";
 
-        String str = "";
+        StringBuilder str = new StringBuilder();
         for (int i = 0; i <= this.size() - 1; i++) {
-            if (i > 0) str += ",";
-            str += this.data[i];
-            str += "#";
-            str += System.identityHashCode(this.data[i]);
+            if (i > 0) str.append(",");
+            str.append(this.data[i]);
+            str.append("#");
+            str.append(System.identityHashCode(this.data[i]));
         }
         return "(" + str + ")";
     }
@@ -605,30 +613,30 @@ abstract class Cortege <E extends Cortege<E,T>, T extends Number> implements Clo
     // (otherwise it is not possible to call .eq() method without making class public)
 
     public void assertEq(Cortege c) {
-        LOG.debug(
+        LOG.trace(
                 this + " / " + this.getClass().getSimpleName() + " vs " +
                 c + " / " + c.getClass().getSimpleName()
         );
         assert(this.getClass() == c.getClass());
-        assert (this.eq(c) == true);
+        assert (this.eq(c));
     }
 
     public void assertNotEq(Cortege c) {
-        LOG.debug(
+        LOG.trace(
                 this + " / " + this.getClass().getSimpleName() + " vs " +
                 c + " / " + c.getClass().getSimpleName()
         );
-        assert ((this.getClass() != c.getClass()) || (this.eq(c) == false));
+        assert ((this.getClass() != c.getClass()) || (!this.eq(c)));
     }
 
     // We have to use some "epsilon", because double numbers are stored with binary representation
     // See https://stackoverflow.com/questions/322749/retain-precision-with-double-in-java?rq=1.
     public void assertEqDouble(Cortege c, double epsilon) {
-        LOG.debug(
+        LOG.trace(
                 this + " / " + this.getClass().getSimpleName() + " vs " +
                 c + " / " + c.getClass().getSimpleName()
         );
         assert(this.getClass() == c.getClass());
-        assert (this.eqDouble(c, epsilon) == true);
+        assert (this.eqDouble(c, epsilon));
     }
 }

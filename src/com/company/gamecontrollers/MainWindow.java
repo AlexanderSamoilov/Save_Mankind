@@ -1,3 +1,6 @@
+/* ***************** *
+ * S I N G L E T O N *
+ * ***************** */
 package com.company.gamecontrollers;
 
 import javax.swing.*;
@@ -13,7 +16,6 @@ import org.apache.logging.log4j.Logger;
 import com.company.gamecontent.GameMap;
 import com.company.gamecontent.GameMapRenderer;
 import com.company.gamegraphics.GraphBugfixes;
-import com.company.Main;
 import com.company.gamethread.D_Thread;
 import com.company.gamethread.V_Thread;
 import com.company.gamethread.C_Thread;
@@ -21,14 +23,23 @@ import com.company.gametools.Tools;
 
 import static com.company.gamethread.M_Thread.terminateNoGiveUp;
 
-public abstract class MainWindow {
+public class MainWindow {
     private static Logger LOG = LogManager.getLogger(MainWindow.class.getName());
 
+    // Singleton
+    private static final MainWindow instance = new MainWindow();
+    public static synchronized MainWindow getInstance() {
+        return instance;
+    }
+    private MainWindow() {
+        LOG.debug(getClass() + " singleton created.");
+    }
+
     // global graphics variables
-    //private static Canvas canvOber = new Canvas();
-    //private static Canvas canvUnter = new Canvas();
-    //private static BufferStrategy bs = null;
-    //private static Graphics grap = null;
+    //private Canvas canvOber = new Canvas();
+    //private Canvas canvUnter = new Canvas();
+    //private BufferStrategy bs = null;
+    //private Graphics grap = null;
 
     /*
       EDT = Event Dispatcher Thread
@@ -39,10 +50,11 @@ public abstract class MainWindow {
       We use EDT at the moment as replacement of D-Thread in our game concept.
       It is an experimental implementation (in future better to implement own graphics completely).
      */
-    private static long EDT_ID = -1;
+    // static, because EventDispatcherThread is single for the whole JVM
+    public static long EDT_ID = -1;
 
     // Element #0 - the main game window.
-    public static final JFrame frame = new JFrame("Main Window") {
+    public final JFrame frame = new JFrame("Main Window") {
 //    <editor-fold desc="ATTENTION: Please, don't remove this implementation!">
 //
 //    ATTENTION: Please, don't remove this implementation!
@@ -126,7 +138,7 @@ public abstract class MainWindow {
     };
 
     // Element #1 - the upper layer of the main window.
-    private static final JPanel jpOber = new JPanel();
+    private final JPanel jpOber = new JPanel();
 //    {
 //        // Override basic method of EDT of JPanel
 //        @Override
@@ -138,7 +150,7 @@ public abstract class MainWindow {
 //    };
 
     // Element #2 - the lower layer of the main window.
-    private static final JPanel jpUnter = new JPanel() {
+    private final JPanel jpUnter = new JPanel() {
         // Override basic method of EDT of JPanel
         @Override
         public void paintComponent(Graphics g) {
@@ -155,14 +167,14 @@ public abstract class MainWindow {
     // FIXME Class-in-Class.
     // FIXME Set this singletone
     // Element #3 - selection rectangle.
-    public static class MouseRect extends JPanel {
+    static class MouseRect extends JPanel {
 
         private int x = -1;
         private int y = -1;
         private int width = 0;
         private int height = 0;
 
-        public void redefineRect(int x, int y, int w, int h) {
+        void redefineRect(int x, int y, int w, int h) {
 
 //            LOG.trace("before(" + "(" + x + "," + y + " -> (" + wid + "," + hei + ")");
 //            LOG.trace("after (" + "(" + x0 + "," + y0 + " -> (" + wid0 + "," + hei0 + ")");
@@ -201,18 +213,18 @@ public abstract class MainWindow {
             GraphBugfixes.drawRect(g, new Rectangle(x, y, width, height));
         }
 
-        public Rectangle getRect() {
+        Rectangle getRect() {
             return new Rectangle(x, y, width, height);
         }
-    };
-    public static final MouseRect mouseRectangle = new MouseRect();
+    }
+    final MouseRect mouseRectangle = new MouseRect();
 
     /*
      This should be in the main thread and not in D-Thread, otherwise we will have to synchronize D-Thread
      with the main thread on exiting moment that is complicated (what if before we suspend D-Thread it also does some exiting stuff?
      will not it lead to double exiting with unexpected consequences?)
     */
-    public static void destroy() {
+    public void destroy() {
         // Here we implement releasing of allocated memory for all objects.
 
         // kill main windows properly
@@ -225,36 +237,43 @@ public abstract class MainWindow {
         // TODO: Controllers also should be destroyed?
     }
 
-    public static void debugMargins(JFrame jFrame, String msg) {
+    // DEBUG:
+    private void debugMargins(String msg) {
         if (LOG.getLevel().intLevel() <= Level.INFO.intLevel()) {
             return;
         }
 
-        LOG.debug("-------------------" + msg + "------------------");
-        LOG.debug("JFrame.getInsets(left,top,right,bottom):" + jFrame.getInsets().left + "," + jFrame.getInsets().top
-                + "," + jFrame.getInsets().right + "," + jFrame.getInsets().bottom);
-        LOG.debug("JFrame.getContentPane().getInsets(left,top,right,bottom):" + jFrame.getContentPane().getInsets().left + "," + jFrame.getContentPane().getInsets().top
-                + "," + jFrame.getContentPane().getInsets().right + "," + jFrame.getContentPane().getInsets().bottom);
-
-        LOG.debug("JFrame.getBounds(): " + jFrame.getBounds().width + " x " + jFrame.getBounds().height);
-        LOG.debug("JFrame.getContentPane().getBounds(): " + jFrame.getContentPane().getBounds().width + " x " + jFrame.getContentPane().getBounds().height);
-        LOG.debug("DIFF(JFrame.getBounds() - JFrame.getContentPane().getBounds()):" +
-                (jFrame.getBounds().width - jFrame.getContentPane().getBounds().width) + " x " +
-                (jFrame.getBounds().height - jFrame.getContentPane().getBounds().height));
-        LOG.debug("**********************************************************");
+        LOG.trace("-------------------" + msg + "------------------");
+        LOG.trace("JFrame.getInsets(left,top,right,bottom):" +
+                frame.getInsets().left + "," + frame.getInsets().top + "," +
+                frame.getInsets().right + "," + frame.getInsets().bottom
+        );
+        LOG.trace("JFrame.getContentPane().getInsets(left,top,right,bottom):" +
+                frame.getContentPane().getInsets().left + "," + frame.getContentPane().getInsets().top + "," +
+                frame.getContentPane().getInsets().right + "," + frame.getContentPane().getInsets().bottom
+        );
+        LOG.trace("JFrame.getBounds(): " + frame.getBounds().width + " x " + frame.getBounds().height);
+        LOG.trace("JFrame.getContentPane().getBounds(): " +
+                frame.getContentPane().getBounds().width + " x " + frame.getContentPane().getBounds().height
+        );
+        LOG.trace("DIFF(JFrame.getBounds() - JFrame.getContentPane().getBounds()):" +
+                (frame.getBounds().width - frame.getContentPane().getBounds().width) + " x " +
+                (frame.getBounds().height - frame.getContentPane().getBounds().height)
+        );
+        LOG.trace("**********************************************************");
     }
 
-    public static void initGraph() {
+    public void initGraph() {
         // FIXME do not use try for all of them.
         try {
             jpOber.setLayout(new BorderLayout());
-            jpOber.setBounds(0,0,GameMap.getInstance().getAbsDim().x(), GameMap.getInstance().getAbsDim().y());
+            jpOber.setBounds(0,0,GameMap.getInstance().dim.x(), GameMap.getInstance().dim.y());
             jpOber.setOpaque(false);
             mouseRectangle.setOpaque(false);
             jpOber.add(mouseRectangle);
 
             //jpUnter.setLayout(null);
-            jpUnter.setBounds(0,0,GameMap.getInstance().getAbsDim().x(), GameMap.getInstance().getAbsDim().y());
+            jpUnter.setBounds(0,0,GameMap.getInstance().dim.x(), GameMap.getInstance().dim.y());
             jpUnter.setOpaque(true);
 
             // Создаём окно, в котором будет запускаться игра
@@ -272,12 +291,12 @@ public abstract class MainWindow {
             // Empirically I found that calling of .setPreferredSize to the contained JRootPane solves it.
             // Both .getRootPane() and .getContentPane() give good result.
             frame.getRootPane().setPreferredSize(new Dimension(
-                            GameMap.getInstance().getAbsDim().x(),
-                            GameMap.getInstance().getAbsDim().y()
+                            GameMap.getInstance().dim.x(),
+                            GameMap.getInstance().dim.y()
                     )
             );
 
-            debugMargins(frame,"Before JFrame.pack()");
+            debugMargins("Before JFrame.pack()");
 
             // https://stackoverflow.com/a/19740999/4807875:
             // Call setResizable(false) BEFORE calling pack() !!
@@ -287,11 +306,11 @@ public abstract class MainWindow {
             //frame.setResizable(false);
             frame.setFocusable(true);
 
-            debugMargins(frame,"After JFrame.pack() / Before JFrame.setLocationRelativeTo()");
+            debugMargins("After JFrame.pack() / Before JFrame.setLocationRelativeTo()");
 
             frame.setLocationRelativeTo(null);        // Установка окна в центр экрана
 
-            debugMargins(frame,"After JFrame.setLocationRelativeTo() / Before frame.addWindowListener()");
+            debugMargins("After JFrame.setLocationRelativeTo() / Before frame.addWindowListener()");
 
             // Лучше написать слушателя событий, который может контролировать приложение
             frame.addWindowListener(new WindowAdapter() {
@@ -306,7 +325,7 @@ public abstract class MainWindow {
                 }
             });
 
-            debugMargins(frame,"After JFrame.addWindowListener()");
+            debugMargins("After JFrame.addWindowListener()");
 
             LOG.debug(" ------ Rectangle API Test  ------ ");
 
@@ -357,15 +376,11 @@ public abstract class MainWindow {
         LOG.info("Graphics: ready.");
     }
 
-    public static void initControllers() {
+    public void initControllers() {
         jpUnter.addMouseListener(MouseController.getInstance());
         jpUnter.addMouseMotionListener(MouseController.getInstance());
         jpUnter.addMouseWheelListener(MouseController.getInstance());
         LOG.info("Controllers: ready.");
-    }
-
-    public static long getEDTId() {
-        return EDT_ID;
     }
 
 }

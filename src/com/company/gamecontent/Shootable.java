@@ -10,7 +10,7 @@ public interface Shootable {
 
     GameObject getTargetObject();
 
-    Point3D_Integer getTargetPoint();
+    //Point3D_Integer getTargetPoint();
 
     void unsetTargetObject();
 

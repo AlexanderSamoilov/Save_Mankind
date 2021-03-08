@@ -13,9 +13,9 @@ import static com.company.gamethread.M_Thread.terminateNoGiveUp;
 public class ParallelogramHorizontal extends Figure_2D /*implements Centerable*/ {
     private static Logger LOG = LogManager.getLogger(ParallelogramHorizontal.class.getName());
 
-    public final Point2D_Integer loc; // Coordinates of the left-top-back point
-    public final int width, height;
-    public final int shift; // shift of the second horizontal edge along Ox
+    final Point2D_Integer loc; // Coordinates of the left-top-back point
+    final int width, height; /* IDE_BUG: no warning about "package-private" if we set it public like "shift" */
+    final int shift; // shift of the second horizontal edge along Ox
 
     public final Color color = Color.BLUE;
 
@@ -61,8 +61,8 @@ public class ParallelogramHorizontal extends Figure_2D /*implements Centerable*/
             || (p.x() == x_right_bottom) && (p.y() == y_bottom) // bottom-right vertex
         ) return 0;
 
-        double x_left = x_left_top + (p.y() - y_top) * (x_left_bottom - x_left_top) / (y_bottom - y_top);
-        double x_right = x_right_top + (p.y() - y_top) * (x_right_bottom - x_right_top) / (y_bottom - y_top);
+        double x_left = x_left_top + (double)(p.y() - y_top) * (x_left_bottom - x_left_top) / (y_bottom - y_top);
+        double x_right = x_right_top + (double)(p.y() - y_top) * (x_right_bottom - x_right_top) / (y_bottom - y_top);
 
         LOG.trace("x_left=" + x_left + ", x=" + p.x() + ", x_right=" + x_right);
         LOG.trace("y_top=" + y_top + ", y=" + p.y() + ", y_bottom=" + y_bottom);
@@ -80,13 +80,14 @@ public class ParallelogramHorizontal extends Figure_2D /*implements Centerable*/
       -1 - section [A; B] lays completely in the exterior (does not even touch)
      */
     public int intersects(Point2D_Integer A, Point2D_Integer B) {
-
         // Validation. We are not supposed that the section turns to a point.
-        // We call this function to check intersection of a parallelogram interior with a section [A; B].
-        // This section must never turn to a point. Thus we don't just return here smth, but exit the program with a fatal error.
-        if ((A.x() == B.x()) && (A.y() == B.y())) {
-            terminateNoGiveUp(null,1000, "Wrong data: section [A; B] is a point!");
-            return contains(A);
+        // Thus we don't just return here something, but exit the program with a fatal error.
+        if (MathTools.sectionHasNullCoordinates(A, B)) {
+            terminateNoGiveUp(null,1000, "Some section [A; B] coordinates are null.");
+        }
+        if ((A.x().equals(B.x())) && (A.y().equals(B.y()))) {
+            terminateNoGiveUp(null,1000, "Section [A; B] is a point!");
+            //return contains(A);
         }
 
         int containsA = contains(A);
@@ -123,8 +124,8 @@ public class ParallelogramHorizontal extends Figure_2D /*implements Centerable*/
             };
 
             if ( // bug defense (to avoid the case if one function found that some edge contains the point, but another one cannot find which one)
-                   (edgesContainingA[0] == false) && (edgesContainingA[1] == false)
-                && (edgesContainingA[2] == false) && (edgesContainingA[3] == false)
+                   (!edgesContainingA[0]) && (!edgesContainingA[1])
+                && (!edgesContainingA[2]) && (!edgesContainingA[3])
             ) {
                 LOG.debug("L=" + top_left + ", A=" + A + ", R=" + top_right + ", sectionContains=" + MathTools.sectionContains(top_left, A, top_right));
                 LOG.debug("L=" + bottom_left + ", A=" + A + ", R=" + bottom_right + ", sectionContains=" + MathTools.sectionContains(bottom_left, A, bottom_right));
@@ -141,8 +142,8 @@ public class ParallelogramHorizontal extends Figure_2D /*implements Centerable*/
             };
 
             if ( // bug defense (to avoid the case if one function found that some edge contains the point, but another one cannot find which one)
-                   (edgesContainingB[0] == false) && (edgesContainingB[1] == false)
-                && (edgesContainingB[2] == false) && (edgesContainingB[3] == false)
+                   (!edgesContainingB[0]) && (!edgesContainingB[1])
+                && (!edgesContainingB[2]) && (!edgesContainingB[3])
             ) {
                 LOG.debug("L=" + top_left + ", B=" + B + ", R=" + top_right + ", sectionContains=" + MathTools.sectionContains(top_left, B, top_right));
                 LOG.debug("L=" + bottom_left + ", B=(" + B + ", R=" + bottom_right + ", sectionContains=" + MathTools.sectionContains(bottom_left, B, bottom_right));

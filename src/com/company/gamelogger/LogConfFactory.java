@@ -21,7 +21,7 @@ import static com.company.gamelogger.LogOptions.*;
 public class LogConfFactory extends ConfigurationFactory {
     private static Configuration createConfiguration(final String name, ConfigurationBuilder<BuiltConfiguration> builder) {
         builder.setConfigurationName(name);
-        builder.setStatusLevel(LEVEL);
+        builder.setStatusLevel(Level.OFF); // hide log4j initialization messages
 
         String logFilePath = FILE_PATH + "/" + FILE_NAME;
         boolean debugging = LEVEL.intLevel() >= Level.DEBUG.intLevel();

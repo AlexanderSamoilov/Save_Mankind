@@ -8,17 +8,16 @@ import java.io.IOException;
 import javax.imageio.ImageIO; // https://habr.com/post/145433/
 
 import com.company.gamegeom._3d.Parallelepiped;
-
-import static com.company.gamethread.M_Thread.terminateNoGiveUp;
+import com.company.gamethread.M_Thread;
 
 public class Sprite {
 //    private static Logger LOG = LogManager.getLogger(Sprite.class.getName());
 
-    private String fileName;
+    //private String fileName;
     private BufferedImage image = null;
 
     // Store the Angle of rotation of sprite
-    public AffineTransform rotation;
+    private AffineTransform rotation;
 
     public Sprite(String fileName) {
         if (fileName != null && !fileName.equals("")) {
@@ -29,12 +28,6 @@ public class Sprite {
         this.rotation = new AffineTransform();
     }
 
-    // FIXME Getter() to Class.attr
-    public BufferedImage getImage() {
-        return this.image;
-    }
-
-    //TODO We must wait loading of image
     public void setImage(String filename) {
         if (filename == null) {
             throw new NullPointerException("setImage: filename is null");
@@ -43,27 +36,26 @@ public class Sprite {
         try {
             this.image = ImageIO.read(new File("./res/drawable/" + filename));
         } catch (IOException e) {
-            // FIXME -> Main.terminateNoGiveUp()
-            terminateNoGiveUp(e,
+            M_Thread.terminateNoGiveUp(e,
                     1000,
                     "Could not set Sprite: ./res/drawable/" + filename + " could not be read/found."
             );
         }
 
-        this.fileName = filename;
+        //this.fileName = filename;
     }
 
-    public void draw(Graphics g, Parallelepiped parallelepiped, double rotation_angle) {
+    public void draw(Graphics g, Parallelepiped ppd, double rotation_angle) {
         AffineTransform saveAT = ((Graphics2D) g).getTransform();
 
         if (rotation_angle != 0) {
             this.rotation.setToIdentity();
-            this.rotation.rotate(rotation_angle, parallelepiped.getAbsCenterDouble().x(), parallelepiped.getAbsCenterDouble().y());
+            this.rotation.rotate(rotation_angle, ppd.getAbsCenterDouble().x(), ppd.getAbsCenterDouble().y());
             ((Graphics2D) g).transform(rotation);
         }
 
         g.setColor(Color.GREEN);
-        g.drawImage(image, parallelepiped.getAbsLoc().x(), parallelepiped.getAbsLoc().y(), parallelepiped.getAbsDim().x(), parallelepiped.getAbsDim().y(), null);
+        g.drawImage(image, ppd.loc.x(), ppd.loc.y(), ppd.dim.x(), ppd.dim.y(), null);
         ((Graphics2D) g).setTransform(saveAT);
     }
 }

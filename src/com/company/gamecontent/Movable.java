@@ -2,7 +2,7 @@ package com.company.gamecontent;
 
 import com.company.gamemath.cortegemath.point.Point3D_Integer;
 
-public interface Moveable {
+public interface Movable {
 
     void setDestinationPoint(Point3D_Integer point);
 

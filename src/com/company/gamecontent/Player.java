@@ -1,9 +1,7 @@
 package com.company.gamecontent;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -11,136 +9,133 @@ import org.apache.logging.log4j.Logger;
 import com.company.gamethread.ParameterizedMutexManager;
 
 import static com.company.gamethread.M_Thread.terminateNoGiveUp;
+import static com.company.gamecontent.Constants.MAX_PLAYERS;
+import static com.company.gamecontent.Constants.MAX_PLAYER_OBJECTS;
 
 public class Player {
     private static Logger LOG = LogManager.getLogger(Player.class.getName());
 
     // It will affect restrictions on type of buildings/weapons owned by the player
-    private Race.RaceType race;
+    //private Race.RaceType race;
     /*(namely:
             1. The default set of buildings/units given at the beginning of the game
             2. The list of buildings/units available for creation, or the set of skills to learn.
     )*/
 
     // The name which each player specifies before the game starts
-    private String nickName;
+    //private String nickName;
 
     // We should distinguish all players by id. Live player should always have id=0.
-    // FIXME Move to other Class
-    // TODO remove dis and use dynamic array
-    private static int maxId = -1;
-    private int        id    = -1;
+    final int        id;
 
-    // FIXME Move to other Class
-    private static Player[] players = null;
+    // static: stores collection of the class instances
+    public static ConcurrentLinkedQueue<Player> players = null; // WRITABLE
 
-    // If the player is defected, there should be some rules about how do its leftover objects behave
-    // and what is it allowed to do with then for the rest players which are still in game.
+    // If the player is defeated, there should be some rules about how do its leftover objects behave
+    // and what is it allowed to do with them for the rest players which are still in game.
     // Once the player was defeated, it should not be allowed to be reanimated, most probably.
-    boolean defeated;
+    //private boolean defeated;
 
     // resources (we can add/remove some ones or call them money, oxygen, energy, mass etc...)
-    private HashMap<Resource, Integer> resources;
-    private ArrayList<Building>        buildings = null;
-    private ArrayList<Unit>            units     = null;
+    //private HashMap<Resource, Integer> resources;
 
+    // ConcurrentLinkedQueue is concurrent ArrayList, see https://stackoverflow.com/a/25630263/4807875.
+    // and https://stackoverflow.com/questions/37117470/how-to-loop-arraylist-from-one-thread-while-adding-to-it-from-other-thread.
+    // NOTE: If we want random processing of Units in C-Thread then it is better to use ConcurrentHashSet.
+    private ConcurrentLinkedQueue<Building> buildings = null;
+    public ConcurrentLinkedQueue<Unit>     units     = null; // WRITABLE
 
-    public Player(Race.RaceType race, String name, HashMap<Resource, Integer> res, ArrayList<Building> buildings, ArrayList<Unit> units) {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M")));
+    Player(
+            /*Race.RaceType race,
+            String name,*/
+            HashMap<Resource, Integer> res,
+            ArrayList<Building> buildings,
+            ArrayList<Unit> units
+    ) {
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("M"))); // Arrays.asList("M")
 
         // 1 - parent class specific parameters
         /* ...*/
 
         // 2 - child class specific parameters validation
-        maxId ++;
-        if (maxId + 1 > Constants.MAX_PLAYERS) {
-            throw new IllegalArgumentException("Failed to initialize " + getClass() +
-                                               ". Not allowed to create more than " + Constants.MAX_PLAYERS + " players!");
+        if (players == null) {
+            players = new ConcurrentLinkedQueue<>(); // ConcurrentLinkedQueue<Player>()
         }
-
-        this.id = maxId;
+        if (players.size() + 1 > MAX_PLAYERS) {
+            throw new IllegalArgumentException(
+                "Failed to initialize " + getClass() +
+                ". Not allowed to create more than " + MAX_PLAYERS + " players!"
+            );
+        }
 
         if (res == null) {
-            throw new IllegalArgumentException("Failed to initialize " + getClass() +
-                                               ". Resource hash must be not null!");
+            throw new IllegalArgumentException(
+                "Failed to initialize " + getClass() +
+                ". Resource hash must be not null!"
+            );
         }
 
-        if (Player.players == null) {
-            Player.players = new Player[Constants.MAX_PLAYERS];
-        }
-
-        this.race = race;
-        this.nickName = name;
+        this.id = players.size();
+        //this.race = race;
+        //this.nickName = name;
 
         int bSize = (buildings == null) ? 0 : buildings.size();
         int uSize = (units == null) ? 0 : units.size();
 
-        if ((bSize + uSize) > Constants.MAX_PLAYER_OBJECTS) {
-            throw new IllegalArgumentException("Failed to initialize " + getClass() +
-                    ". Some of parameters are beyond the restricted boundaries."
+        if ((bSize + uSize) > MAX_PLAYER_OBJECTS) {
+            throw new IllegalArgumentException(
+                "Failed to initialize " + getClass() +
+                ". Some of parameters are beyond the restricted boundaries."
             );
         }
 
         if (res.size() > Resource.values().length) {
             throw new IllegalArgumentException(
-                    "Failed to initialize " + getClass() + ". Resource enum has only " +
-                    Resource.values().length + " elements, but " + res.size() + " were passed."
+                "Failed to initialize " + getClass() + ". Resource enum has only " +
+                Resource.values().length + " elements, but " + res.size() + " were passed."
             );
         }
 
         // Assign buildings
         if (bSize != 0) {
-            this.buildings = new ArrayList<>();
+            this.buildings = new ConcurrentLinkedQueue<>();
             this.buildings.addAll(buildings);
         }
 
         // Assign units
         if (uSize != 0) {
-            this.units = new ArrayList<>();
+            this.units = new ConcurrentLinkedQueue<>();
             this.units.addAll(units);
 
             for (Unit u : units) {
-                u.setOwner(id);
+                u.setOwner(this);
             }
         }
 
         // Assign resources
-        this.resources = new HashMap<>();
+        //this.resources = new HashMap<>();
 
         // TODO: check types of res elements
-        this.resources.putAll(res);
+        //this.resources.putAll(res);
 
         /* DEBUG */
         if (this.units != null){
             for (Unit printUnit : this.units) {
-                LOG.debug("INITIAL Player #(" + id + ")" + this +" unit: " + printUnit + "(" + printUnit.getWeapon().getOwner() + ").");
+                LOG.debug(
+                    "INITIAL Player #(" + id + ")" + this + " unit: " +
+                    printUnit +"(" + printUnit.weapon.owner + ")."
+                );
             }
         }
 
         // 3 - default values
-        // TODO May be useless
-        this.defeated = false;
+        //this.defeated = false;
 
-        Player.players[id] = this;
+        players.add(this);
     }
 
-    // FIXME Getter() to Class.attr
-    public ArrayList<Unit> getUnits() {
-        return units;
-    }
-
-    // TODO: return unmodifiable
-    // FIXME Move to other Class
-    public static Player[] getPlayers() {
-        // TODO remove this and use dynamic array
-        Player [] subArray = new Player[maxId + 1];
-        System.arraycopy(Player.players, 0, subArray, 0, maxId + 1);
-        return subArray;
-    }
-
-    // Add exception handling etc.
-    public void destroy(GameObject gameObj) {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+    void remove(GameObject gameObj) {
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("C"))); // Arrays.asList("C")
 
         if (gameObj instanceof Building) {
             this.removeBuilding((Building) gameObj);
@@ -149,40 +144,33 @@ public class Player {
         if (gameObj instanceof Unit) {
             this.removeUnit((Unit) gameObj);
         }
-
-        // TODO: do we need it to make GC to delete it indeed?
-        gameObj = null;
     }
 
     private void removeBuilding (Building building) {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("C"))); // Arrays.asList("C")
 
         if (!buildings.contains(building)) {
             /* DEBUG */
             terminateNoGiveUp(null,
-                    1000,
-                    "Critical error: The size of the buildings collection for the Player #" +
-                            id + " after the removal of the Unit #" + building
+                1000,
+                "Player #" + id + ": " +
+                " the object #" + building + " does not exist."
             );
-            System.exit(1);
         }
-
         this.buildings.remove(building);
     }
 
     private void removeUnit (Unit unit) {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("C"))); // Arrays.asList("C")
 
         if (!units.contains(unit)) {
             /* DEBUG */
             terminateNoGiveUp(null,
-                    1000,
-                    "Critical error: The size of the units collection for the Player #" +
-                            id + " after the removal of the Unit #" + unit
+                1000,
+                "Player #" + id + ": " +
+                " the object #" + unit + " does not exist."
             );
-            System.exit(1);
         }
-
         this.units.remove(unit);
     }
 }

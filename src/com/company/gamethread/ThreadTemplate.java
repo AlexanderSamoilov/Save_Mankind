@@ -1,26 +1,31 @@
+/* ********************************* *
+ * S I N G L E T O N   P A T T E R N *
+ * ********************************* */
 package com.company.gamethread;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.company.gamecontent.Constants;
 import com.company.gametools.Tools;
+import static com.company.gamecontent.Constants.TIME_QUANTUM;
 
 // "Pattern" class for creation of singletons
 public abstract class ThreadTemplate extends Thread {
     private static Logger LOG = LogManager.getLogger(ThreadTemplate.class.getName());
 
-    protected boolean SIGNAL_TERM;
+    // Semi-Singleton (abstract): "protected" constructor with a parameter
+    // Child classes will have "private" constructor like a normal singleton, but with a parameter
     private static ThreadTemplate instance = null;
-
-    public static ThreadTemplate getInstance() {
+    public static synchronized ThreadTemplate getInstance() {
         return instance;
     }
-
-    protected ThreadTemplate(String threadName) {
+    ThreadTemplate(String threadName) {
         super.setName(threadName);
         SIGNAL_TERM = false;
+        //LOG.debug(ThreadTemplate.class + " singleton created.");
     }
+
+    private boolean SIGNAL_TERM;
 
     @Override
     @Deprecated
@@ -66,7 +71,7 @@ public abstract class ThreadTemplate extends Thread {
             while (!interrupted() && !SIGNAL_TERM) {
                 // All the functionality is incapsulated here.
                 repeat();
-                Tools.timeout(Constants.TIME_QUANT);
+                Tools.timeout(TIME_QUANTUM);
             }
 
             LOG.info("Thread " + super.getId() + " finished.");
@@ -89,7 +94,7 @@ public abstract class ThreadTemplate extends Thread {
     // TODO: Should we release all mutexes held by a thread before terminating?
     // TODO: What if we call this function when the thread is held by another thread?
     // FIXME Confused ret values
-    public boolean terminate(long timeoutMsec) {
+    private boolean terminateThread(long timeoutMsec) {
         SIGNAL_TERM = true;
 
         // Wait and hope that the thread finish its work normally
@@ -108,7 +113,20 @@ public abstract class ThreadTemplate extends Thread {
             super.interrupt();
         }
 
-        return isAlive();
+        return !isAlive();
+    }
+
+    /*
+     We need this static function to avoid such a situation
+     when somebody calls <Class>.getInstance().terminateThread()
+     when the singleton instance not created yet. In this case it
+     will be first created inside getInstance() which is absolutely useless.
+     */
+    public static boolean terminate(long timeoutMsec) {
+        if (instance == null) {
+            return true;
+        }
+        return instance.terminateThread(timeoutMsec);
     }
 } // end of class ThreadTemplate
 // public class ThreadTemplateImpl extends ThreadTemplate { }

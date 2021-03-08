@@ -98,7 +98,7 @@ public class Cortege3D_Double extends Cortege3D<Cortege3D_Double, Double> {
 
     // Forbid to call static methods of Cortege?D_XXX(x, y) directly from the main code,
     // if x or y is child instance of Cortege?D_XXX, because in this case we bypass the type check.
-    static void checkWhoCalled(Cortege3D c1, Cortege3D c2) {
+    private static void checkWhoCalled(Cortege3D c1, Cortege3D c2) {
         if (
                 (c1.getClass() != Cortege3D_Integer.class) && (c1.getClass() != Cortege3D_Double.class) ||
                 (c2.getClass() != Cortege3D_Integer.class) && (c2.getClass() != Cortege3D_Double.class)

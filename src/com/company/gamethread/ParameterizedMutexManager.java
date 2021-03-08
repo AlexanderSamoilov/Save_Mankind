@@ -1,18 +1,24 @@
+/* ***************** *
+ * S I N G L E T O N *
+ * ***************** */
 package com.company.gamethread;
 
 import java.util.concurrent.Semaphore;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 // We must derive from a generic type to use a full power of getGenericSuperclass()
 // (avoiding type erasure)
 public class ParameterizedMutexManager extends MutexManager<String, Semaphore> {
-    public static ParameterizedMutexManager instance = null;
-    public static ParameterizedMutexManager getInstance() {
-        if (instance == null) {
-            instance = new ParameterizedMutexManager();
-        }
+    private static Logger LOG = LogManager.getLogger(MutexManager.class.getName());
+
+    // Singleton
+    public static final ParameterizedMutexManager instance = new ParameterizedMutexManager();
+    public static synchronized ParameterizedMutexManager getInstance() {
         return instance;
     }
-    private ParameterizedMutexManager() { // must be private, but otherwise I cannot inherit in Main.
-        super();
+    private ParameterizedMutexManager() {
+        LOG.debug(getClass() + " singleton created.");
     }
 }

@@ -1,7 +1,19 @@
+/* ************************* *
+ * U T I L I T Y   C L A S S *
+ * T E S T         C L A S S *
+ * ************************* */
+
+/*
+   We use "utility class" ("abstract final" class) simulation as "empty enum"
+   described on https://stackoverflow.com/questions/9618583/java-final-abstract-class.
+   Empty enum constants list (;) makes impossible to use its non-static methods:
+   https://stackoverflow.com/questions/61972971/non-static-enum-methods-what-is-the-purpose-and-how-to-call-them.
+ */
+
 package com.company.gamemath.cortegemath;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+// import org.apache.logging.log4j.LogManager;
+// import org.apache.logging.log4j.Logger;
 
 import com.company.gamemath.cortegemath.cortege.*;
 import com.company.gamemath.cortegemath.point.Point2D_Double;
@@ -13,9 +25,10 @@ import com.company.gamemath.cortegemath.vector.Vector2D_Integer;
 import com.company.gamemath.cortegemath.vector.Vector3D_Double;
 import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
 
-public class CortegeTest {
+public enum CortegeTest {
+    ; // utility class
 
-    private static Logger LOG = LogManager.getLogger(CortegeTest.class.getName());
+    //private static Logger LOG = LogManager.getLogger(CortegeTest.class.getName());
     private static double eps = 0.000001;
 
     private static void testCortege2D() {
@@ -25,10 +38,9 @@ public class CortegeTest {
         Cortege2D_Integer c2iInitial = new Cortege2D_Integer(null, null);
         Cortege2D_Double c2dInitial = new Cortege2D_Double(null, null);
 
-        c2iInitial.assign(c2i);
-        c2dInitial.assign(c2d);
-
         // Special tests
+        assert(c2iInitial.clone().isNullCortege());
+        assert(c2dInitial.clone().isNullCortege());
         assert(new Cortege2D_Integer(0, 0).isZeroCortege());
         assert(new Cortege2D_Integer(0.0, 0.0).isZeroCortege());
         assert(new Cortege2D_Double(0, 0).isZeroCortege());
@@ -38,6 +50,8 @@ public class CortegeTest {
         new Cortege2D_Integer(-0.6, 0.4).assertEq(new Cortege2D_Integer(0, 0));
 
         // Test self unary operators
+        c2iInitial.assign(c2i).assign(c2i).assertEq(c2i);
+        c2dInitial.assign(c2d).assign(c2d).assertEq(c2d);
         c2i.plus(c2i).assertEq(new Cortege2D_Integer(2, -6)); c2i.assign(c2iInitial);
         c2i.plus(c2d).assertEq(new Cortege2D_Integer(0, -1)); c2i.assign(c2iInitial);
         c2i.minus(c2i).assertEq(new Cortege2D_Integer(0, 0)); c2i.assign(c2iInitial);
@@ -144,10 +158,9 @@ public class CortegeTest {
         Cortege3D_Integer c3iInitial = new Cortege3D_Integer(null, null, null);
         Cortege3D_Double c3dInitial = new Cortege3D_Double(null, null, null);
 
-        c3iInitial.assign(c3i);
-        c3dInitial.assign(c3d);
-
         // Special tests
+        assert(c3iInitial.clone().isNullCortege());
+        assert(c3dInitial.clone().isNullCortege());
         assert(new Cortege3D_Integer(0, 0, 0).isZeroCortege());
         assert(new Cortege3D_Integer(0.0, 0.0, 0.0).isZeroCortege());
         assert(new Cortege3D_Double(0, 0, 0).isZeroCortege());
@@ -157,6 +170,8 @@ public class CortegeTest {
         new Cortege3D_Integer(-0.6, 0.4, -0.0).assertEq(new Cortege3D_Integer(0, 0, 0));
 
         // Test self unary operators
+        c3iInitial.assign(c3i).assign(c3i).assertEq(c3i);
+        c3dInitial.assign(c3d).assign(c3d).assertEq(c3d);
         c3i.plus(c3i).assertEq(new Cortege3D_Integer(-2, 0, 2)); c3i.assign(c3iInitial);
         c3i.plus(c3d).assertEq(new Cortege3D_Integer(0, 0, 0)); c3i.assign(c3iInitial);
         c3i.minus(c3i).assertEq(new Cortege3D_Integer(0, 0, 0)); c3i.assign(c3iInitial);
@@ -267,12 +282,11 @@ public class CortegeTest {
         Vector2D_Integer v2iInitial = new Vector2D_Integer(null, null);
         Vector2D_Double v2dInitial = new Vector2D_Double(null, null);
 
-        p2iInitial.assign(p2i);
-        p2dInitial.assign(p2d);
-        v2iInitial.assign(v2i);
-        v2dInitial.assign(v2d);
-
         // Special tests
+        assert(p2iInitial.isNullCortege());
+        assert(p2dInitial.isNullCortege());
+        assert(v2iInitial.isNullCortege());
+        assert(v2dInitial.isNullCortege());
         assert(new Point2D_Integer(0, 0).isZeroCortege());
         assert(new Point2D_Integer(0.0, 0.0).isZeroCortege());
         assert(new Point2D_Double(0, 0).isZeroCortege());
@@ -301,7 +315,10 @@ public class CortegeTest {
         new Vector2D_Integer(-0.6, 0.4).assertNotEq(new Cortege2D_Integer(0, 0));
 
         // Test self unary operators
-
+        p2iInitial.assign(p2i).assign(p2i).assertEq(p2i);
+        p2dInitial.assign(p2d).assign(p2d).assertEq(p2d);
+        v2iInitial.assign(v2i).assign(v2i).assertEq(v2i);
+        v2dInitial.assign(v2d).assign(v2d).assertEq(v2d);
         p2i.plus(v2i).assertEq(new Point2D_Integer(2, -6)); p2i.assign(p2iInitial);
         p2i.plus(v2d).assertEq(new Point2D_Integer(0, -1)); p2i.assign(p2iInitial);
         p2i.minus(v2i).assertEq(new Point2D_Integer(0, 0)); p2i.assign(p2iInitial);
@@ -448,7 +465,6 @@ public class CortegeTest {
         v2d.assertEq(v2dInitial);
 
         // Test transitivity of binary operators
-
         Point2D_Integer.plus2(p2i, v2i).to3D().to2D().assertEq(new Point2D_Integer(2, -6));
         Point2D_Integer.plus2(p2i, v2d).to3D().to2D().assertEqDouble(new Point2D_Double(0.1, -1.5), eps);
         p2i.assertEq(p2iInitial);
@@ -531,11 +547,11 @@ public class CortegeTest {
         Vector3D_Integer v3iInitial = new Vector3D_Integer(null, null, null);
         Vector3D_Double v3dInitial = new Vector3D_Double(null, null, null);
 
-        p3iInitial.assign(p3i);
-        p3dInitial.assign(p3d);
-        v3iInitial.assign(v3i);
-        v3dInitial.assign(v3d);
-
+        // Special tests
+        assert(p3iInitial.isNullCortege());
+        assert(p3dInitial.isNullCortege());
+        assert(v3iInitial.isNullCortege());
+        assert(v3dInitial.isNullCortege());
         assert(new Point3D_Integer(0, 0, 0).isZeroCortege());
         assert(new Point3D_Integer(0.0, 0.0, 0.0).isZeroCortege());
         assert(new Point3D_Double(0, 0, 0).isZeroCortege());
@@ -564,7 +580,10 @@ public class CortegeTest {
         new Vector3D_Integer(-0.6, 0.4, -0.0).assertNotEq(new Cortege3D_Integer(0, 0, 0));
 
         // Test self unary operators
-
+        p3iInitial.assign(p3i).assign(p3i).assertEq(p3i);
+        p3dInitial.assign(p3d).assign(p3d).assertEq(p3d);
+        v3iInitial.assign(v3i).assign(v3i).assertEq(v3i);
+        v3dInitial.assign(v3d).assign(v3d).assertEq(v3d);
         p3i.plus(v3i).assertEq(new Point3D_Integer(-2, 0, 2)); p3i.assign(p3iInitial);
         p3i.plus(v3d).assertEq(new Point3D_Integer(0, 0, 1)); p3i.assign(p3iInitial);
         p3i.minus(v3i).assertEq(new Point3D_Integer(0, 0, 0)); p3i.assign(p3iInitial);
@@ -711,7 +730,6 @@ public class CortegeTest {
         v3d.assertEq(v3dInitial);
 
         // Test transitivity of binary operators
-
         Point3D_Integer.plus2(p3i, v3i).to2D().to3D().assertEq(new Point3D_Integer(-2, 0, 0));
         Point3D_Integer.plus2(p3i, v3d).to2D().to3D().assertEqDouble(new Point3D_Double(-0.5, -0.5, 0), eps);
         p3i.assertEq(p3iInitial);
@@ -2254,7 +2272,7 @@ public class CortegeTest {
         testNotSupportedCombinationsForbidden3D_minus();
     }
 
-    public static void testOperators() {
+    public static void main(String[] args) {
 
         assert(Cortege2D_Integer.class.isAssignableFrom(Point2D_Integer.class));
         assert(Cortege2D_Double.class.isAssignableFrom(Point2D_Double.class));

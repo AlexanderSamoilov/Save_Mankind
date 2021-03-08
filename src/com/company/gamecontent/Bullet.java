@@ -2,6 +2,7 @@ package com.company.gamecontent;
 
 import java.awt.*;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 
 import org.apache.logging.log4j.LogManager;
@@ -18,7 +19,7 @@ import com.company.gametools.MathTools;
 
 import static com.company.gamecontent.Constants.BLOCK_SIZE;
 
-public class Bullet extends Parallelepiped implements Moveable, Renderable {
+public class Bullet extends Parallelepiped implements Movable, Renderable {
     private static Logger LOG = LogManager.getLogger(Bullet.class.getName());
 
     // NOTE: now this field is used to detect which Unit made a shoot in order to set its "targetObject" to null when the target dies
@@ -27,20 +28,19 @@ public class Bullet extends Parallelepiped implements Moveable, Renderable {
     // existence of an object in the list many times (proportional to the number of units on the map)
     // Moreover, this  "shooter" field may be used for another purpose - to know whom to grant the kill frag (experience)
     // when its bullet kills something.
-    private final Unit shooter; // who shoot?
+    final Unit shooter;
     private final BulletTemplate bulletTemplate;
 
-    // TODO dest_x, dest_y
-    private Point3D_Integer destPoint = null;
+    private Point3D_Integer destPoint;
 
-    public Bullet(Unit shooter, Point3D_Integer center_location, Point3D_Integer target, BulletTemplate bulletTemplate) {
+    Bullet(Unit shooter, Point3D_Integer center_location, Point3D_Integer target, BulletTemplate bulletTemplate) {
         // NOTE: yes, we modify the existing "center_location" here, but it is not used anywhere else afterwards
         super(
                 center_location.minus(new Vector3D_Integer(1,1,1).mult(bulletTemplate.caliber - 1).divInt(2)),
                 new Vector3D_Integer(1,1,1).mult(bulletTemplate.caliber)
         );
 
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("C"))); // Arrays.asList("C")
 
         // TODO: check max caliber and whether the location is valid
         // TODO: so far we don't consider Z-coordinate
@@ -64,18 +64,25 @@ public class Bullet extends Parallelepiped implements Moveable, Renderable {
     }
 
     public boolean move() {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("C"))); // Arrays.asList("C")
 
+        boolean res = moveTo(destPoint);
         // The bullet can fly only where it was shot to. Its destination is not possible to change
-        return moveTo(destPoint);
+        if (res) { // the bullet did the job
+            GameMap.getInstance().eraseBullet(this);
+            this.unsetDestinationPoint();
+            // TODO: Check if it is safe to destroy the object which method is being called at the moment
+            // this.delete() - in C/C++ object destruction will be called here
+        }
+        return res;
     }
 
     public boolean moveTo(Point3D_Integer next) {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("C"))); // Arrays.asList("C")
 
         // Calculate future coordinates where we want to move hypothetically (if nothing prevents this)
         LOG.trace("bullet_center: " + getAbsCenterInteger() + ", next: " + next);
-        Point3D_Integer new_center = MathTools.getNextPointOnRay(getAbsCenterInteger(), next, bulletTemplate.speed);
+        Point3D_Integer new_center = MathTools.calcNextPointOnRay(getAbsCenterInteger(), next, bulletTemplate.speed);
 
         // translation vector
         Vector3D_Integer dv = new_center.minusClone(getAbsCenterInteger());
@@ -86,37 +93,46 @@ public class Bullet extends Parallelepiped implements Moveable, Renderable {
 
         if (! GameMap.getInstance().contains(new_center)) {
             // the bullet left the map - forget it!
-            // TODO: check it it is safe to make null the object which method is being called at the moment
-            GameMap.getInstance().destroyBullet(this);
-            return false;
+            return true;
         }
 
         // Destination point reached, bullet do damage
         if (new_center.eq(next)) {
             this.causeDamage();
+            return true;
         }
 
-        return true;
+        return false;
     }
 
-    public void causeDamage() {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+    private void causeDamage() {
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("C"))); // Arrays.asList("C")
 
         Point2D_Integer block = loc.to2D().divInt(BLOCK_SIZE);
+        HashSet<GameObject> objectsOnBlock = GameMap.getInstance().landscapeBlocks[block.x()][block.y()].objectsOnBlock;
+        HashSet<GameObject> killedObjectsOnBlock = new HashSet<>(); // HashSet<GameObject>
 
-        HashSet<GameObject> objectsOnBlock = (HashSet<GameObject>)GameMap.getInstance().landscapeBlocks[block.x()][block.y()].objectsOnBlock.clone();
+        LOG.debug(
+            "Player #" + this.shooter.owner.id + ", unit #" + this.shooter + ", bullet " + this.toString() +
+            "--- hit [" + bulletTemplate.damage + " dmg] -> " + block + '=' + loc.to2D() + " -> " + objectsOnBlock
+        );
 
-        LOG.trace("--- hit [" + bulletTemplate.damage + " dmg] -> " + block + '=' + loc.to2D() + " -> " + objectsOnBlock.toString());
-
-        for (GameObject objOnBlock : objectsOnBlock) {
-            if (objOnBlock.hitPoints > bulletTemplate.damage) {
-                objOnBlock.hitPoints -= bulletTemplate.damage;
+        // Decrease HP of every object on the block in which the bullet hit.
+        // Put killed objects to a separate collection.
+        // We will erase them from the map in the second loop to avoid ConcurrentModificationException.
+        for (GameObject obj : objectsOnBlock) {
+            if (obj.hitPoints > bulletTemplate.damage) {
+                obj.hitPoints -= bulletTemplate.damage;
                 continue;
             }
+            killedObjectsOnBlock.add(obj);
+        }
 
+        // Iterate through killed objects, do necessary actions for them (erase etc.)
+        for (GameObject obj : killedObjectsOnBlock) {
             // Get experience - not implemented yet
-            // shooter.giveExp(go.getExpFromMe());
-            GameMap.getInstance().eraseObject(objOnBlock);
+            // shooter.giveExp(obj.getExpFromMe());
+            GameMap.getInstance().eraseObject(obj);
 
             // TODO: it is a hard question what is more optimal:
             // - to check the list of all Units who had a given Unit as a target and unset their targetObject
@@ -125,41 +141,36 @@ public class Bullet extends Parallelepiped implements Moveable, Renderable {
             // I propose to implement the second option now, but implement also the first one in the future and test  which one is faster.
             // TODO: Move global iteration of player and units to function
             int unset = 0; // DEBUG
-            for (Player p : Player.getPlayers()) {
-                for (Unit u : p.getUnits()) {
-                    if (u.getTargetObject() != objOnBlock) {
+            for (Player p : Player.players) {
+                for (Unit u : p.units) {
+                    if (u.getTargetObject() != obj) {
                         continue;
                     }
 
                     // The bullet killed exactly the target of that Unit "u"
                     u.unsetTargetObject();
-                    LOG.debug(objOnBlock + " died, unset is as a target for: " + u);
+                    LOG.debug(obj + " died, unset is as a target for: " + u);
                     unset ++;
                 }
             }
 
             // DEBUG
             if (unset == 0) {
-                LOG.warn(objOnBlock + " died from a stray bullet!");
+                LOG.warn(obj + " died from a stray bullet!");
             }
 
             // NOTE: this part must be the last one if we want to support such fun as self-killing
             // Because otherwise it will no more be returned in the getUnits() list
-            // TODO: It looks very dirty
-            // FIXME Unit.destroy()
-            Player.getPlayers()[objOnBlock.getPlayerId()].destroy(objOnBlock);
+            obj.remove();
         }
-
-        // TODO: check it it is safe to make null the object which method is being called at the moment
-        GameMap.getInstance().destroyBullet(this);
     }
 
     // TODO Use Sprite rendering
     public void render(Graphics g) {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("V"))); // Arrays.asList("V")
 
         g.setColor(bulletTemplate.color);
-        GraphExtensions.fillRect(g, new Rectangle(loc.x(), loc.y(), getAbsDim().x(), getAbsDim().y()), 0);
+        GraphExtensions.fillRect(g, getAbsBottomRect(), 0);
         super.render(g);
     }
 }

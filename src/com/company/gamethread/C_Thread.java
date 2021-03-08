@@ -1,6 +1,8 @@
+/* ***************** *
+ * S I N G L E T O N *
+ * ***************** */
 package com.company.gamethread;
 
-import java.util.HashSet;
 import java.util.concurrent.Semaphore;
 
 import org.apache.logging.log4j.LogManager;
@@ -8,16 +10,17 @@ import org.apache.logging.log4j.Logger;
 
 import com.company.gamecontent.*;
 
-// Singleton
 public class C_Thread extends ThreadTemplate {
     private static Logger LOG = LogManager.getLogger(C_Thread.class.getName());
 
+    // Singleton
     private static final C_Thread instance = new C_Thread("C-Thread");
-    public static C_Thread getInstance() {
+    public static synchronized C_Thread getInstance() {
         return instance;
     }
     private C_Thread(String threadName) {
         super(threadName);
+        LOG.debug(getClass() + " singleton created.");
     }
 
     @Override
@@ -29,27 +32,26 @@ public class C_Thread extends ThreadTemplate {
         } catch (InterruptedException e) {
             // It is naturally to have this exception while the thread is dying
             // Don't report about it in case of total termination
-            if (M_Thread.SIGNAL_TERM_GENERAL != true) throw(e);
+            if (! M_Thread.SIGNAL_TERM_GENERAL) throw(e);
         }
 
         LOG.trace("-> " + super.getName() + " is calculating. Permits: " + String.valueOf(sem.availablePermits()));
 
         // recalculate positions of each game object
         // TODO: do it according to our documentation (swap pointers worldCurr, worldNext)
-        if (GameMap.getInstance().getBullets() != null) {
-            HashSet<Bullet> bullets = (HashSet<Bullet>)GameMap.getInstance().getBullets().clone();
-
-            for (Bullet b : bullets) {
+        if (GameMap.getInstance().bullets != null) {
+            // NO clone required, although .move() modifies the bullets collection (use ConcurrentHashSet).
+            for (Bullet b : GameMap.getInstance().bullets) {
                 b.move();
             }
         }
 
-        // TODO bad realisation. We must use collections to iterate all units
         // TODO May be != null check move in getPlayers(), getUnits()?
-        if (Player.getPlayers() != null) {
-            for (Player pl : Player.getPlayers()) {
-                if (pl.getUnits() != null) {
-                    for (Unit u : pl.getUnits()) {
+        if (Player.players != null) {
+            for (Player pl : Player.players) {
+                if (pl.units != null) {
+                    // NO clone required, although .processTargets() modifies the units collection (use ConcurrentHashSet).
+                    for (Unit u : pl.units) {
                         u.processTargets();
                     }
                 }
@@ -62,7 +64,7 @@ public class C_Thread extends ThreadTemplate {
         } catch (Exception e) {
             // It is naturally to have this exception while the thread is dying
             // Don't report about it in case of total termination
-            if (M_Thread.SIGNAL_TERM_GENERAL != true) throw(e);
+            if (! M_Thread.SIGNAL_TERM_GENERAL) throw(e);
         }
     }
 

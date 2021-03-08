@@ -99,7 +99,7 @@ public class Cortege2D_Double extends Cortege2D<Cortege2D_Double,Double> {
 
     // Forbid to call static methods of Cortege?D_XXX(x, y) directly from the main code,
     // if x or y is child instance of Cortege?D_XXX, because in this case we bypass the type check.
-    static void checkWhoCalled(Cortege2D c1, Cortege2D c2) {
+    private static void checkWhoCalled(Cortege2D c1, Cortege2D c2) {
         if (
                 (c1.getClass() != Cortege2D_Integer.class) && (c1.getClass() != Cortege2D_Double.class) ||
                         (c2.getClass() != Cortege2D_Integer.class) && (c2.getClass() != Cortege2D_Double.class)

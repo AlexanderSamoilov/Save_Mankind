@@ -22,7 +22,7 @@ public abstract class AbstractMutexManager <TypeKey, TypeValue> extends Concurre
 
     //Class clazz = HashMap<T2,HashMap<T3, V>>; - does not work! (http://javanotepad.blogspot.com/2007/09/instanceof-doesnt-work-with-generics.html)
     // Thanks! https://stackoverflow.com/questions/5734720/test-if-object-is-instanceof-a-parameter-type
-    protected final Class <TypeValue> TypeV = (Class<TypeValue>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[1];
+    private final Class <TypeValue> TypeV = (Class<TypeValue>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[1];
 
         /* For the safety we deprecate the most base class methods */
         @Override @Deprecated public Object put(Object k, Object v) {
@@ -65,7 +65,7 @@ public abstract class AbstractMutexManager <TypeKey, TypeValue> extends Concurre
 
 
         // Careful about types: https://stackoverflow.com/questions/33765010/put-an-object-of-the-wrong-type-in-a-map.
-        protected TypeValue insert(TypeKey key, TypeValue value) {
+        TypeValue insert(TypeKey key, TypeValue value) {
 
             if (super.containsKey(key)) {
                 // NOTE: may be it has been just created in a sibling thread, but the value still was not assigned?
@@ -96,10 +96,11 @@ public abstract class AbstractMutexManager <TypeKey, TypeValue> extends Concurre
             return value;
         }
 
-        /* Implement this function if we allow to respawn threads */
+        // Implement this function if we allow to respawn threads
+        /*
         public boolean clearRecordsForThread(int threadId) {
             return false;
-        }
+        }*/
 
         /*public void test() {
             class myClass extends HashMap<Long, HashMap<String, Semaphore>> {}
@@ -109,7 +110,7 @@ public abstract class AbstractMutexManager <TypeKey, TypeValue> extends Concurre
         }*/
 
         // Careful about types: https://stackoverflow.com/questions/33765010/put-an-object-of-the-wrong-type-in-a-map.
-        protected TypeValue obtain(TypeKey key) throws NullPointerException, NoSuchElementException, ClassCastException {
+        TypeValue obtain(TypeKey key) throws NullPointerException, NoSuchElementException, ClassCastException {
             // TODO: check what happens if it contains, but another type (String "123" instead of integer 123).
             // Will in this case (or even in case we just call containsKey() with another type and variables are not equal literally as int and String) some exception be thrown?
             if (super.containsKey(key)) {

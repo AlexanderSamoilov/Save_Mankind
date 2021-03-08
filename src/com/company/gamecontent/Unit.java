@@ -2,6 +2,7 @@ package com.company.gamecontent;
 
 import java.awt.*;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -16,10 +17,11 @@ import com.company.gamegraphics.Sprite;
 import com.company.gamethread.ParameterizedMutexManager;
 import com.company.gametools.MathBugfixes;
 
-import static com.company.gamecontent.Constants.BLOCK_SIZE;
-import static com.company.gamecontent.Constants.INTERSECTION_STRATEGY_SEVERITY;
 import static com.company.gametools.MathTools.in_range;
 import static com.company.gamethread.M_Thread.terminateNoGiveUp;
+import static com.company.gamecontent.Constants.BLOCK_SIZE;
+import static com.company.gamecontent.Constants.INTERSECTION_STRATEGY_SEVERITY;
+import static com.company.gamecontent.Constants.MAX_DETECT_RADIUS_ABS;
 
 public class Unit extends GameObject implements Shootable {
     private static Logger LOG = LogManager.getLogger(Unit.class.getName());
@@ -28,14 +30,14 @@ public class Unit extends GameObject implements Shootable {
     // it is also supposed that it is not possible to redevelop existing units to use another weapon
     // but it will be possible to upgrade some factory to produce some type of units with another
     // weapon starting from some time point
-    private Weapon weapon;
+    Weapon weapon; // WRITABLE
 
     // The radius within which the unit is capable to see enemy's objects
     private int detectRadius;
 
     // Sometimes the unit gets such a damage which breaks its engine and it still can shoot,
     // but cannot move anymore
-    private boolean isCorrupted;
+    //private boolean isCorrupted;
 
     // Whom to Target now, may be NULL
     private GameObject targetObject;
@@ -44,13 +46,13 @@ public class Unit extends GameObject implements Shootable {
     private Point3D_Integer targetPoint;
 
     // Add the given Weapon to the Unit
-    public boolean setWeapon(Weapon w) {
+    private boolean setWeapon(Weapon w) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
 
         /* Special check for the weapon distance. In case of INTERSECTION_STRATEGY_SEVERITY = 2
            the shooting radius must be at least the object radius + 1 block*sqrt(2).
            In case of INTERSECTION_STRATEGY_SEVERITY = 1 it must be not less than the object radius.
-           Under "object radius" above we undersnabd the circle (sphere in 3D case) containing the object
+           Under "object radius" above we understand the circle (sphere in 3D case) containing the object
            (circumcircle or circumsphere).
          */
 
@@ -60,10 +62,10 @@ public class Unit extends GameObject implements Shootable {
         }
 
         double shootRadiusMinimal = (INTERSECTION_STRATEGY_SEVERITY - 1) * BLOCK_SIZE * MathBugfixes.sqrt(2) +
-                0.5 * MathBugfixes.sqrt(getAbsDim().to2D().sumSqr());
+                0.5 * MathBugfixes.sqrt(dim.to2D().sumSqr());
 
-        if (w.getShootRadius() < shootRadiusMinimal) {
-            LOG.error("The given shooting radius " + w.getShootRadius()
+        if (w.radius < shootRadiusMinimal) {
+            LOG.error("The given shooting radius " + w.radius
                         + " is less than the minimal value " + shootRadiusMinimal);
             return false;
         }
@@ -72,18 +74,32 @@ public class Unit extends GameObject implements Shootable {
         return true;
     }
 
-    // TODO Initialization of vars to init(), constructor must be empty
-    public Unit(Weapon weapon, int r, Sprite sprite, Point3D_Integer loc, Vector3D_Integer dim, HashMap<Resource, Integer> res, int hp, int speed, int rot_speed, int preMoveAngle, int arm, int hard, int bch, int ech, int eco) {
+    Unit(
+            Weapon weapon,
+            int r,
+            Sprite sprite,
+            Point3D_Integer loc,
+            Vector3D_Integer dim,
+            HashMap<Resource, Integer> res,
+            int hp,
+            int speed,
+            int rot_speed,
+            int preMoveAngle
+            //int arm,
+            //int hard,
+            //int bch,
+            //int ech,
+            //int eco
+    ) {
         // 1 - parent class specific parameters
-        super(sprite, loc, dim, res, hp, speed, rot_speed, preMoveAngle, arm, hard, bch, ech, eco);
+        super(sprite, loc, dim, res, hp, speed, rot_speed, preMoveAngle/*, arm, hard, bch, ech, eco*/);
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
 
         // 2 - child class specific parameters validation
-        boolean valid = true;
-        valid = valid && in_range(
+        boolean valid = in_range(
                 0,
                 r * BLOCK_SIZE,
-                Constants.MAX_DETECT_RADIUS_ABS,
+                MAX_DETECT_RADIUS_ABS,
                 false
         );
 
@@ -101,33 +117,30 @@ public class Unit extends GameObject implements Shootable {
 
         // 3 - default values
         this.targetPoint = null;
-        this.isCorrupted = false;
+        //this.isCorrupted = false;
         this.weapon.setOwner(this);
     }
 
-    public boolean hasWeapon() {
-        return weapon != null;
-    }
-
-    // FIXME Getter() to Class.attr
-    public Weapon getWeapon() {
-        return weapon;
+    private boolean hasNoWeapon() {
+        return weapon == null;
     }
 
     public boolean setTargetObject(GameObject targetObj) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
 
-        if (!hasWeapon()) return false;
-
-        // Forbid to kill colleagues
-        if (targetObj.getPlayerId() == getPlayerId()) {
+        if (hasNoWeapon()) {
             return false;
         }
 
-        LOG.debug("Player " + this.getPlayerId() + " get Object of Player " + targetObj.playerId + " as target!");
+        // Forbid to kill colleagues
+        if (targetObj.owner == this.owner) {
+            return false;
+        }
+
+        LOG.debug("Player " + this.owner.id + " get Object of Player " + targetObj.owner.id + " as target!");
         this.targetObject = targetObj;
 
-        this.unsetTargetPoint();
+        unsetTargetPoint();
 
         // TODO May be we want to Maneuvering (Move + Attack)
         unsetDestinationPoint();
@@ -138,10 +151,14 @@ public class Unit extends GameObject implements Shootable {
     public void setTargetPoint(Point3D_Integer point) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
 
-        if (!hasWeapon()) return;
+        if (hasNoWeapon()) {
+            return;
+        }
 
+        if (this.targetPoint == null) {
+            targetPoint = new Point3D_Integer(0, 0, 0);
+        }
         // TODO: check if coordinates are within restrictions
-        if (this.targetPoint == null) targetPoint = new Point3D_Integer(0, 0, 0);
         this.targetPoint.assign(point);
 
         unsetTargetObject();
@@ -168,11 +185,11 @@ public class Unit extends GameObject implements Shootable {
     }
 
     // FIXME Getter() to Class.attr
-    public Point3D_Integer getTargetPoint() {
+    /*public Point3D_Integer getTargetPoint() {
         return targetPoint;
-    }
+    }*/
 
-    public void validateTargetTypesNumber() {
+    private void validateTargetTypesNumber() {
         int targetCheck = 0;
         if (targetObject != null) {
             targetCheck ++;
@@ -188,46 +205,44 @@ public class Unit extends GameObject implements Shootable {
 
         if (targetCheck > 1) {
             terminateNoGiveUp(null,
-                    1000,
-                    "Error: " + targetCheck + " targets were set for the player " + getPlayerId()
+                1000,
+                "Error: " + targetCheck + " targets were set for the player " + this.owner.id
             );
-            System.exit(1);
         }
     }
 
-    public boolean shoot(Point3D_Integer point) {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+    private void /*boolean*/ shoot(Point3D_Integer point) {
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("C"))); // Arrays.asList("C")
 
         // We need to turn gun on the target first and then shoot.
         if (rotateTo(point.to2D())) {
-            return false;
+            return /*false*/;
         }
-        LOG.trace("Player " + this.getPlayerId() + " shoots target");
-        weapon.shoot(getAbsCenterInteger(), point); // returns true each Nth shoot
-        return true;
+        LOG.trace("Player " + this.owner.id + " shoots target");
+        /*return*/ weapon.shoot(getAbsCenterInteger(), point); // returns true each Nth shoot
     }
 
     // TODO: Take into account visibility of the target point as well
     // TODO: The target object can be "lost" if it is going much faster than the shooter
     public void processTargets() {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("C"))); // Arrays.asList("C")
 
         validateTargetTypesNumber();
 
         if (destPoint != null) {
-            LOG.trace("Player " + this.getPlayerId() + " move to destPoint");
+            LOG.trace("Player " + this.owner.id + " move to destPoint");
             this.moveTo(destPoint);
             return;
         }
 
-        if (!hasWeapon()) {
-            LOG.debug("Player " + this.getPlayerId() + " has no weapon :(");
+        if (hasNoWeapon()) {
+            LOG.debug("Player " + this.owner.id + " has no weapon :(");
             return;
         }
 
         // TODO Move it in AI_Tools_Class
         if ((targetPoint == null) && (targetObject == null)) {
-            LOG.trace("Player " + this.getPlayerId() + " searchTargetsInRadius");
+            LOG.trace("Player " + this.owner.id + " searchTargetsInRadius");
             searchTargetsInRadius();
             return;
         }
@@ -235,8 +250,8 @@ public class Unit extends GameObject implements Shootable {
         Point3D_Integer target = (targetPoint != null) ? targetPoint : targetObject.getAbsCenterInteger();
 
         // TODO Move it in AI_Tools_Class
-        if (isOnLineOfFire(target)) {
-            int shootRadius = weapon.getShootRadius();
+        //if (isOnLineOfFire(target)) {
+            int shootRadius = weapon.radius;
 
             if (Cortege3D_Integer.withinRadius(target, getAbsCenterInteger(), shootRadius)) {
                 shoot(target);
@@ -257,8 +272,7 @@ public class Unit extends GameObject implements Shootable {
                 double dist = MathBugfixes.sqrt(Cortege3D_Integer.distSqrVal(target, getAbsCenterInteger()));
 
                 if (dist < 1) {
-                    // This may be not economically, but safe that nobody modify "target" outside, so do clone()
-                    far = target.clone();
+                    far = target; // far = target.clone();
                 } else {
                     far = getAbsCenterInteger().plusClone(
                           target.minusClone(getAbsCenterInteger()).mult(shootRadius).divInt(dist)
@@ -266,26 +280,26 @@ public class Unit extends GameObject implements Shootable {
                 }
 
                 if (targetObject.getAbsBottomRect().contains(far.x(), far.y())) {
-                    LOG.trace("Player " + this.getPlayerId() + " shoots target border");
+                    LOG.trace("Player " + this.owner.id + " shoots target border");
                     shoot(far);
                     return;
                 }
             }
-        }
+        //}
 
         // This is "else" for expr withinRadius(target, loc, shootRadius) && isOnLineOfFire(target)
         // Either: the target point is too far, so we must come so close that we can shoot it
         // or: something hinders (impediment on the line of fire) - need to relocate
         // TODO Here may be a Def target where unit can't pursuing
         // TODO Move it in AI_Tools_Class
-        LOG.debug("Player " + this.getPlayerId() + ", unit " + this + " at " + getAbsCenterInteger() +
+        LOG.debug("Player " + this.owner.id + ", unit " + this + " at " + getAbsCenterInteger() +
                 ": target " + targetObject + " at " + target + " is too far - cannot shoot now.");
-        this.moveTo(getNextPointOnOptimalShootingPath(target));
+        this.moveTo(calcNextPointOnOptimalShootingPath(target));
     }
 
     // TODO Move it in AI_Tools_Class
-    public void searchTargetsInRadius() {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+    private void searchTargetsInRadius() {
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("C"))); // Arrays.asList("C")
 
         // TODO: introduce some algorithm of the optimal search to consider the closes blocks first
         // For example, radial search (spiral)
@@ -305,9 +319,8 @@ public class Unit extends GameObject implements Shootable {
         detectionAreaRect = GameMap.getInstance().crop(detectionAreaRect);
 
         GridRectangle gridRect = new GridRectangle(detectionAreaRect);
-//        LOG.debug("Player " + this.getPlayerId() + ": left=" + left + ", right=" + right + ", top=" + top + ", bottom=" + bottom);
+//        LOG.debug("Player " + this.playerId + ": left=" + left + ", right=" + right + ", top=" + top + ", bottom=" + bottom);
 
-        // TODO Use Collections
         for (int i = gridRect.left; (i <= gridRect.right) && (targetObject == null); i++) {
             for(int j = gridRect.top; (j <= gridRect.bottom) && (targetObject == null); j++) {
                 HashSet<GameObject> objectsOnTheBlock = GameMap.getInstance().landscapeBlocks[i][j].objectsOnBlock;
@@ -315,7 +328,7 @@ public class Unit extends GameObject implements Shootable {
                     continue;
                 }
 
-                LOG.trace("Player " + this.getPlayerId() + " found something in position (" + i + ", " + j + ")!");
+                LOG.trace("Player " + this.owner.id + " found something in position (" + i + ", " + j + ")!");
                 for (GameObject thatObject : objectsOnTheBlock) {
                     // Not me
                     // TODO !is_allie
@@ -329,22 +342,22 @@ public class Unit extends GameObject implements Shootable {
     }
 
     // TODO: not implemented yet, just return what was given
-    public boolean isOnLineOfFire(Point3D_Integer dest) {
+    /*private boolean isOnLineOfFire(Point3D_Integer dest) {
         return true;
-    }
+    }*/
 
     // TODO: not implemented yet, just return what was given
-    public Point3D_Integer getNextPointOnOptimalShootingPath(Point3D_Integer dest) {
+    private Point3D_Integer calcNextPointOnOptimalShootingPath(Point3D_Integer dest) {
         return dest;
     }
 
     public void render(Graphics g) {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("V"))); // Arrays.asList("V")
 
-        LOG.trace("Rendering UNIT: " + this.getPlayerId());
+        LOG.trace("Rendering UNIT: " + this.owner.id);
         super.render(g);
 
-        if (!hasWeapon()) {
+        if (hasNoWeapon()) {
             return;
         }
 

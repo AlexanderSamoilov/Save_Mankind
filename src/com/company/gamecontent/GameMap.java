@@ -1,7 +1,11 @@
+/* ***************** *
+ * S I N G L E T O N *
+ * ***************** */
 package com.company.gamecontent;
 
 import java.awt.*;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 
 import org.apache.logging.log4j.LogManager;
@@ -12,8 +16,10 @@ import com.company.gamegeom._3d.ParallelepipedOfBlocks;
 import com.company.gamecontrollers.MouseController;
 import com.company.gamemath.cortegemath.point.Point2D_Integer;
 import com.company.gamemath.cortegemath.point.Point3D_Integer;
+import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
 import com.company.gamethread.ParameterizedMutexManager;
-import com.company.gametools.Tools;
+import com.company.gametools.ConcurrentHashSet;
+//import com.company.gametools.Tools;
 
 import static com.company.gamethread.M_Thread.terminateNoGiveUp;
 import static com.company.gamecontent.Constants.BLOCK_SIZE;
@@ -23,52 +29,50 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
 
     private static Logger LOG = LogManager.getLogger(GameMap.class.getName());
 
-    private static final GameMap instance = new GameMap();
+    // Singleton
+    /*
+     Lazy thread-safe initialization (possible to catch exception in Main).
+     See https://www.geeksforgeeks.org/java-singleton-design-pattern-practices-examples.
+     */
 
-    // TODO what about Units, Buildings? Why Bullets separate of them?
-    // TODO Guava has Table<R, C, V> (table.get(x, y)). May be create Generic Class?
-    HashSet<GameObject>           selectedObjects = null;
-    GameMapBlock[][]              landscapeBlocks = null;
-    HashSet<Bullet>               bullets         = null;
-
-    private static boolean initialized = false;
-
+    private static GameMap instance = null;
     public static synchronized GameMap getInstance() {
         return instance;
     }
 
-    private GameMap() {
-        // Initialization of the map geometry (ParallelepipedOfBlocks)
-        super(
-                new Point3D_Integer(0, 0, 0),
-                GameMapGenerator.readMapDimensionsFromConfig() // static computation before super(): https://stackoverflow.com/a/17769207/4807875
-        );
-        Tools.printStackTrace(null); // DEBUG
-        init();
+    private GameMap(Point3D_Integer p, Vector3D_Integer v) {
+        super(p, v);
+        LOG.debug(getClass() + " singleton created.");
+        //Tools.printStackTrace(null); // DEBUG
     }
 
+    // TODO what about Units, Buildings? Why Bullets separate of them?
+    private HashSet<GameObject>           selectedObjects = null;
+    GameMapBlock[][]                      landscapeBlocks = null;
+    public ConcurrentHashSet<Bullet>             bullets         = null;
+
     private static synchronized void initDefaultLandscapeBlockTemplates() {
-        LandscapeBlockTemplate.add("SAND", true, true, false, "sand_dark_stackable.png");
-        LandscapeBlockTemplate.add("DIRT", true, true, false, "dirt.png");
-        LandscapeBlockTemplate.add("PLATE", true, true, false, "plate.png");
-        LandscapeBlockTemplate.add("FOREST", true, true, false, "forest.png");
-        LandscapeBlockTemplate.add("BUSH", true, true, false, "bush.png");
-        LandscapeBlockTemplate.add("WATER", true, true, false, "water_dirt.png");
-        LandscapeBlockTemplate.add("HOLE", true, true, false, "hole_dirt.png");
-        LandscapeBlockTemplate.add("MARSH", true, true, false, "marsh_dirt_stackable.png");
-        LandscapeBlockTemplate.add("HILL", true, true, false, "hill_dirt.png");
+        LandscapeBlockTemplate.add("SAND", /*true, true, false,*/ "sand_dark_stackable.png");
+        LandscapeBlockTemplate.add("DIRT", /*true, true, false,*/ "dirt.png");
+        LandscapeBlockTemplate.add("PLATE", /*true, true, false,*/ "plate.png");
+        LandscapeBlockTemplate.add("FOREST", /*true, true, false,*/ "forest.png");
+        LandscapeBlockTemplate.add("BUSH", /*true, true, false,*/ "bush.png");
+        LandscapeBlockTemplate.add("WATER", /*true, true, false,*/ "water_dirt.png");
+        LandscapeBlockTemplate.add("HOLE", /*true, true, false,*/ "hole_dirt.png");
+        LandscapeBlockTemplate.add("MARSH", /*true, true, false,*/ "marsh_dirt_stackable.png");
+        LandscapeBlockTemplate.add("HILL", /*true, true, false,*/ "hill_dirt.png");
     }
 
     private synchronized void initMapBlocks() {
         //String[][] terrain_map = GameMapGenerator.readMapFromConfig();
-        String [][] terrain_map = GameMapGenerator.generateRandomMap(getDim().x(), getDim().y());
-        for (int x = 0; x < getDim().x(); x++) {
-            for (int y = 0; y < getDim().y(); y++) {
+        String [][] terrain_map = GameMapGenerator.generateRandomMap(dimInBlocks.x(), dimInBlocks.y());
+        for (int x = 0; x < dimInBlocks.x(); x++) {
+            for (int y = 0; y < dimInBlocks.y(); y++) {
                 try {
                     this.landscapeBlocks[x][y] = new GameMapBlock(x, y, terrain_map[x][y]);
                 } catch (Exception e) {
                     LOG.error("Block (" + x + ", " + y + ")");
-                    LOG.error("Map size: " + getDim().x() + "x" + getDim().y());
+                    LOG.error("Map size: " + dimInBlocks.x() + "x" + dimInBlocks.y());
                     terminateNoGiveUp(e,
                         1000,
                         getClass() + ": Map initialization failed with " + e.getClass().getSimpleName()
@@ -87,31 +91,39 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
        but it is not worth on my opinion to use it when it is not quite necessary in our situation.
        The init() method is implemented synchronized in order to prevent being called in parallel.
      */
-    private synchronized void init() throws EnumConstantNotPresentException {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M")));
+    public static synchronized void init() throws EnumConstantNotPresentException {
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("M"))); // Arrays.asList("M")
 
         // Prevent duplicated call of the init() method.
-        if (initialized) {
+        // Let imagine we called init() first time and it failed for some reason,
+        // the instance was created, but the class fields were not initialized completely.
+        // So let us be strict and give only one chance to init the map.
+        if (instance != null) {
             terminateNoGiveUp(null,
                 1000,
-                getClass() + " init error. Not allowed to initialize the map twice!"
+                instance.getClass() + " init error. Not allowed to initialize the map twice!"
             );
         }
 
-        // TODO What about collections and Maps?
-        this.landscapeBlocks = new GameMapBlock[getDim().x()][getDim().y()];
+        // Initialization of the map geometry (ParallelepipedOfBlocks) happens in GameMapGenerator.readMapDimensionsFromConfig()
+        // It will work inside a default constructor as well as far as readMapDimensionsFromConfig() is static
+        // See https://stackoverflow.com/a/17769207/4807875
+        instance = new GameMap(
+                new Point3D_Integer(0, 0, 0),
+                GameMapGenerator.readMapDimensionsFromConfig()
+        );
+
+        instance.landscapeBlocks = new GameMapBlock[instance.dimInBlocks.x()][instance.dimInBlocks.y()];
         initDefaultLandscapeBlockTemplates();
-        initMapBlocks();
-        this.selectedObjects = new HashSet<GameObject>();
-        this.bullets = new HashSet<Bullet>();
+        instance.initMapBlocks();
+        instance.selectedObjects = new HashSet<>(); // HashSet<GameObject>
+        instance.bullets = new ConcurrentHashSet<>(); // ConcurrentHashSet<Bullet>
 
-        initialized = true;
-
-        LOG.info("Initialized map " + getDim().x() + "x" + getDim().y());
+        LOG.info("Initialized map " + instance.dimInBlocks.x() + "x" + instance.dimInBlocks.y());
     }
 
     public void select(Rectangle mouseRect) {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("D")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("D"))); // Arrays.asList("D")
 
         /* crop the selection rectangle to take into account
            the case when the mouse cursor is outside the map
@@ -119,12 +131,11 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
         Rectangle mouseRectCropped = crop(mouseRect);
 
         if (selectedObjects == null) {
-            selectedObjects = new HashSet<GameObject>();
+            selectedObjects = new HashSet<>(); // HashSet<GameObject>
         }
 
         // First deselect all selected objects
-        // TODO Why we Clone them?
-        this.deselect((HashSet<GameObject>)selectedObjects.clone());
+        this.deselectAll();
 
         // Check objects in Rect-Selector and add them to selectedObjects
         GridRectangle gridRect = new GridRectangle(mouseRectCropped);
@@ -151,7 +162,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
                     // TODO go.isMine()
                     // TODO I can select Enemy objects!
                     // If this Objects not mine or neutral
-                    if (objectOnMap.getPlayerId() > 0) {
+                    if (objectOnMap.owner.id > 0) {
                         continue;
                     }
 
@@ -162,17 +173,17 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
         }
     }
 
-    private void deselect(HashSet<GameObject> objects) {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("D")));
+    private void deselectAll() {
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("D"))); // Arrays.asList("D")
 
         if (selectedObjects == null) {
             return;
         }
 
-        for (GameObject selectedObj : objects) {
+        for (GameObject selectedObj : selectedObjects) {
             selectedObj.deselect();
-            this.selectedObjects.remove(selectedObj);
         }
+        this.selectedObjects.clear();
     }
 
     public void assign(Point3D_Integer point) {
@@ -183,19 +194,18 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
         }
 
         for (GameObject selectedObj : selectedObjects) {
-            // TODO: that is wrong if we allow moveable Buildings
+            // TODO: think about, whether we allow movable Buildings
             if (selectedObj instanceof Unit) {
                 assignUnit(selectedObj, point);
             }
         }
     }
 
-    // QUESTION What this do? May be rename?
-    // QUESTION Is this super.method() for GameObject.Unit.setTargets()? Why?
+    // Q: What does it do? May be we rename it?
+    // Q: Is this super.method() for GameObject.Unit.setTargets()? Why?
     private void assignUnit(GameObject selectedObj, Point3D_Integer point){
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C", "D")));
 
-        // FIXME: We must take floor(), not just divide!
         Point2D_Integer block = point.to2D().divInt(BLOCK_SIZE);
 
         // TODO: currently we don't consider "visibility" of the point by the player/enemy.
@@ -221,11 +231,11 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
         }
 
         // Attack point
-        if (MouseController.attackFocus) {
+        if (MouseController.getInstance().attackFocus) {
             ((Unit) selectedObj).setTargetPoint(point);
 
             // FIXME Move it in MouseController until reasons clarified
-            MouseController.attackFocus = false;
+            MouseController.getInstance().attackFocus = false;
 
             return;
         }
@@ -235,8 +245,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
     }
 
     // TODO Code Duplicate. Collections or method fixBlockPositionOnMap()
-    // TODO What is this?
-    public void registerObject(GameObject gameObj) {
+    void registerObject(GameObject gameObj) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
 
         GridRectangle gridRect = new GridRectangle(gameObj.getAbsBottomRect());
@@ -250,9 +259,7 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
     }
 
     // TODO Code Duplicate. Collections or method fixBlockPositionOnMap()
-    // QUESTION What is this?
-    // QUESTION Rename to erase()?
-    public void eraseObject(GameObject gameObj) {
+    void eraseObject(GameObject gameObj) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
 
         GridRectangle gridRect = new GridRectangle(gameObj.getAbsBottomRect());
@@ -266,24 +273,24 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
         }
     }
 
-    public void validateBlockCoordinates(int grid_x, int grid_y) {
+    private void validateBlockCoordinates(int grid_x, int grid_y) {
         if (! getAbsBottomRect().contains(grid_x, grid_y)) {
             terminateNoGiveUp(null,
                     1000, "Block (" + grid_x + "," + grid_y +
-                    " is outside of map " + getDim().x() + " x " + getDim().y()
+                    " is outside of map " + dimInBlocks.x() + " x " + dimInBlocks.y()
             );
         }
     }
 
     // Checks if the area "givenRect" is occupied by some GameObject.
-    public boolean occupied(Rectangle givenRect) {
+    /*public boolean occupied(Rectangle givenRect) {
         return occupied(givenRect, null);
-    }
+    }*/
 
     // Checks if the area "givenRect" where the given GameObject wants to move to/appear is occupied by some other GameObject.
     // Depending of INTERSECTION_STRATEGY_SEVERITY we decide how strictly we consider "occupied".
     // TODO: check not only intersection, but also containing (inclusion).
-    public boolean occupied(Rectangle givenRect, GameObject exceptObject) {
+    boolean occupied(Rectangle givenRect, GameObject exceptObject) {
         // With intersection severity level INTERSECTION_STRATEGY_SEVERITY=0 of two game objects is allowed.
         // Multiple units can use the same place (unreal, but let it be).
 
@@ -324,8 +331,8 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
 
                     // DEBUG
                     LOG.trace("Check 1: (" + givenRect.x + "," + givenRect.y + "," + givenRect.width + "," + givenRect.height);
-                    LOG.trace("Check 2: (" + objOnBlockRect.getX() + "," + objOnBlockRect.getY() + "," + objOnBlockRect.getWidth() + "," + objOnBlockRect.getHeight());
-                    LOG.trace("Check 3: " + objOnBlock.getAbsLoc() + "," + objOnBlock.getAbsDim());
+                    LOG.trace("Check 2: (" + objOnBlockRect.x + "," + objOnBlockRect.y + "," + objOnBlockRect.width + "," + objOnBlockRect.height);
+                    LOG.trace("Check 3: " + objOnBlock.loc + "," + objOnBlock.dim);
 
                     if (givenRect.intersects(objOnBlockRect)) {
                         return true;
@@ -337,33 +344,31 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
         return false;
     }
 
-    // TODO: make unmodifiable
-    // TODO Remove getters. Use Class.attr
-    public HashSet<Bullet> getBullets() { return bullets; }
-
     // TODO: check that i,j are within allowed boundaries
-    public boolean isBlockVisibleForMe(Point2D_Integer b) {
-//        LOG.debug("get: " + i + "." + j + "." + Player.getMyPlayerId());
+    private boolean isBlockVisibleForMe(Point2D_Integer b) {
+//        LOG.debug("get: " + i + "." + j + "." + Player.playerId());
         return landscapeBlocks[b.x()][b.y()].visible.get(0);
     }
 
-    public void registerBullet(Bullet b) {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+    void registerBullet(Bullet b) {
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("C"))); // Arrays.asList("C")
 
         // TODO: check validity of bullet coordinates, return and process bad result
         bullets.add(b);
     }
 
-    // TODO Move it in Spawner class
-    public void destroyBullet(Bullet b) {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+    void eraseBullet(Bullet b) {
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("C"))); // Arrays.asList("C")
 
-        // TODO; check if exists
+        if (!bullets.contains(b)) {
+            /* DEBUG */
+            terminateNoGiveUp(null,
+                1000,
+                "Player #" + b.shooter.owner.id + ": " +
+                " the object #" + b + " does not exist."
+            );
+        }
         bullets.remove(b);
-        b.unsetDestinationPoint();
-
-        // delete - -TODO: move to another class!
-//        b = null;
     }
 
     // Crops the given rectangle with the map rectangle (is used to avoid going outside the map)
@@ -376,28 +381,29 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
     }
 
     /* DEBUG */
+    /*
     public void show() {
-        for (int i = 0; i < getDim().x(); i++) {
-            for (int j = 0; j < getDim().y(); j++) {
+        for (int i = 0; i < dimInBlocks.x(); i++) {
+            for (int j = 0; j < dimInBlocks.y(); j++) {
                 int plId = -1;
                 GameObject target = null;
                 if (landscapeBlocks[i][j].objectsOnBlock.size() != 0) {
                     for (GameObject currObj : landscapeBlocks[i][j].objectsOnBlock) {
-                        plId = currObj.getPlayerId();
+                        plId = currObj.playerId;
                         target = ((Unit) (currObj)).getTargetObject();
                         LOG.debug("(" + i + "," + j + ")[" + plId + "]:" + currObj + " -> " + target);
                     }
                 }
             }
         }
-    }
+    }*/
 
     // Randomising landscapeBlocks
     /*
     public void rerandom() {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M")));
-        for(int i=0; i < getDim().x(); i++)
-            for (int j=0; j < getDim().y(); j++)
+        for(int i=0; i < dimInBlocks.x(); i++)
+            for (int j=0; j < dimInBlocks.y(); j++)
             {
                 landscapeBlocks[i][j].changeNature(); // pseudo-random
             }

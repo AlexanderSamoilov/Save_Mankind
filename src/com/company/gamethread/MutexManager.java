@@ -4,23 +4,23 @@ import java.util.ConcurrentModificationException;
 import java.util.HashSet;
 import java.util.concurrent.Semaphore;
 
-import com.company.Main;
+import com.company.gametools.Tools;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.company.gamecontrollers.MainWindow;
 
-// Singleton
-public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <TypeKey, TypeValue> {
+public abstract class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <TypeKey, TypeValue> {
     private static Logger LOG = LogManager.getLogger(MutexManager.class.getName());
 
-    //private static MutexManager instance = new MutexManager(); // sun.reflect.generics.reflectiveObjects.TypeVariableImpl cannot be cast to java.lang.Class
-    //public static MutexManager getInstance() { return instance; } // sun.reflect.generics.reflectiveObjects.TypeVariableImpl cannot be cast to java.lang.Class
-
+    // Singleton cannot be used:
+    // private static MutexManager instance = new MutexManager(); // sun.reflect.generics.reflectiveObjects.TypeVariableImpl cannot be cast to java.lang.Class
+    // public static synchronized MutexManager getInstance() { return instance; } // sun.reflect.generics.reflectiveObjects.TypeVariableImpl cannot be cast to java.lang.Class
+    // // private MutexManager() {LOG.debug(getClass() + " singleton created.");}
 
     public TypeValue getMutex(String threadType, TypeKey mutexPurpose) {
-        Long threadIdA = Thread.currentThread().getId(); // calculate threadId of the calling thread
-        Long threadIdB = null;
+        long threadIdA = Thread.currentThread().getId(); // calculate threadId of the calling thread
+        long threadIdB = -1;
         switch (threadType) {
             case "M":
                 threadIdB = M_Thread.getThreadId();
@@ -41,15 +41,17 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
                 );
         }
 
+        if (threadIdB == -1) {
+            M_Thread.terminateNoGiveUp(null,1000, "Target thread ID is invalid!");
+        }
         if (threadIdA == threadIdB) {
-            M_Thread.terminateNoGiveUp(null,1000, "An attempt to block the own thread was detected!");
+            M_Thread.terminateNoGiveUp(null,1000, "Thread attempted to block itself!");
         }
 
         Long threadIdLess = Math.min(threadIdA, threadIdB);
         Long threadIdMore = Math.max(threadIdA, threadIdB);
-        TypeValue value = null;
         String key = threadIdLess.toString() + ":" + threadIdMore.toString() + ":" + mutexPurpose.toString();
-        value = obtain((TypeKey) (key));
+        TypeValue value = obtain((TypeKey) (key));
 
         if (value != null) { return value; }
         else {
@@ -86,10 +88,7 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
                     errCounter ++;
                     if (errCounter > 100) {
                         M_Thread.terminateNoGiveUp(e,1000, "Got exception too much times!");
-                        // TODO: move to a func
-                        for (StackTraceElement stackTraceElement : e.getStackTrace()) {
-                            LOG.error(stackTraceElement.toString());
-                        }
+                        Tools.printStackTrace(e);
                     }
                     continue;
                 }
@@ -103,7 +102,7 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
                 delete s;
             }*/
 
-            LOG.debug("-> New Semaphore: [" + key.toString() + "]=" + insertionRes.toString());
+            LOG.debug("-> New Semaphore: [" + key + "]=" + insertionRes.toString());
 
             if (insertionRes instanceof  Semaphore) {
                 if (((Semaphore) insertionRes).availablePermits() > 1) {
@@ -115,6 +114,7 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
     }
 
     // for debugging
+    /*
     public void printHash() {
         LOG.debug("__________");
         for (Object key : keySet()) {
@@ -122,16 +122,16 @@ public class MutexManager <TypeKey, TypeValue> extends AbstractMutexManager <Typ
             LOG.debug(key + " => " + value);
         }
         LOG.debug("__________");
-    }
+    }*/
 
     // quasi-unique thread string name (unique for all except "U" that means "other" or "unknown")
-    public String getThreadType() {
-        long EDT_Thread_ID = MainWindow.getEDTId();
+    private String getThreadType() {
+        long EDT_Thread_ID = MainWindow.EDT_ID;
         // TODO: reactive this "if" after introduction of drawing routines which run before initMap() and initObjects()
         // (for example, drawing of the main game menu)
         // if (EDT_Thread_ID == -1) Main.terminateNoGiveUp(1000, "EDT thread ID must be defined first!");
 
-        Long threadId = Thread.currentThread().getId(); // calculate threadId of the calling thread
+        long threadId = Thread.currentThread().getId(); // calculate threadId of the calling thread
 
         if      (threadId == M_Thread.getThreadId())         { return "M"; }
         else if (threadId == D_Thread.getInstance().getId()) { return "D"; }

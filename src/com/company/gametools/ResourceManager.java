@@ -1,9 +1,9 @@
 package com.company.gametools;
 
-/**
+/*
  * Resource Manager will rule of resources in the game
  * */
-
+/*
 public abstract class ResourceManager {
     protected int ref_count = 1;
 
@@ -15,4 +15,4 @@ public abstract class ResourceManager {
         ref_count--;
         return ref_count == 0;
     }
-}
+}*/

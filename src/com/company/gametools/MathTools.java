@@ -1,3 +1,14 @@
+/* ************************* *
+ * U T I L I T Y   C L A S S *
+ * ************************* */
+
+/*
+   We use "utility class" ("abstract final" class) simulation as "empty enum"
+   described on https://stackoverflow.com/questions/9618583/java-final-abstract-class.
+   Empty enum constants list (;) makes impossible to use its non-static methods:
+   https://stackoverflow.com/questions/61972971/non-static-enum-methods-what-is-the-purpose-and-how-to-call-them.
+ */
+
 package com.company.gametools;
 
 import java.util.Random;
@@ -13,16 +24,17 @@ import com.company.gamemath.cortegemath.point.Point3D_Integer;
 import static com.company.gamecontent.Constants.Y_ORIENT;
 import static com.company.gamethread.M_Thread.terminateNoGiveUp;
 
-public abstract class MathTools {
+public enum MathTools {
+    ; // utility class
 
     private static Logger LOG = LogManager.getLogger(MathTools.class.getName());
 
-    public static enum RoundingMode {
+    private enum RoundingMode {
         TRUNC, // simply removes any fractional part from the number (round-toward-zero)
         CEIL,  // chooses the smallest (closest to negative infinity) integer that is not smaller than the original number
         FLOOR, // chooses the largest (closest to positive infinity) integer that is not greater than the original number
         ROUND  // chooses the integer closest to the original number (implementation dependent)
-    };
+    }
     // Let use "round" mode
     public static RoundingMode getRoundingMode() {
         return RoundingMode.ROUND;
@@ -67,7 +79,7 @@ public abstract class MathTools {
         return (left <= val && val <= right);
     }
 
-    public static Point3D_Integer getNextPointOnRay(Point3D_Integer srcPoint, Point3D_Integer destPoint, int step) {
+    public static Point3D_Integer calcNextPointOnRay(Point3D_Integer srcPoint, Point3D_Integer destPoint, int step) {
 
         Point3D_Integer nextPoint;
 
@@ -103,7 +115,7 @@ public abstract class MathTools {
       0 - 180 degrees (turn opposite)
      -1 - clockwise
      */
-    public static int getRotationDirectionRay (double rayAngle, Point2D_Double pointFrom, Point2D_Integer pointTo) {
+    public static int calcRotationDirectionRay (double rayAngle, Point2D_Double pointFrom, Point2D_Integer pointTo) {
 
         if (pointFrom == null) throw new NullPointerException("getRotationDirectionRay: pointFrom is NULL!");
         if (pointTo == null) throw new NullPointerException("getRotationDirectionRay: pointTo is NULL!");
@@ -151,7 +163,7 @@ public abstract class MathTools {
 
 
     /*
-        public int getRotationDirectionPolar () {
+        public static int calcRotationDirectionPolar () {
             double destAngle = ...;
             double diffAngles = destAngle - currAngle;
 
@@ -242,6 +254,9 @@ public abstract class MathTools {
                 (yp - y0) * Math.sin(rayAngle) > len * Math.cos(dAngle);
     }
 
+    public static boolean sectionHasNullCoordinates(Point2D_Integer A, Point2D_Integer B) {
+        return A.hasNullCoordinates() || B.hasNullCoordinates();
+    }
 
     public static boolean angleBetweenRayAndPointSmallEnoughRegardingRotationSpeed(double rayAngle, Point2D_Double pointFrom, Point2D_Integer pointTo, double rotation_speed) {
         // Sometimes it is better to turn one more time (even if the angle different is already less than given delta)
@@ -265,7 +280,7 @@ public abstract class MathTools {
         // the sequence formula: (n + 1) / 2n
         // let's take for example n = 5, then K = 0.6 which is a little more than 0.5, but safe.
         int N = 5;
-        double K = (N + 1) / (2.0 * N);
+        double K = (double)(N + 1) / (2 * N);
         return angleBetweenRayAndPointLessThan(rayAngle, pointFrom, pointTo, K * rotation_speed);
     }
 
@@ -277,15 +292,17 @@ public abstract class MathTools {
        -1 - does not belong
      */
     public static int sectionContains(Point2D_Integer A, Point2D_Integer p, Point2D_Integer B) {
-
         // Validation. We are not supposed that the section turns to a point.
-        // Thus we don't just return here smth, but exit the program with a fatal error.
-        if ((A.x() == B.x()) && (A.y() == B.y())) {
-            terminateNoGiveUp(null,1000, "Wrong data: section [A; B] is a point.");
+        // Thus we don't just return here something, but exit the program with a fatal error.
+        if (sectionHasNullCoordinates(A, B)) {
+            terminateNoGiveUp(null,1000, "Some section [A; B] coordinates are null.");
+        }
+        if ((A.x().equals(B.x())) && (A.y().equals(B.y()))) {
+            terminateNoGiveUp(null,1000, "Section [A; B] is a point.");
         }
 
-        if ((A.x() == p.x()) && (A.y() == p.y())) return 0; // belongs to the end A
-        if ((B.x() == p.x()) && (B.y() == p.y())) return 0; // belongs to the end B
+        if ((A.x().equals(p.x())) && (A.y().equals(p.y()))) return 0; // belongs to the end A
+        if ((B.x().equals(p.x())) && (B.y().equals(p.y()))) return 0; // belongs to the end B
 
         int minX = Math.min(A.x(), B.x());
         int maxX = Math.max(A.x(), B.x());
@@ -309,15 +326,21 @@ public abstract class MathTools {
      */
     public static int twoSectionsIntersect(Point2D_Integer p1, Point2D_Integer p2, Point2D_Integer p3, Point2D_Integer p4) {
 
-        // Validation. We are not supposed that the section turns to a point.
-        // We call this function to check intersection of a line with the edge of another shape.
-        // This edge must never turn to a point. Thus we don't just return here smth, but exit the program with a fatal error.
-        if ((p1.x() == p2.x()) && (p1.y() == p2.y())) {
-            terminateNoGiveUp(null,1000, "Wrong data: section [1; 2] is a point!");
+        // Validation. We call this function to check intersection of a line with the edge of another shape.
+        // This edge must never turn to a point, but if it happens we don't return anything,
+        // just exit the program with a fatal error.
+        if (sectionHasNullCoordinates(p1, p2)) {
+            terminateNoGiveUp(null,1000, "Some section [1; 2] coordinates are null.");
+        }
+        if (sectionHasNullCoordinates(p3, p4)) {
+            terminateNoGiveUp(null,1000, "Some section [3; 4] coordinates are null.");
+        }
+        if ((p1.x().equals(p2.x())) && (p1.y().equals(p2.y()))) {
+            terminateNoGiveUp(null,1000, "Section [1; 2] is a point!");
             // TODO: return anyway the result if the point belongs to another section
         }
-        if ((p3.x() == p4.x()) && (p3.y() == p4.y())) {
-            terminateNoGiveUp(null,1000, "Wrong data: section [3; 4] is a point!");
+        if ((p3.x().equals(p4.x())) && (p3.y().equals(p4.y()))) {
+            terminateNoGiveUp(null,1000, "Section [3; 4] is a point!");
             // TODO: return anyway the result if the point belongs to another section
         }
 

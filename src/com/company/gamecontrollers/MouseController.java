@@ -1,3 +1,6 @@
+/* ***************** *
+ * S I N G L E T O N *
+ * ***************** */
 package com.company.gamecontrollers;
 
 import java.awt.*;
@@ -13,20 +16,33 @@ import com.company.gamemath.cortegemath.point.Point3D_Integer;
 import com.company.gamethread.C_Thread;
 import com.company.gamethread.M_Thread;
 
-// TODO If we not releasing controller for Enemy, than this class must be static
+// https://stackoverflow.com/questions/3990319/storing-integer-values-as-constants-in-enum-manner-in-java
+enum Buttons {
+    NO_BUTTON(0),
+    L_BUTTON(1),
+    M_BUTTON(2),
+    R_BUTTON(3);
+
+    final int value;
+    Buttons(final int newValue) {
+        value = newValue;
+    }
+
+}
+
 public class MouseController extends MouseAdapter {
     private static Logger LOG = LogManager.getLogger(MouseController.class.getName());
+
+    // Singleton
     private static final MouseController instance = new MouseController();
     public static synchronized MouseController getInstance() {
         return instance;
     }
+    private MouseController() {
+        LOG.debug(getClass() + " singleton created.");
+    }
 
-    private final int NUM_BUTTONS = 4;
-
-    private static final int NO_BUTTON = 0;
-    private static final int L_BUTTON = 1;
-    private static final int M_BUTTON = 2;
-    private static final int R_BUTTON = 3;
+    private final int NUM_BUTTONS = Buttons.values().length;
 
     private final boolean[] buttons = new boolean[NUM_BUTTONS];
 //    private final boolean[] lastButtons = new boolean[NUM_BUTTONS];
@@ -41,13 +57,13 @@ public class MouseController extends MouseAdapter {
 //    private boolean         moving;         // Двигается ли курсор мышки
 //    private boolean         disabled;       // Вкл/Выкл контроллера
 
-    public static boolean attackFocus = false;
+    public boolean attackFocus = false;
 
     @Override
     public void mousePressed(MouseEvent e) {
         this.buttons[e.getButton()] = true;
 
-        if (e.getButton() == R_BUTTON) {
+        if (e.getButton() == Buttons.R_BUTTON.value) {
             // C thread should be locked here while we are reassigning the targets
             // Otherwise there is such a situation possible when C thread assigns a target
             // and this (D) thread (actually EDT in Java) assigns also a dest point or vice versa
@@ -71,7 +87,7 @@ public class MouseController extends MouseAdapter {
     @Override
     public void mouseReleased(MouseEvent e) {
         // Left button stopped dragging
-        if (e.getButton() == L_BUTTON) {
+        if (e.getButton() == Buttons.L_BUTTON.value) {
 //            if (hasBeenDragged()) {
 //                // Assign selection to units
 ////                int rectX = java.lang.Math.min(last_x, e.getX());
@@ -117,14 +133,14 @@ public class MouseController extends MouseAdapter {
             */
             if (!hasBeenDragged()) {
                 // TODO This idea is temporary
-                M_Thread.suspendAll();
+                M_Thread.suspendChilds();
 
                 // Point selection of unit by rect-selection
                 GameMap.getInstance().select(new Rectangle(e.getX(), e.getY(), 1, 1));
                 LOG.debug("released_press(" + e.getButton() + "): x=" + x + ", y=" + y);
             } else {
                 // Selection of units by rect-selection
-                GameMap.getInstance().select(MainWindow.mouseRectangle.getRect());
+                GameMap.getInstance().select(MainWindow.getInstance().mouseRectangle.getRect());
                 LOG.debug("released_drag(" + e.getButton() + "): x=" + x + ", y=" + y);
             }
 
@@ -134,12 +150,12 @@ public class MouseController extends MouseAdapter {
         }
 
         // Remove previous rect-selection
-        MainWindow.mouseRectangle.redefineRect(-1, -1, -1, -1);
+        MainWindow.getInstance().mouseRectangle.redefineRect(-1, -1, -1, -1);
 
         // Drop mouse drag modifier
-        this.buttons[NO_BUTTON] = false;
+        this.buttons[Buttons.NO_BUTTON.value] = false;
 
-        M_Thread.resumeAll();
+        M_Thread.resumeChilds();
 
         this.last_x = x;
         this.last_y = y;
@@ -188,7 +204,7 @@ public class MouseController extends MouseAdapter {
             // As a result, any other thread that is also trying to call System.out.println gets blocked.
             // If the current thread which calls suspend() is trying to System.out.println then it results to deadlock.
             // https://stackoverflow.com/questions/36631153/deadlock-with-system-out-println-and-a-suspended-thread
-            M_Thread.suspendAll();
+            M_Thread.suspendChilds();
 
             // Detect which of two points (last_x,last_y) and (e.getX(), e.getY())
             // is left-top and which is right-bottom
@@ -198,8 +214,8 @@ public class MouseController extends MouseAdapter {
             int rectHeight = java.lang.Math.abs(last_y - e.getY()) + 1;
 
             // How it works without it?! how the lower layer is recovered after rect painting?
-//            Main.getPanelUnter().repaint(0);
-            MainWindow.mouseRectangle.redefineRect(rectX, rectY, rectWidth, rectHeight);
+//            Main.jpUnter.repaint(0);
+            MainWindow.getInstance().mouseRectangle.redefineRect(rectX, rectY, rectWidth, rectHeight);
 
             LOG.trace("repainted.");
 
@@ -208,8 +224,8 @@ public class MouseController extends MouseAdapter {
         }
     }
 
-    public boolean hasBeenDragged() {
-        return buttons[NO_BUTTON];
+    private boolean hasBeenDragged() {
+        return buttons[Buttons.NO_BUTTON.value];
     }
 
     @Override
@@ -229,7 +245,7 @@ public class MouseController extends MouseAdapter {
         // called (with thr same getX, getY)
         // but mouseClicked was not called. It might be a bug of the mouse driver or of AWT
         /*if (e.getButton() == MouseEvent.BUTTON3) { // right click
-            // TODO: ideally C and V threads should be locked here when we reassignin the targets
+            // TODO: ideally C and V threads should be locked here when we reassigning the targets
             // currently it also works, but from the next round
             GameMap.getInstance().assign(e.getX(), e.getY());
         }

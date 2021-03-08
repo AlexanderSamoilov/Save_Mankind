@@ -53,7 +53,4 @@ abstract class Cortege2D <E extends Cortege<E,T>, T extends Number> extends Cort
                 createGenericArray3D(type, this.x(), this.y(), castToGeneric(0, type)));
     }
 
-    /*public Point toJPoint () {
-        return new Point((int) this.x, (int) this.y);
-    }*/
 }

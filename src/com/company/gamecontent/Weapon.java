@@ -2,6 +2,7 @@ package com.company.gamecontent;
 
 import java.awt.*;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 
 import org.apache.logging.log4j.LogManager;
@@ -14,14 +15,14 @@ public class Weapon implements Renderable {
     private static Logger LOG = LogManager.getLogger(Weapon.class.getName());
 
     // in order to support "shooter" field of class Bullet (see the comment in the class Bullet)
-    private Unit owner = null;
+    Unit owner = null; // WRITABLE FIELD
 
-    private final int radius;
+    final int radius;
     private final int reload;
-    private BulletTemplate bulletTemplate = null;
-    private int reloadCounter = 0;
+    private final BulletTemplate bulletTemplate;
+    private int reloadCounter;
 
-    public Weapon(int radius, int reload, BulletTemplate bulletTemplate) {
+    Weapon(int radius, int reload, BulletTemplate bulletTemplate) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
 
         this.radius  = radius;
@@ -33,39 +34,34 @@ public class Weapon implements Renderable {
     }
 
     // FIXME Setter() to Class.attr = val
-    public void setOwner(Unit u) {
+    void setOwner(Unit u) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("M", "C")));
 
         owner = u;
     }
 
-    // FIXME Getter() to Class.attr
-    public Unit getOwner() {
-        return owner;
-    }
-
-    // FIXME Getter() to Class.attr
-    public int getShootRadius() {
-        return radius;
-    }
-
     // TODO: not implemented yet
     public void render(Graphics g) {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("V")));
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("V"))); // Arrays.asList("V")
 
     }
 
-    public void shoot(Point3D_Integer location, Point3D_Integer target) {
-        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Arrays.asList("C")));
+    void shoot(Point3D_Integer location, Point3D_Integer target) {
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("C"))); // Arrays.asList("C")
 
-        if (reloadCounter == 0) {
-            Integer plId = owner.getPlayerId();
-            LOG.debug("Player #(" + plId + ")" + Player.getPlayers()[plId] + ", unit #" + owner + " is shooting -> " + target);
-            Bullet b = new Bullet(owner, location, target, bulletTemplate);
-            GameMap.getInstance().registerBullet(b);
+        // Charging ...
+        this.reloadCounter++;
+        this.reloadCounter = this.reloadCounter % reload;
+
+        // Not yet charged ...
+        if (this.reloadCounter != 0) {
+            return;
         }
 
-        this.reloadCounter++;
-        this.reloadCounter = reloadCounter % reload;
+        // Bang!
+        Player pl = this.owner.owner;
+        LOG.debug("Player #" + pl.id + ", unit #" + owner + " is shooting -> " + target);
+        Bullet b = new Bullet(this.owner, location, target, bulletTemplate);
+        GameMap.getInstance().registerBullet(b);
     }
 }

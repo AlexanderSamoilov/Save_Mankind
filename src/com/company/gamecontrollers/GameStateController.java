@@ -1,20 +1,35 @@
+/* ************************* *
+ * U T I L I T Y   C L A S S *
+ * ************************* */
+
+/*
+   We use "utility class" ("abstract final" class) simulation as "empty enum"
+   described on https://stackoverflow.com/questions/9618583/java-final-abstract-class.
+   Empty enum constants list (;) makes impossible to use its non-static methods:
+   https://stackoverflow.com/questions/61972971/non-static-enum-methods-what-is-the-purpose-and-how-to-call-them.
+ */
+
 package com.company.gamecontrollers;
 
-import com.company.gamethread.M_Thread;
+//import com.company.gamethread.M_Thread;
 
 // TODO: Think about GameManager or GameState
+/*
 enum Choice {
     EXIT_IMMEDIATELY,
     EXIT,
     PAUSE,
     RESUME,
     CANCEL
-}
+}*/
 
-public abstract class GameStateController {
+/*
+public enum GameStateController {
+    ; // utility class
+
     // This function handles ESC key press (it runs in a special unnamed thread automatically by Java mechanisms)
     // I think that this must be handled in the main thread, because it is the highest priority action - game state managing.
-    public void escKeyHandling() {
+    public static void escKeyHandling() {
         M_Thread.suspendAll();
         M_Thread.terminateNoGiveUp(null, 1000, "User quit action.");
 
@@ -38,4 +53,4 @@ public abstract class GameStateController {
 //            //ew.close();
 //        }
     }
-}
+}*/

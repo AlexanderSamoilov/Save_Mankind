@@ -1,5 +1,5 @@
 package com.company.gamegraphics;
-
+/*
 import java.awt.image.BufferedImage;
 
 import com.company.gametools.ResourceManager;
@@ -19,4 +19,4 @@ public class SpriteManager extends ResourceManager {
     public void setImage(BufferedImage image) {
         this.image = image;
     }
-}
+}*/
