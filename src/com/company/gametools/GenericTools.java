@@ -21,7 +21,7 @@ import org.apache.logging.log4j.Logger;
 import static com.company.gamethread.M_Thread.terminateNoGiveUp;
 
 public enum GenericTools {
-    ; // utility class
+    ;
 
     private static Logger LOG = LogManager.getLogger(GenericTools.class.getName());
 

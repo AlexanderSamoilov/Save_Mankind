@@ -1,6 +1,11 @@
 /* ***************** *
  * S I N G L E T O N *
  * ***************** */
+    /*
+     Lazy thread-safe singleton initialization (possible to catch exception in Main).
+     See https://www.geeksforgeeks.org/java-singleton-design-pattern-practices-examples.
+     */
+
 package com.company.gamecontent;
 
 import java.awt.*;
@@ -29,12 +34,6 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
 
     private static Logger LOG = LogManager.getLogger(GameMap.class.getName());
 
-    // Singleton
-    /*
-     Lazy thread-safe initialization (possible to catch exception in Main).
-     See https://www.geeksforgeeks.org/java-singleton-design-pattern-practices-examples.
-     */
-
     private static GameMap instance = null;
     public static synchronized GameMap getInstance() {
         return instance;
@@ -46,10 +45,9 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
         //Tools.printStackTrace(null); // DEBUG
     }
 
-    // TODO what about Units, Buildings? Why Bullets separate of them?
     private HashSet<GameObject>           selectedObjects = null;
     GameMapBlock[][]                      landscapeBlocks = null;
-    public ConcurrentHashSet<Bullet>             bullets         = null;
+    public final ConcurrentHashSet<Bullet> bullets        = new ConcurrentHashSet<>();
 
     private static synchronized void initDefaultLandscapeBlockTemplates() {
         LandscapeBlockTemplate.add("SAND", /*true, true, false,*/ "sand_dark_stackable.png");
@@ -117,7 +115,6 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
         initDefaultLandscapeBlockTemplates();
         instance.initMapBlocks();
         instance.selectedObjects = new HashSet<>(); // HashSet<GameObject>
-        instance.bullets = new ConcurrentHashSet<>(); // ConcurrentHashSet<Bullet>
 
         LOG.info("Initialized map " + instance.dimInBlocks.x() + "x" + instance.dimInBlocks.y());
     }
@@ -134,7 +131,6 @@ public class GameMap extends ParallelepipedOfBlocks implements Renderable {
             selectedObjects = new HashSet<>(); // HashSet<GameObject>
         }
 
-        // First deselect all selected objects
         this.deselectAll();
 
         // Check objects in Rect-Selector and add them to selectedObjects

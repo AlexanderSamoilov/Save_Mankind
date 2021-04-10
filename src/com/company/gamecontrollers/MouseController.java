@@ -33,7 +33,6 @@ enum Buttons {
 public class MouseController extends MouseAdapter {
     private static Logger LOG = LogManager.getLogger(MouseController.class.getName());
 
-    // Singleton
     private static final MouseController instance = new MouseController();
     public static synchronized MouseController getInstance() {
         return instance;

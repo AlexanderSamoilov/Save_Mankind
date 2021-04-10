@@ -26,13 +26,22 @@ import static com.company.gamethread.M_Thread.terminateNoGiveUp;
 public class MainWindow {
     private static Logger LOG = LogManager.getLogger(MainWindow.class.getName());
 
-    // Singleton
-    private static final MainWindow instance = new MainWindow();
+    private static MainWindow instance = null;
     public static synchronized MainWindow getInstance() {
         return instance;
     }
     private MainWindow() {
         LOG.debug(getClass() + " singleton created.");
+    }
+
+    public static synchronized void init() {
+        if (instance != null) {
+            terminateNoGiveUp(null,
+                    1000,
+                    instance.getClass() + " init error. Not allowed to initialize MainWindow twice!"
+            );
+        }
+        instance = new MainWindow();
     }
 
     // global graphics variables
@@ -51,13 +60,12 @@ public class MainWindow {
       It is an experimental implementation (in future better to implement own graphics completely).
      */
     // static, because EventDispatcherThread is single for the whole JVM
-    public static long EDT_ID = -1;
+    public static long EDT_ID = -1; // WRITABLE
 
     // Element #0 - the main game window.
     public final JFrame frame = new JFrame("Main Window") {
 //    <editor-fold desc="ATTENTION: Please, don't remove this implementation!">
 //
-//    ATTENTION: Please, don't remove this implementation!
 //    I added it to synchronize C-thread with EDT (Swing) thread.
 //    Normally EDT thread is working automatically and is drawing asynchronously to the other game threads.
 //    This contradicts however with Hayami's game concept where all drawing (which is done by V-Thread)
@@ -157,6 +165,7 @@ public class MainWindow {
             LOG.trace("Painting from jpUnter.paint[" + Thread.currentThread().getId() + "].");
             if (EDT_ID == -1) { // redefine it only one time!
                 EDT_ID = Thread.currentThread().getId();
+                LOG.info("EDT ID assigned: " + EDT_ID);
             }
             super.paintComponent(g);
             GameMapRenderer.render(g);
@@ -362,7 +371,7 @@ public class MainWindow {
         }
 
         if (
-               (EDT_ID == M_Thread.getThreadId()) ||
+               (EDT_ID == M_Thread.threadId) ||
                (EDT_ID == C_Thread.getInstance().getId()) ||
                (EDT_ID == V_Thread.getInstance().getId()) ||
                (EDT_ID == D_Thread.getInstance().getId())

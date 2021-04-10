@@ -15,7 +15,7 @@ package com.company.gamecontent;
 
 /*
 public enum Race {
-    ; // utility class
+    ;
 
     public enum RaceType {
         HUMANS,

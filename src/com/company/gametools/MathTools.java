@@ -25,7 +25,7 @@ import static com.company.gamecontent.Constants.Y_ORIENT;
 import static com.company.gamethread.M_Thread.terminateNoGiveUp;
 
 public enum MathTools {
-    ; // utility class
+    ;
 
     private static Logger LOG = LogManager.getLogger(MathTools.class.getName());
 
@@ -364,5 +364,14 @@ public enum MathTools {
         ) return 0; // overlapping or touching (we don't distinguish these cases for our tasks)
 
         return -1; // don't intersect, don't overlap and don't even touch
+    }
+
+    public static boolean allFalse(Boolean [] arr) {
+        for (int i = 0; i < arr.length; i++) {
+            if (arr[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 }

@@ -23,7 +23,7 @@ public abstract class MutexManager <TypeKey, TypeValue> extends AbstractMutexMan
         long threadIdB = -1;
         switch (threadType) {
             case "M":
-                threadIdB = M_Thread.getThreadId();
+                threadIdB = M_Thread.threadId;
                 break;
             case "D":
                 threadIdB = D_Thread.getInstance().getId();
@@ -78,6 +78,7 @@ public abstract class MutexManager <TypeKey, TypeValue> extends AbstractMutexMan
             // to return still not completely created value which is null, so we should wait a little bit
             // using the condition insertionRes == null until the first thread completes its "insert"
             int errCounter = 0;
+            int errMax = 100;
             while (!concurrentAccessOK && insertionRes == null) {
                 try {
                     insertionRes = insert((TypeKey) key, (TypeValue) (s));
@@ -86,7 +87,7 @@ public abstract class MutexManager <TypeKey, TypeValue> extends AbstractMutexMan
                     continue;
                 } catch (Exception e) {
                     errCounter ++;
-                    if (errCounter > 100) {
+                    if (errCounter > errMax) {
                         M_Thread.terminateNoGiveUp(e,1000, "Got exception too much times!");
                         Tools.printStackTrace(e);
                     }
@@ -131,9 +132,10 @@ public abstract class MutexManager <TypeKey, TypeValue> extends AbstractMutexMan
         // (for example, drawing of the main game menu)
         // if (EDT_Thread_ID == -1) Main.terminateNoGiveUp(1000, "EDT thread ID must be defined first!");
 
-        long threadId = Thread.currentThread().getId(); // calculate threadId of the calling thread
+        // calculate threadId of the calling thread
+        long threadId = Thread.currentThread().getId();
 
-        if      (threadId == M_Thread.getThreadId())         { return "M"; }
+        if      (threadId == M_Thread.threadId)              { return "M"; }
         else if (threadId == D_Thread.getInstance().getId()) { return "D"; }
         else if (threadId == C_Thread.getInstance().getId()) { return "C"; }
         else if (threadId == V_Thread.getInstance().getId()) { return "V"; }

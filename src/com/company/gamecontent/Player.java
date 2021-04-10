@@ -29,7 +29,7 @@ public class Player {
     final int        id;
 
     // static: stores collection of the class instances
-    public static ConcurrentLinkedQueue<Player> players = null; // WRITABLE
+    public static final ConcurrentLinkedQueue<Player> players = new ConcurrentLinkedQueue<>();
 
     // If the player is defeated, there should be some rules about how do its leftover objects behave
     // and what is it allowed to do with them for the rest players which are still in game.
@@ -42,8 +42,8 @@ public class Player {
     // ConcurrentLinkedQueue is concurrent ArrayList, see https://stackoverflow.com/a/25630263/4807875.
     // and https://stackoverflow.com/questions/37117470/how-to-loop-arraylist-from-one-thread-while-adding-to-it-from-other-thread.
     // NOTE: If we want random processing of Units in C-Thread then it is better to use ConcurrentHashSet.
-    private ConcurrentLinkedQueue<Building> buildings = null;
-    public ConcurrentLinkedQueue<Unit>     units     = null; // WRITABLE
+    private final ConcurrentLinkedQueue<Building> buildings = new ConcurrentLinkedQueue<>();
+    public final ConcurrentLinkedQueue<Unit> units          = new ConcurrentLinkedQueue<>();
 
     Player(
             /*Race.RaceType race,
@@ -58,9 +58,6 @@ public class Player {
         /* ...*/
 
         // 2 - child class specific parameters validation
-        if (players == null) {
-            players = new ConcurrentLinkedQueue<>(); // ConcurrentLinkedQueue<Player>()
-        }
         if (players.size() + 1 > MAX_PLAYERS) {
             throw new IllegalArgumentException(
                 "Failed to initialize " + getClass() +
@@ -98,15 +95,12 @@ public class Player {
 
         // Assign buildings
         if (bSize != 0) {
-            this.buildings = new ConcurrentLinkedQueue<>();
             this.buildings.addAll(buildings);
         }
 
         // Assign units
         if (uSize != 0) {
-            this.units = new ConcurrentLinkedQueue<>();
             this.units.addAll(units);
-
             for (Unit u : units) {
                 u.setOwner(this);
             }
@@ -119,13 +113,11 @@ public class Player {
         //this.resources.putAll(res);
 
         /* DEBUG */
-        if (this.units != null){
-            for (Unit printUnit : this.units) {
-                LOG.debug(
-                    "INITIAL Player #(" + id + ")" + this + " unit: " +
-                    printUnit +"(" + printUnit.weapon.owner + ")."
-                );
-            }
+        for (Unit printUnit : this.units) {
+            LOG.debug(
+                "INITIAL Player #(" + id + ")" + this + " unit: " +
+                printUnit +"(" + printUnit.weapon.owner + ")."
+            );
         }
 
         // 3 - default values

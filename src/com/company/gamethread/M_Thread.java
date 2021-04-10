@@ -14,23 +14,50 @@ package com.company.gamethread;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.company.Main;
 import com.company.gamecontrollers.MainWindow;
 import com.company.gametools.Tools;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /*
  The only sense of this class is to move thread control from Main to a separate file.
  */
 
 public enum M_Thread {
-    ; // utility class
+    ;
 
     private static Logger LOG = LogManager.getLogger(M_Thread.class.getName());
 
+    public static final long threadId = Thread.currentThread().getId();
     public static boolean SIGNAL_TERM_GENERAL = false;
-    public static int deadStatus = 0;
+    public static boolean deadStatus = false;
+
+    // This does not work in stupid Java: https://stackoverflow.com/questions/66932627/how-do-i-call-a-static-method-on-elements-of-listclass-extends-classname.
+    // ArrayList<Class<? extends ThreadTemplate>> GAME_THREADS_1 = new ArrayList(Arrays.asList(C_Thread.class, V_Thread.class, D_Thread.class));
+
+    static ArrayList<? extends ThreadTemplate> getGameThreads() {
+        return new ArrayList<>(Arrays.asList(
+                C_Thread.getInstance(),
+                V_Thread.getInstance(),
+                D_Thread.getInstance()
+        ));
+    }
+
+    public static void init() {
+        D_Thread.init();
+        V_Thread.init();
+        C_Thread.init();
+    }
 
     public static void start() {
+        init();
+        MainWindow.init();
+        MainWindow.getInstance().initControllers();
+        // TODO: This call leads .paintComponent() of MainWindow.frame get called.
+        // Properly is if only V-Thread explicitly says to draw, without EDT.
+        MainWindow.getInstance().initGraph();
+
         if (D_Thread.getInstance().start(100, 10)) {
             M_Thread.terminateNoGiveUp(null,1000, null);
         }
@@ -57,6 +84,8 @@ public enum M_Thread {
         if (C_Thread.getInstance().start(100, 10)) {
             M_Thread.terminateNoGiveUp(null,1000, null);
         }
+
+        System.out.println("- ALL THREADS STARTED -");
     }
 
     public static void repeat() {
@@ -84,45 +113,32 @@ public enum M_Thread {
             // and from which other thread the given thread waited and could not acquire.
             //}
 
-            if (!D_Thread.getInstance().isAlive()) {
-                deadStatus++;
-            }
-            if (!V_Thread.getInstance().isAlive()) {
-                deadStatus++;
-            }
-            if (!C_Thread.getInstance().isAlive()) {
-                deadStatus++;
+            for (ThreadTemplate gThread : getGameThreads()) {
+                if (gThread == null || !gThread.isAlive()) {
+                    deadStatus = true;
+                }
             }
 
-            if (deadStatus > 0) {
-                LOG.error(deadStatus + " of game threads were unexpectedly terminated. To ensure the correct game flow we must exit. Please, restart the game.");
+            if (deadStatus) {
+                LOG.error("Some game threads were unexpectedly terminated. To ensure the correct game flow we must exit. Please, restart the game.");
                 break;
             }
         }
 
-        if (deadStatus == 0) {
+        if (!deadStatus) {
             // If no one thread died then we wait for all threads to exit normally {
             // End of the game (wrap up actions)
             // We expect not just InterruptedException, but general Exception, because MutexManager can throw many times of exception from inside *_Thread
-            try {
-                C_Thread.getInstance().join(); // wait the C-thread to finish
-            } catch (Exception eOuter) {
-                Tools.printStackTrace(eOuter);
-                C_Thread.terminate(1000);
-            }
-
-            try {
-                V_Thread.getInstance().join(); // wait the V-thread to finish
-            } catch (Exception eOuter) {
-                Tools.printStackTrace(eOuter);
-                V_Thread.terminate(1000);
-            }
-
-            try {
-                D_Thread.getInstance().join(); // wait the D-thread to finish
-            } catch (Exception eOuter) {
-                Tools.printStackTrace(eOuter);
-                D_Thread.terminate(1000);
+            for (ThreadTemplate gThread : getGameThreads()) {
+                if (gThread == null) {
+                    continue;
+                }
+                try {
+                    gThread.join(); // wait the C-thread to finish
+                } catch (Exception eOuter) {
+                    Tools.printStackTrace(eOuter);
+                    gThread.terminate(1000);
+                }
             }
         }
     }
@@ -147,32 +163,20 @@ public enum M_Thread {
     // TODO Check logic here!
     private static boolean terminate(long timeoutMsec) {
         SIGNAL_TERM_GENERAL = true;
-        boolean res;
-        try {
-            res = C_Thread.terminate(timeoutMsec);
-        } catch (Exception e) {
-            for (StackTraceElement steElement : e.getStackTrace()) {
-                LOG.error(steElement.toString());
+        boolean res = true;
+        for (ThreadTemplate gThread : getGameThreads()) {
+            if (gThread == null) {
+                continue;
             }
-            return false;
-        }
 
-        try {
-            res = res || V_Thread.terminate(timeoutMsec);
-        } catch (Exception e) {
-            for (StackTraceElement steElement : e.getStackTrace()) {
-                LOG.error(steElement.toString());
+            try {
+                res = res && gThread.terminate(timeoutMsec);
+            } catch (Exception e) {
+                for (StackTraceElement steElement : e.getStackTrace()) {
+                    LOG.error(steElement.toString());
+                }
+                return false;
             }
-            return false;
-        }
-
-        try {
-            res = res || D_Thread.terminate(timeoutMsec);
-        } catch (Exception e) {
-            for (StackTraceElement steElement : e.getStackTrace()) {
-                LOG.error(steElement.toString());
-            }
-            return false;
         }
 
         // Delete all objects and destroy main window
@@ -204,25 +208,17 @@ public enum M_Thread {
     }
 
     public static void suspendChilds() {
-        D_Thread.getInstance().suspend();
-        LOG.debug("D suspended");
-
-        V_Thread.getInstance().suspend();
-        LOG.debug("V suspended");
-
-        C_Thread.getInstance().suspend();
-        LOG.debug("C suspended");
+        for (ThreadTemplate gThread : getGameThreads()) {
+            gThread.suspend();
+            LOG.debug(gThread.getName() + " suspended");
+        }
         LOG.debug("--- suspended ---");
     }
 
     public static void resumeChilds() {
-        D_Thread.getInstance().resume();
-        V_Thread.getInstance().resume();
-        C_Thread.getInstance().resume();
+        for (ThreadTemplate gThread : getGameThreads()) {
+            gThread.resume();
+        }
         LOG.debug("--- resumed ---");
-    }
-
-    public static long getThreadId() {
-        return Main.threadId;
     }
 }

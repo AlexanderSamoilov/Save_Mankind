@@ -21,7 +21,7 @@ import org.apache.logging.log4j.Level;
  */
 
 enum LogOptions {
-    ; // utility class
+    ;
 
     // OFF -> FATAL -> ERROR -> WARN -> INFO -> TRACE -> ALL
     static final Level LEVEL = Level.DEBUG;

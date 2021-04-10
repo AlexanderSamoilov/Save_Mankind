@@ -28,7 +28,7 @@ import com.company.gamethread.V_Thread;
  */
 
 public enum GameMapRenderer {
-    ; // utility class
+    ;
 
     private static Logger LOG = LogManager.getLogger(GameMapRenderer.class.getName());
 

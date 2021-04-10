@@ -63,18 +63,18 @@ public class Bullet extends Parallelepiped implements Movable, Renderable {
         destPoint = null;
     }
 
-    public boolean move() {
+    public /*boolean*/ void move() {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("C"))); // Arrays.asList("C")
 
-        boolean res = moveTo(destPoint);
+        boolean destPointReached = moveTo(destPoint);
         // The bullet can fly only where it was shot to. Its destination is not possible to change
-        if (res) { // the bullet did the job
+        if (destPointReached) {
             GameMap.getInstance().eraseBullet(this);
             this.unsetDestinationPoint();
             // TODO: Check if it is safe to destroy the object which method is being called at the moment
             // this.delete() - in C/C++ object destruction will be called here
         }
-        return res;
+        /*return destPointReached;*/
     }
 
     public boolean moveTo(Point3D_Integer next) {
@@ -92,7 +92,7 @@ public class Bullet extends Parallelepiped implements Movable, Renderable {
         LOG.trace("move?: new_loc=" + loc + ", dist=" + MathBugfixes.sqrt(dv.sumSqr()) + ", obj=" + this);
 
         if (! GameMap.getInstance().contains(new_center)) {
-            // the bullet left the map - forget it!
+            // map border reached
             return true;
         }
 

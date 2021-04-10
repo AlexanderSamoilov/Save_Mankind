@@ -14,8 +14,9 @@ import com.company.gamethread.ParameterizedMutexManager;
 public class Weapon implements Renderable {
     private static Logger LOG = LogManager.getLogger(Weapon.class.getName());
 
+    // properties
     // in order to support "shooter" field of class Bullet (see the comment in the class Bullet)
-    Unit owner = null; // WRITABLE FIELD
+    Unit owner = null; // WRITABLE
 
     final int radius;
     private final int reload;
@@ -46,19 +47,25 @@ public class Weapon implements Renderable {
 
     }
 
-    void shoot(Point3D_Integer location, Point3D_Integer target) {
+    void orderShoot(Point3D_Integer location, Point3D_Integer target) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("C"))); // Arrays.asList("C")
 
-        // Charging ...
+        // Loading ...
         this.reloadCounter++;
         this.reloadCounter = this.reloadCounter % reload;
 
-        // Not yet charged ...
+        // Not yet loaded ...
         if (this.reloadCounter != 0) {
             return;
         }
 
         // Bang!
+        shoot(location, target);
+    }
+
+    void shoot(Point3D_Integer location, Point3D_Integer target) {
+        ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("C"))); // Arrays.asList("C")
+
         Player pl = this.owner.owner;
         LOG.debug("Player #" + pl.id + ", unit #" + owner + " is shooting -> " + target);
         Bullet b = new Bullet(this.owner, location, target, bulletTemplate);

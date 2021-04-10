@@ -16,7 +16,7 @@ import java.lang.Math;
 import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
 
 public enum Constants {
-    ; // utility class
+    ;
 
     public static final int ROTATE_MOD = 1; // 0 - angle mode, not 0 - ray mode
 

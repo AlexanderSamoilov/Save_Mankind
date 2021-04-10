@@ -211,7 +211,7 @@ public class Unit extends GameObject implements Shootable {
         }
     }
 
-    private void /*boolean*/ shoot(Point3D_Integer point) {
+    private void /*boolean*/ orderShoot(Point3D_Integer point) {
         ParameterizedMutexManager.getInstance().checkThreadPermission(new HashSet<>(Collections.singletonList("C"))); // Arrays.asList("C")
 
         // We need to turn gun on the target first and then shoot.
@@ -219,7 +219,7 @@ public class Unit extends GameObject implements Shootable {
             return /*false*/;
         }
         LOG.trace("Player " + this.owner.id + " shoots target");
-        /*return*/ weapon.shoot(getAbsCenterInteger(), point); // returns true each Nth shoot
+        /*return*/ weapon.orderShoot(getAbsCenterInteger(), point); // returns true each Nth shoot
     }
 
     // TODO: Take into account visibility of the target point as well
@@ -254,7 +254,7 @@ public class Unit extends GameObject implements Shootable {
             int shootRadius = weapon.radius;
 
             if (Cortege3D_Integer.withinRadius(target, getAbsCenterInteger(), shootRadius)) {
-                shoot(target);
+                orderShoot(target);
                 return;
             }
             // else: shooting point outside the shooting radius
@@ -281,7 +281,7 @@ public class Unit extends GameObject implements Shootable {
 
                 if (targetObject.getAbsBottomRect().contains(far.x(), far.y())) {
                     LOG.trace("Player " + this.owner.id + " shoots target border");
-                    shoot(far);
+                    orderShoot(far);
                     return;
                 }
             }

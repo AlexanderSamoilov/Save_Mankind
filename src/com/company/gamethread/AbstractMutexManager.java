@@ -96,8 +96,8 @@ public abstract class AbstractMutexManager <TypeKey, TypeValue> extends Concurre
             return value;
         }
 
-        // Implement this function if we allow to respawn threads
         /*
+        // This function will be implemented if we allow to respawn threads
         public boolean clearRecordsForThread(int threadId) {
             return false;
         }*/

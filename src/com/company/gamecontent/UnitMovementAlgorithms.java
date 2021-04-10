@@ -38,7 +38,7 @@ import static com.company.gamethread.M_Thread.terminateNoGiveUp;
 import static com.company.gamecontent.Constants.INTERSECTION_STRATEGY_SEVERITY;
 
 public enum UnitMovementAlgorithms {
-    ; // utility class
+    ;
 
     private static Logger LOG = LogManager.getLogger(UnitMovementAlgorithms.class.getName());
 
@@ -62,44 +62,47 @@ public enum UnitMovementAlgorithms {
         Rectangle new_rect = go.getAbsBottomRect();
         new_rect.translate(dv.x(), dv.y()); // translocated rectangle
 
-        if (dv.y() != 0) { // a)
-            if (dv.y() < 0) {
-                pgmHoriz = new ParallelogramHorizontal(
+        // a
+        if (dv.y() < 0) {
+            pgmHoriz = new ParallelogramHorizontal(
                     new Point2D_Integer(new_rect.x, new_rect.y),
                     new_rect.width,
                     go.loc.y() - new_rect.y + 1,
                     -dv.x()
-                );
-            }
-            /*if (dv.y() > 0)*/ else {
-                pgmHoriz = new ParallelogramHorizontal(
+            );
+        }
+        if (dv.y() > 0) {
+            pgmHoriz = new ParallelogramHorizontal(
                     new Point2D_Integer(go.loc.x(), go.loc.y() + go.dim.y() - 1),
                     new_rect.width,
                     new_rect.y - go.loc.y() + 1,
                     dv.x()
-                );
-            }
+            );
+        }
+        if (dv.y() != 0) {
             pgmHorizOccupiedBlocks = new GridMatrixHorizontal(pgmHoriz);
             pgmHoriz.render(currentGraphics); // DEBUG (draw parallelogram)
             pgmHorizOccupiedBlocks.render(currentGraphics); // DEBUG (draw occupied blocks)
         }
-        if (dv.x() != 0) { // b)
-            if (dv.x() < 0) {
-                pgmVert = new ParallelogramVertical(
+
+        // b
+        if (dv.x() < 0) {
+            pgmVert = new ParallelogramVertical(
                     new Point2D_Integer(new_rect.x, new_rect.y),
                     go.loc.x() - new_rect.x + 1,
                     new_rect.height,
                     -dv.y()
-                );
-            }
-            /* if (dv.x() > 0) */ else {
-                pgmVert = new ParallelogramVertical(
+            );
+        }
+        if (dv.x() > 0) {
+            pgmVert = new ParallelogramVertical(
                     new Point2D_Integer(go.loc.x() + go.dim.x() - 1, go.loc.y()),
                     new_rect.x - go.loc.x() + 1,
                     new_rect.height,
                     dv.y()
-                );
-            }
+            );
+        }
+        if (dv.x() != 0) {
             pgmVertOccupiedBlocks = new GridMatrixVertical(pgmVert);
             pgmVert.render(currentGraphics); // DEBUG (draw parallelogram)
             pgmVertOccupiedBlocks.render(currentGraphics); // DEBUG (draw occupied blocks)
@@ -204,70 +207,63 @@ public enum UnitMovementAlgorithms {
             Point2D_Integer go_bottom_right = new Point2D_Integer(rect.x + rect.width - 1, rect.y + rect.height - 1);
 
             // a
-            if (dv.y() != 0) {
-                // NOTE: Here "dy < 0" means movement UP since Y_ORIENT=-1 (we are not in Cartesian system in the game).
-                if (dv.y() < 0) { // UP
-                    // check intersection/touching of the object rectangle by the bottom edge of the impediment
-                    if (pgmHoriz.intersects(go_bottom_left, go_bottom_right) > -1) {
-                        suspectedObjectsA.add(rect);
-                    }
+            // NOTE: Here "dy < 0" means movement UP since Y_ORIENT=-1 (we are not in Cartesian system in the game).
+            if (dv.y() < 0) { // UP
+                // check intersection/touching of the object rectangle by the bottom edge of the impediment
+                if (pgmHoriz.intersects(go_bottom_left, go_bottom_right) > -1) {
+                    suspectedObjectsA.add(rect);
                 }
-                if (dv.y() > 0) { // DOWN
-                    // check intersection/touching of the object rectangle by the top edge of the impediment
-                    if (pgmHoriz.intersects(go_top_left, go_top_right) > -1) {
-                        suspectedObjectsA.add(rect);
-                    }
+            }
+            if (dv.y() > 0) { // DOWN
+                // check intersection/touching of the object rectangle by the top edge of the impediment
+                if (pgmHoriz.intersects(go_top_left, go_top_right) > -1) {
+                    suspectedObjectsA.add(rect);
                 }
             }
 
             // b
-            if (dv.x() != 0) {
-                if (dv.x() > 0) { // RIGHT
-                    // check intersection/touching of the object rectangle by the left edge of the impediment
-                    if (pgmVert.intersects(go_top_left, go_bottom_left) > -1) {
-                        suspectedObjectsB.add(rect);
-                    }
+            if (dv.x() > 0) { // RIGHT
+                // check intersection/touching of the object rectangle by the left edge of the impediment
+                if (pgmVert.intersects(go_top_left, go_bottom_left) > -1) {
+                    suspectedObjectsB.add(rect);
                 }
-                if (dv.x() < 0) { // LEFT
-                    // check intersection/touching of the object rectangle by the right edge of the impediment
-                    if (pgmVert.intersects(go_top_right, go_bottom_right) > -1) {
-                        suspectedObjectsB.add(rect);
-                    }
+            }
+            if (dv.x() < 0) { // LEFT
+                // check intersection/touching of the object rectangle by the right edge of the impediment
+                if (pgmVert.intersects(go_top_right, go_bottom_right) > -1) {
+                    suspectedObjectsB.add(rect);
                 }
             }
 
             // c
-            if (!dv.isZeroCortege()) {
-                if ((dv.x() > 0) && (dv.y() < 0)) { // UP-RIGHT
-                    // check if the bottom-left vertex of the impediment belongs to the common section [frontPointStartPos; frontPointEndPos]
-                    // connecting pgmHoriz and pgmVert
-                    if (sectionContains(frontPointStartPos, go_bottom_left, frontPointEndPos) > -1) {
-                        suspectedObjectsC.add(rect);
-                    }
-                }
-                if ((dv.x() < 0) && (dv.y() < 0)) { // UP-LEFT
-                    // check if the bottom-left vertex of the impediment belongs to the common section [frontPointStartPos; frontPointEndPos]
-                    // connecting pgmHoriz and pgmVert
-                    if (sectionContains(frontPointStartPos, go_bottom_right, frontPointEndPos) > -1) {
-                        suspectedObjectsC.add(rect);
-                    }
-                }
-                if ((dv.x() > 0) && (dv.y() > 0)) { // DOWN-RIGHT
-                    // check if the top-left vertex of the impediment belongs to the common section [frontPointStartPos; frontPointEndPos]
-                    // connecting pgmHoriz and pgmVert
-                    if (sectionContains(frontPointStartPos, go_top_left, frontPointEndPos) > -1) {
-                        suspectedObjectsC.add(rect);
-                    }
-                }
-                if ((dv.x() < 0) && (dv.y() > 0)) { // DOWN-LEFT
-                    // check if the top-right vertex of the impediment belongs to the common section [frontPointStartPos; frontPointEndPos]
-                    // connecting pgmHoriz and pgmVert
-                    if (sectionContains(frontPointStartPos, go_top_right, frontPointEndPos) > -1) {
-                        suspectedObjectsC.add(rect);
-                    }
+            if ((dv.x() > 0) && (dv.y() < 0)) { // UP-RIGHT
+                // check if the bottom-left vertex of the impediment belongs to the common section [frontPointStartPos; frontPointEndPos]
+                // connecting pgmHoriz and pgmVert
+                if (sectionContains(frontPointStartPos, go_bottom_left, frontPointEndPos) > -1) {
+                    suspectedObjectsC.add(rect);
                 }
             }
-
+            if ((dv.x() < 0) && (dv.y() < 0)) { // UP-LEFT
+                // check if the bottom-left vertex of the impediment belongs to the common section [frontPointStartPos; frontPointEndPos]
+                // connecting pgmHoriz and pgmVert
+                if (sectionContains(frontPointStartPos, go_bottom_right, frontPointEndPos) > -1) {
+                    suspectedObjectsC.add(rect);
+                }
+            }
+            if ((dv.x() > 0) && (dv.y() > 0)) { // DOWN-RIGHT
+                // check if the top-left vertex of the impediment belongs to the common section [frontPointStartPos; frontPointEndPos]
+                // connecting pgmHoriz and pgmVert
+                if (sectionContains(frontPointStartPos, go_top_left, frontPointEndPos) > -1) {
+                    suspectedObjectsC.add(rect);
+                }
+            }
+            if ((dv.x() < 0) && (dv.y() > 0)) { // DOWN-LEFT
+                // check if the top-right vertex of the impediment belongs to the common section [frontPointStartPos; frontPointEndPos]
+                // connecting pgmHoriz and pgmVert
+                if (sectionContains(frontPointStartPos, go_top_right, frontPointEndPos) > -1) {
+                    suspectedObjectsC.add(rect);
+                }
+            }
         }
 
         /* Step 4.

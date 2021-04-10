@@ -12,12 +12,6 @@ import com.company.gamecontent.*;
 
 public class Main {
 
-    // Remember ID of the main thread to give it to other threads
-    // PROBLEM: For WJ DDA I moved thread related code to M_Thread.java,
-    // but I could not move also this variable into it, because then
-    // it can be modified from other threads
-    public static final long threadId = Thread.currentThread().getId();
-
     /* ATTENTION! */
     /* Don't use System.out.println! Since we use very powerful Thread.suspend() method
     in this software, we must not call anywhere System.out.println(), because it results to deadlock:
@@ -53,10 +47,8 @@ public class Main {
         System.out.println(" ------------------------------ START ------------------------------ ");
         initLoggers();
         CortegeTest.main(null);
-        MainWindow.getInstance().initControllers();
         initMap();
         initObjects();
-        MainWindow.getInstance().initGraph();
 
         LOG.debug("players:" + Player.players.size());
 
@@ -66,11 +58,11 @@ public class Main {
         // Main game loop (child threads are working).
         M_Thread.repeat();
 
-        // For sure
+        // Terminate remaining threads if still are running
         M_Thread.terminateNoGiveUp(null,1000, "Some threads did not terminate normally.");
 
         LOG.info("The game exited.");
-        System.exit(M_Thread.deadStatus);
+        System.exit(M_Thread.deadStatus ? 1 : 0);
     }
 
 }

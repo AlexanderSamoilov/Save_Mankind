@@ -1,6 +1,11 @@
 /* ***************** *
  * S I N G L E T O N *
  * ***************** */
+/*
+     Lazy thread-safe singleton initialization (possible to catch exception in Main).
+     See https://www.geeksforgeeks.org/java-singleton-design-pattern-practices-examples.
+ */
+
 package com.company.gamethread;
 
 import java.util.concurrent.Semaphore;
@@ -10,17 +15,28 @@ import org.apache.logging.log4j.Logger;
 
 import com.company.gamecontent.*;
 
+import static com.company.gamethread.M_Thread.terminateNoGiveUp;
+
 public class C_Thread extends ThreadTemplate {
     private static Logger LOG = LogManager.getLogger(C_Thread.class.getName());
 
-    // Singleton
-    private static final C_Thread instance = new C_Thread("C-Thread");
+    private static C_Thread instance = null;
     public static synchronized C_Thread getInstance() {
         return instance;
     }
-    private C_Thread(String threadName) {
-        super(threadName);
+    private C_Thread() {
+        super("C-Thread");
         LOG.debug(getClass() + " singleton created.");
+    }
+
+    static synchronized void init() {
+        if (instance != null) {
+            terminateNoGiveUp(null,
+                    1000,
+                    instance.getClass() + " init error. Not allowed to initialize C_Thread twice!"
+            );
+        }
+        instance = new C_Thread();
     }
 
     @Override
@@ -39,22 +55,16 @@ public class C_Thread extends ThreadTemplate {
 
         // recalculate positions of each game object
         // TODO: do it according to our documentation (swap pointers worldCurr, worldNext)
-        if (GameMap.getInstance().bullets != null) {
-            // NO clone required, although .move() modifies the bullets collection (use ConcurrentHashSet).
-            for (Bullet b : GameMap.getInstance().bullets) {
-                b.move();
-            }
+
+        // NO clone required, although .move() modifies the bullets collection (use ConcurrentHashSet).
+        for (Bullet b : GameMap.getInstance().bullets) {
+            b.move();
         }
 
-        // TODO May be != null check move in getPlayers(), getUnits()?
-        if (Player.players != null) {
-            for (Player pl : Player.players) {
-                if (pl.units != null) {
-                    // NO clone required, although .processTargets() modifies the units collection (use ConcurrentHashSet).
-                    for (Unit u : pl.units) {
-                        u.processTargets();
-                    }
-                }
+        for (Player pl : Player.players) {
+            // NO clone required, although .processTargets() modifies the units collection (use ConcurrentHashSet).
+            for (Unit u : pl.units) {
+                u.processTargets();
             }
         }
 

@@ -1,6 +1,10 @@
 /* ***************** *
  * S I N G L E T O N *
  * ***************** */
+/*
+     Lazy thread-safe singleton initialization (possible to catch exception in Main).
+     See https://www.geeksforgeeks.org/java-singleton-design-pattern-practices-examples.
+ */
 package com.company.gamethread;
 
 import java.util.concurrent.Semaphore;
@@ -10,17 +14,28 @@ import org.apache.logging.log4j.Logger;
 
 import com.company.gamecontrollers.MainWindow;
 
+import static com.company.gamethread.M_Thread.terminateNoGiveUp;
+
 public class V_Thread extends ThreadTemplate {
     private static Logger LOG = LogManager.getLogger(V_Thread.class.getName());
 
-    // Singleton
-    private static final V_Thread instance = new V_Thread("V-Thread");
+    private static V_Thread instance = null;
     public static synchronized V_Thread getInstance() {
         return instance;
     }
-    private V_Thread(String threadName) {
-        super(threadName);
+    private V_Thread() {
+        super("V-Thread");
         LOG.debug(getClass() + " singleton created.");
+    }
+
+    static synchronized void init() {
+        if (instance != null) {
+            terminateNoGiveUp(null,
+                    1000,
+                    instance.getClass() + " init error. Not allowed to initialize V_Thread twice!"
+            );
+        }
+        instance = new V_Thread();
     }
 
     @Override

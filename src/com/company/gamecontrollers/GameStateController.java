@@ -25,7 +25,7 @@ enum Choice {
 
 /*
 public enum GameStateController {
-    ; // utility class
+    ;
 
     // This function handles ESC key press (it runs in a special unnamed thread automatically by Java mechanisms)
     // I think that this must be handled in the main thread, because it is the highest priority action - game state managing.

@@ -36,17 +36,17 @@ enum Nature {
 }
 
 public enum GameMapGenerator {
-    ; // utility class
+    ;
 
     /*private synchronized String [][] readMapFromConfig() {
         return null; // Will be implemented soon.
     }*/
 
-    public static Vector3D_Integer readMapDimensionsFromConfig() {
+    public static synchronized Vector3D_Integer readMapDimensionsFromConfig() {
         // TODO: read it from the game config. If not available - use default values.
         int width = MAX_DIM.x();
         int height = MAX_DIM.y();
-        int depth = MAX_DIM.z(); // MAX_Z because we don't support 3D so far
+        int depth = MAX_DIM.z();
 
         // Validation of the map sizes.
         boolean width_ok = (width <= 0) || (width > MAX_DIM.x());
@@ -64,7 +64,7 @@ public enum GameMapGenerator {
         return new Vector3D_Integer(width, height, depth);
     }
 
-    public static String [][] generateRandomMap(int x_size, int y_size) {
+    public static synchronized String [][] generateRandomMap(int x_size, int y_size) {
         String [][] terrain_map = new String[x_size][y_size];
 
         // Fill map with random numbers of textures (get it from the game config in the future)

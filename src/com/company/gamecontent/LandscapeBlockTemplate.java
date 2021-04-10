@@ -18,7 +18,6 @@ public class LandscapeBlockTemplate {
     // static: stores collection of the class instances
     private static HashMap<String, LandscapeBlockTemplate> globalListOfKeys = new HashMap<>(); // HashMap<String, LandscapeBlockTemplate>
 
-    // sprite
     public final Sprite sprite = new Sprite(null);
 
     // properties

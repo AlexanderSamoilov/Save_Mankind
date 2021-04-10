@@ -18,7 +18,7 @@ import java.awt.*;
 // something like "ERROR: 3rd party API <func_name> was changed, the program will work wrongly!"
 
 public enum GraphBugfixes {
-    ; // utility class
+    ;
 
     // drawRect() adds +1 pixel to width and height!
     // See https://stackoverflow.com/questions/55445079/java-awt-drawrect-wrongly-interprets-width-and-height-produces-1-pixel-r.

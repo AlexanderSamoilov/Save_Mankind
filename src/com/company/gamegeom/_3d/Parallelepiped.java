@@ -11,8 +11,11 @@ import com.company.gamegraphics.GraphBugfixes;
 
 public class Parallelepiped extends Figure_3D implements Centerable {
 
-    public final Point3D_Integer loc; // Coordinates of the left-top-back point
-    public final Vector3D_Integer dim; // Object dimensions in pixels
+    // Coordinates of the left-top-back point
+    public final Point3D_Integer loc;
+
+    // Object dimensions in pixels
+    public final Vector3D_Integer dim;
 
     public final Color color = Color.GREEN;
 

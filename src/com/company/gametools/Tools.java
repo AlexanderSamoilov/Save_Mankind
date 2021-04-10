@@ -21,7 +21,7 @@ import org.apache.logging.log4j.Logger;
  This class contains miscellaneous helper functions and wrappers for standard Java API.
  */
 public enum Tools {
-    ; // utility class
+    ;
 
     private static Logger LOG = LogManager.getLogger(Tools.class.getName());
 

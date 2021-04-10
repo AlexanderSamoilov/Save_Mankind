@@ -50,6 +50,7 @@ public class GameObject extends ParallelepipedOfBlocks implements Movable, Rotat
     // which are not a solid rectangular parallelepiped. */
 //    bodyBlocks[][] bodyBlocks;
 
+    // Current unit's owner. Null means unattended (wild) unit
     Player owner;
 
     int hitPoints;
@@ -192,9 +193,7 @@ public class GameObject extends ParallelepipedOfBlocks implements Movable, Rotat
 
         // Default - at the beginning of the game all objects are oriented to north
         this.currAngle = INIT_ANGLE;
-
-        // FIXME this.playerId = Faction.NEUTRAL
-        this.owner = null; // unattended unit
+        this.owner = null;
 
         // Mark the object on the map
         GameMap.getInstance().registerObject(this);

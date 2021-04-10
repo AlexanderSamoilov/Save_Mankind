@@ -13,7 +13,6 @@ import org.apache.logging.log4j.Logger;
 public class ParameterizedMutexManager extends MutexManager<String, Semaphore> {
     private static Logger LOG = LogManager.getLogger(MutexManager.class.getName());
 
-    // Singleton
     public static final ParameterizedMutexManager instance = new ParameterizedMutexManager();
     public static synchronized ParameterizedMutexManager getInstance() {
         return instance;

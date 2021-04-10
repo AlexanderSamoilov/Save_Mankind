@@ -14,7 +14,7 @@ package com.company.gamegraphics;
 import java.awt.*;
 
 public enum GraphExtensions {
-    ; // utility class
+    ;
 
         public static void putpixel(Graphics g, int x, int y, Color color) {
             Color origColor = g.getColor();

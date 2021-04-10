@@ -16,7 +16,7 @@ package com.company.gametools;
 // something like "ERROR: 3rd party API <func_name> was changed, the program will work wrongly!"
 
 public enum MathBugfixes {
-    ; // utility class
+    ;
 
     /* Stupid Java bug. It thinks that Math.sqrt accepts double and expects that the computation result
            returned by the function which we pass into sqrt is also Double. If we clearly define an intermediate variable,

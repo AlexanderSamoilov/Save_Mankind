@@ -10,11 +10,13 @@ import com.company.gametools.Tools;
 import static com.company.gamecontent.Constants.TIME_QUANTUM;
 
 // "Pattern" class for creation of singletons
+// Semi-Singleton (abstract): "protected" constructor with a parameter
+// Child classes will have "private" constructor like a normal singleton, but with a parameter
 public abstract class ThreadTemplate extends Thread {
     private static Logger LOG = LogManager.getLogger(ThreadTemplate.class.getName());
 
-    // Semi-Singleton (abstract): "protected" constructor with a parameter
-    // Child classes will have "private" constructor like a normal singleton, but with a parameter
+    private boolean SIGNAL_TERM;
+
     private static ThreadTemplate instance = null;
     public static synchronized ThreadTemplate getInstance() {
         return instance;
@@ -25,8 +27,6 @@ public abstract class ThreadTemplate extends Thread {
         //LOG.debug(ThreadTemplate.class + " singleton created.");
     }
 
-    private boolean SIGNAL_TERM;
-
     @Override
     @Deprecated
     public void start() {
@@ -36,7 +36,7 @@ public abstract class ThreadTemplate extends Thread {
         // interrupt(); - is it possible that the method start() of the base class anyway started the run() at this moment?
     }
 
-    public boolean start(int attempts, long timeoutMSec)
+    boolean start(int attempts, long timeoutMSec)
     {
         boolean rc = true;
         StackTraceElement [] stackTrace = null;

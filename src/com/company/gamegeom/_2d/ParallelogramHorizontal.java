@@ -13,9 +13,14 @@ import static com.company.gamethread.M_Thread.terminateNoGiveUp;
 public class ParallelogramHorizontal extends Figure_2D /*implements Centerable*/ {
     private static Logger LOG = LogManager.getLogger(ParallelogramHorizontal.class.getName());
 
-    final Point2D_Integer loc; // Coordinates of the left-top-back point
-    final int width, height; /* IDE_BUG: no warning about "package-private" if we set it public like "shift" */
-    final int shift; // shift of the second horizontal edge along Ox
+    // Coordinates of the left-top-back point
+    final Point2D_Integer loc;
+
+    /* IDE_BUG: no warning about "package-private" if we set it public like "shift" */
+    final int width, height;
+
+    // shift of the second horizontal edge along Ox
+    final int shift;
 
     public final Color color = Color.BLUE;
 
@@ -85,7 +90,7 @@ public class ParallelogramHorizontal extends Figure_2D /*implements Centerable*/
         if (MathTools.sectionHasNullCoordinates(A, B)) {
             terminateNoGiveUp(null,1000, "Some section [A; B] coordinates are null.");
         }
-        if ((A.x().equals(B.x())) && (A.y().equals(B.y()))) {
+        if (A.eq(B)) {
             terminateNoGiveUp(null,1000, "Section [A; B] is a point!");
             //return contains(A);
         }
@@ -123,10 +128,8 @@ public class ParallelogramHorizontal extends Figure_2D /*implements Centerable*/
                     MathTools.sectionContains(top_right, A, bottom_right) > -1 // lay on the right edge
             };
 
-            if ( // bug defense (to avoid the case if one function found that some edge contains the point, but another one cannot find which one)
-                   (!edgesContainingA[0]) && (!edgesContainingA[1])
-                && (!edgesContainingA[2]) && (!edgesContainingA[3])
-            ) {
+            // bug defense (to avoid the case if one function found that some edge contains the point, but another one cannot find which one)
+            if (MathTools.allFalse(edgesContainingA)) {
                 LOG.debug("L=" + top_left + ", A=" + A + ", R=" + top_right + ", sectionContains=" + MathTools.sectionContains(top_left, A, top_right));
                 LOG.debug("L=" + bottom_left + ", A=" + A + ", R=" + bottom_right + ", sectionContains=" + MathTools.sectionContains(bottom_left, A, bottom_right));
                 LOG.debug("L=" + top_left + ", A=" + A + ", R=" + bottom_left + ", sectionContains=" + MathTools.sectionContains(top_left, A, bottom_left));
@@ -141,10 +144,8 @@ public class ParallelogramHorizontal extends Figure_2D /*implements Centerable*/
                     MathTools.sectionContains(top_right, B, bottom_right) > -1 // lay on the right edge
             };
 
-            if ( // bug defense (to avoid the case if one function found that some edge contains the point, but another one cannot find which one)
-                   (!edgesContainingB[0]) && (!edgesContainingB[1])
-                && (!edgesContainingB[2]) && (!edgesContainingB[3])
-            ) {
+            // bug defense (to avoid the case if one function found that some edge contains the point, but another one cannot find which one)
+            if (MathTools.allFalse(edgesContainingB)) {
                 LOG.debug("L=" + top_left + ", B=" + B + ", R=" + top_right + ", sectionContains=" + MathTools.sectionContains(top_left, B, top_right));
                 LOG.debug("L=" + bottom_left + ", B=(" + B + ", R=" + bottom_right + ", sectionContains=" + MathTools.sectionContains(bottom_left, B, bottom_right));
                 LOG.debug("L=" + top_left + ", B=" + B + ", R=" + bottom_left + ", sectionContains=" + MathTools.sectionContains(top_left, B, bottom_left));

@@ -26,7 +26,7 @@ import com.company.gamemath.cortegemath.vector.Vector3D_Double;
 import com.company.gamemath.cortegemath.vector.Vector3D_Integer;
 
 public enum CortegeTest {
-    ; // utility class
+    ;
 
     //private static Logger LOG = LogManager.getLogger(CortegeTest.class.getName());
     private static double eps = 0.000001;
